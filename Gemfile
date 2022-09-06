@@ -1,6 +1,9 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
+gem 'support', git: "https://github.com/ihsaneddin/support", tag: "v1.0.0"
+gem 'grape_api', git: "https://github.com/ihsaneddin/grape_api", tag: "v1.0.0"
+
 # Specify your gem's dependencies in document.gemspec.
 gemspec
 
@@ -16,5 +19,3 @@ gem 'mongoid'
 gem 'mongoid_search', github: 'mongoid/mongoid_search'
 gem "ranked-model", "~> 0.4.7"
 gem 'validates_timeliness', '~> 6.0.0.alpha1'
-gem 'support', git: "https://github.com/ihsaneddin/support", tag: "v1.0.0"
-gem 'grape_api', git: "https://github.com/ihsaneddin/grape_api", tag: "v1.0.0"
