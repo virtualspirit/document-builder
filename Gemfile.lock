@@ -46,7 +46,7 @@ GIT
 PATH
   remote: .
   specs:
-    document (1.1.0)
+    document (1.2.0)
       activeentity (>= 6.1.0)
       grape_api
       mongoid
