@@ -28,6 +28,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "ranked-model", "~> 0.4.7"
   spec.add_dependency 'validates_timeliness', '~> 6.0.0.alpha1'
   spec.add_dependency 'support'
+  spec.add_dependency 'grape_api'
   spec.add_dependency 'options_model'
 
 end
