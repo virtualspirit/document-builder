@@ -1,0 +1,65 @@
+class <%= migration_class_name %> < ActiveRecord::Migration<%= migration_version %>
+  def change
+
+     create_table :document_forms do |t|
+      t.string :name
+      t.string :title
+      t.text :description
+      t.string :type, null: false, index: true
+      t.string :code
+      t.boolean :step
+      t.text :step_options
+      t.belongs_to :documentable, polymorphic: true, index: true
+      t.references :attachable, polymorphic: true, index: true
+      t.references :owner, polymorphic: true, index: true
+
+      t.timestamps
+    end
+
+    create_table :document_fields do |t|
+      t.string :name, null: false
+      t.string :label, default: ""
+      t.string :hint, default: ""
+      t.integer :accessibility, null: false
+      t.text :options
+      t.text :validations
+      t.integer :position
+      t.string :type
+      t.belongs_to :form
+      t.belongs_to :section, index: true
+      t.belongs_to :field_group, index: true
+      t.string :data_type, null: false
+
+      t.timestamps
+    end
+
+    add_index :document_fields, [:form_id, :name, :id], unique: true
+    add_index :document_fields, [:form_id, :position, :id]
+
+    create_table :document_sections do |t|
+      t.string :title, default: ""
+      t.text :description
+      t.boolean :headless, null: false, default: false
+      t.belongs_to :form
+      t.integer :position
+
+      t.timestamps
+    end
+
+    create_table :document_field_groups do |t|
+      t.string :name, default: ""
+
+      t.timestamps
+    end
+
+    create_table :document_query_builders do |t|
+      t.text :data
+      t.string :name
+      t.string :type
+      t.references :context, polymorphic: true
+      t.references :configurable, polymorphic: true
+      t.timestamps
+    end
+
+  end
+end
