@@ -7,7 +7,7 @@ module Document
       @@current_user = nil
 
       def set_current_user &block
-        @@current_user = Proc.new
+        @@current_user = block
       end
 
 
@@ -37,7 +37,7 @@ module Document
 
           def callback_of name, &block
             if @@callbacks[name.to_sym]
-              @@callbacks[name.to_sym] = Proc.new
+              @@callbacks[name.to_sym] = block
             end
           end
 
