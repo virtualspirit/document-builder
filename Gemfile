@@ -11,9 +11,10 @@ end
 # To use a debugger
 # gem 'byebug', group: [:development, :test]
 
-gem "activeentity", ">= 6.1.0", git: 'https://github.com/ihsaneddin/activeentity'
+gem "activeentity"
 gem 'mongoid'
 gem 'mongoid_search', github: 'mongoid/mongoid_search'
-gem "ranked-model", "~> 0.4.7"
+gem "ranked-model", "~> 0.4.8"
 gem 'validates_timeliness', '~> 6.0.0.alpha1'
-gem 'support', path: "../support"
+gem 'support', git: "https://github.com/ihsaneddin/support", tag: "v2.0.0"
+gem 'grape_api', git: "https://github.com/ihsaneddin/grape_api", tag: "v2.0.0"

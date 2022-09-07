@@ -97,7 +97,6 @@ module Document
             context.can @action, subject, @options.merge(additional_options)
           end
         rescue NameError
-          debugger
           raise "You must provide a valid model name."
         end
 
