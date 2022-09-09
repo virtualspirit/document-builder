@@ -49,4 +49,3 @@ module Document
 end
 
 require 'document/grape'
-require 'document/hooks'
