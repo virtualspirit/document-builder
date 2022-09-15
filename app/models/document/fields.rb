@@ -8,6 +8,7 @@ module Document
       select multiple_select
       integer_range decimal_range date_range datetime_range
       nested_form multiple_nested_form attachment multiple_attachment
+      depedency_one
     ].each do |type|
       require_dependency "document/fields/#{type}_field"
     end

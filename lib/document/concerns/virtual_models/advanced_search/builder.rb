@@ -6,7 +6,7 @@ module Document
         class Builder < Document::FieldOptions
 
           attribute :form_id, :integer
-          embeds_many :clauses, class_name: "::Document::Concerns::VirtualModels::AdvancedSearch::Clause"
+          embeds_many :clauses, class_name: "Document::Concerns::VirtualModels::AdvancedSearch::Clause"
           accepts_nested_attributes_for :clauses, reject_if: :all_blank, allow_destroy: true
 
           class << self

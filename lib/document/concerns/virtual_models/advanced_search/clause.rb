@@ -76,7 +76,9 @@ module Document
             when BigDecimal
               self.values = self.values.to_s unless values.is_a?(String)
             when Array
-              self.values = self.values.to_s.gsub(/\s+/, "").split(",") unless values.is_a?(Array)
+              unless self.values.is_a?(Array)
+                self.values = self.values.to_s.gsub(/\s+/, "").split(",") unless values.is_a?(Array)
+              end
             when ActiveModel::Type::Boolean
               self.values = ActiveModel::Type::Boolean.new.cast(self.values)
             end
