@@ -2,9 +2,10 @@ module Document
   module Fields::Options
     class DepedencyOneField < BaseOptions
 
-      attribute :document_form_id, :number
+      attribute :document_form_id, :integer
       attribute :display_value_field, :string, default: "_id"
       embeds_many :clauses, class_name: "Document::Fields::Options::DepedencyOneField::Clause"
+      accepts_nested_attributes_for :clauses, allow_destroy: true
 
       validates :document_form_id, presence: true
       validates :display_value_field, presence: true, inclusion: { in: -> (dof) { dof.fields } }
@@ -22,7 +23,21 @@ module Document
       end
 
       def fields
-        clause_templates.map{|cf| cf.field }
+        clause_templates.clauses.map{|cf| cf.field }
+      end
+
+      def collection
+        return @collection if @collection
+        @collection = virtual_model.where("_id.eq": nil)
+        clauses.select(&:verified?).each do |clause|
+          logical_operator = clause.logical_operator || :where
+          @collection = @collection.send(logical_operator, clause.to_criteria)
+        end
+        @collection
+      end
+
+      def choices
+        collection.map{|c| { value: c.id.to_s, label: c.send(display_value_field).to_s } }
       end
 
       class Clause < Document::FieldOptions
@@ -34,7 +49,7 @@ module Document
         attribute :logical_operator, :string
         attribute :logical_operators, :json
         attribute :comparison_operators, :string
-        attribute :ignore_blank_values, :boolean
+        # attribute :ignore_blank_values, :boolean
         serialize :comparison_operators, Hash
         attribute :values
         validates :type, presence: true
@@ -120,11 +135,11 @@ module Document
 
         def verified?
           verified = comparison_operators.deep_symbolize_keys.dig(self.comparison_operator.to_sym) && valid?
-          if ignore_blank_values
-            verified
-          else
-            verified && !values.blank?
-          end
+          # if ignore_blank_values
+          #   verified
+          # else
+          #   verified && !values.blank?
+          # end
         end
 
       end

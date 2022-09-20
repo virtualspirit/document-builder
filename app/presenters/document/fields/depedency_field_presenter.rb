@@ -6,12 +6,12 @@ module Document
         virtual_model.find(value)
       end
 
-      def form
-        @model.options.form
+      def virtual_model
+        @virtual_model ||= @model.options.virtual_model
       end
 
-      def virtual_model
-        @model.options.virtual_model
+      def choices
+        @choices ||= @model.options.choices
       end
 
     end
