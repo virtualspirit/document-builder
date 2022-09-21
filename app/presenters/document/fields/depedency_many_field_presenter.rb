@@ -1,10 +1,10 @@
 module Document
   module Fields
-    class DepedencyOneFieldPresenter < FieldPresenter
+    class DepedencyManyFieldPresenter < FieldPresenter
 
       def value_for_preview
         att = @model.options.display_value_field
-        virtual_model.find(value).try(att)
+        virtual_model.find(value).map{|v| v.send(att) }.join(",")
       end
 
       def virtual_model

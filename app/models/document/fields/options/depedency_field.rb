@@ -1,10 +1,10 @@
 module Document
   module Fields::Options
-    class DepedencyOneField < BaseOptions
+    class DepedencyField < BaseOptions
 
       attribute :document_form_id, :integer
       attribute :display_value_field, :string, default: "_id"
-      embeds_many :clauses, class_name: "Document::Fields::Options::DepedencyOneField::Clause"
+      embeds_many :clauses, class_name: "Document::Fields::Options::DepedencyField::Clause"
       accepts_nested_attributes_for :clauses, allow_destroy: true
 
       validates :document_form_id, presence: true
@@ -23,7 +23,7 @@ module Document
       end
 
       def fields
-        clause_templates.clauses.map{|cf| cf.field }
+        (clause_templates.try(:clauses) || []).map{|cf| cf.field }
       end
 
       def collection

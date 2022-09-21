@@ -1,12 +1,12 @@
 module Document
   module Fields
-    class DepedencyOneField < Document::Field
+    class DepedencyManyField < Document::Field
 
-      serialize :validations, Validations::DepedencyOneField
+      serialize :validations, Validations::DepedencyManyField
       serialize :options, Options::DepedencyField
 
       def stored_type
-        :string
+        :array
       end
 
     end
