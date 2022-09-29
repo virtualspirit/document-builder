@@ -29,5 +29,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'validates_timeliness', '~> 6.0.0.alpha1'
   spec.add_dependency 'support'
   spec.add_dependency 'options_model'
+  spec.add_dependency 'keisan'
 
 end

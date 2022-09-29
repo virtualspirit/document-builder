@@ -4,7 +4,7 @@ module Document
 
       def value_for_preview
         att = @model.options.display_value_field
-        virtual_model.find(value).map{|v| v.send(att) }.join(",")
+        virtual_model.find(value.to_a).map{|v| v.send(att) }.join(",")
       end
 
       def virtual_model

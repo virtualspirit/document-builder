@@ -16,5 +16,7 @@ gem 'mongoid'
 gem 'mongoid_search', github: 'mongoid/mongoid_search'
 gem "ranked-model", "~> 0.4.8"
 gem 'validates_timeliness', '~> 6.0.0.alpha1'
+gem 'keisan'
 gem 'support', git: "https://github.com/ihsaneddin/support", tag: "v2.0.0"
 gem 'grape_api', git: "https://github.com/ihsaneddin/grape_api", tag: "v2.0.0"
+gem 'psych', '< 4'
