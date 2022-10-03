@@ -16,5 +16,9 @@ module Document
       end
     end
 
+    initializer "document.form_helpers" do
+      ActiveSupport.on_load(:action_view) { require 'document/rails/form_helpers' }
+    end
+
   end
 end
