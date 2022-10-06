@@ -41,6 +41,7 @@ PATH
       activeentity (>= 6.1.0)
       keisan
       mongoid
+      mongoid-geospatial
       mongoid_search
       options_model
       rails (~> 7.0.3)
@@ -190,6 +191,8 @@ GEM
       activemodel (>= 5.1, < 7.1, != 7.0.0)
       mongo (>= 2.18.0, < 3.0.0)
       ruby2_keywords (~> 0.0.5)
+    mongoid-geospatial (5.1.0)
+      mongoid (>= 4.0.0)
     multi_json (1.15.0)
     mustermann (3.0.0)
       ruby2_keywords (~> 0.0.1)
@@ -294,6 +297,7 @@ DEPENDENCIES
   grape_api!
   keisan
   mongoid
+  mongoid-geospatial
   mongoid_search!
   psych (< 4)
   ranked-model (~> 0.4.8)

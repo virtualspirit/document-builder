@@ -14,6 +14,7 @@ end
 gem "activeentity"
 gem 'mongoid'
 gem 'mongoid_search', github: 'mongoid/mongoid_search'
+gem 'mongoid-geospatial'
 gem "ranked-model", "~> 0.4.8"
 gem 'validates_timeliness', '~> 6.0.0.alpha1'
 gem 'keisan'

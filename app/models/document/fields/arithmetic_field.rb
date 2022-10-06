@@ -24,7 +24,7 @@ module Document
               formula = formula.gsub(/#{f}/, val.to_s)
             end
             val = calculator.evaluate(formula) rescue 0
-            send("#{_name}=", val.to_d(precision))
+            send("#{_name}=", val.to_f.to_d(precision))
           end
         end
 

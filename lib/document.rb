@@ -3,6 +3,8 @@ require_relative 'concern.rb'
 require 'validates_timeliness'
 require 'mongoid'
 require 'mongoid_search'
+# debugger
+require 'mongoid/geospatial'
 require 'keisan'
 
 require 'document/coder'
