@@ -21,3 +21,4 @@ gem 'keisan'
 gem 'support', git: "https://github.com/ihsaneddin/support", tag: "v2.0.0"
 gem 'grape_api', git: "https://github.com/ihsaneddin/grape_api", tag: "v2.0.0"
 gem 'psych', '< 4'
+gem 'truemail'
