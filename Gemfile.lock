@@ -47,7 +47,6 @@ PATH
       rails (~> 7.0.3)
       ranked-model (~> 0.4.7)
       support
-      truemail
       validates_timeliness (~> 6.0.0.alpha1)
 
 GEM
@@ -273,8 +272,6 @@ GEM
     shrine (3.4.0)
       content_disposition (~> 1.0)
       down (~> 5.1)
-    simpleidn (0.2.1)
-      unf (~> 0.1.4)
     spreadsheet (1.3.0)
       ruby-ole
     sqlite3 (1.4.4)
@@ -282,13 +279,8 @@ GEM
     thor (1.2.1)
     timeliness (0.4.4)
     timeout (0.3.0)
-    truemail (2.7.5)
-      simpleidn (~> 0.2.1)
     tzinfo (2.0.5)
       concurrent-ruby (~> 1.0)
-    unf (0.1.4)
-      unf_ext
-    unf_ext (0.0.8.2)
     validates_timeliness (6.0.0.alpha1)
       timeliness (>= 0.3.10, < 1)
     websocket-driver (0.7.5)
@@ -311,7 +303,6 @@ DEPENDENCIES
   ranked-model (~> 0.4.8)
   sqlite3
   support!
-  truemail
   validates_timeliness (~> 6.0.0.alpha1)
 
 BUNDLED WITH

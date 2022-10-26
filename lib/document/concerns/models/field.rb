@@ -32,6 +32,19 @@ module Document
               self.accessibility ||= "read_and_write"
             end
           end
+
+          validate do
+            unless validations.valid?
+              errors.add(:validations, :invalid)
+              validations.errors.each {|e| errors.import e, **e.options.merge(attribute: "options.#{e.attribute}")}
+            end
+
+            unless options.valid?
+              errors.add(:options, :invalid)
+              options.errors.each {|e| errors.import e, **e.options.merge(attribute: "options.#{e.attribute}")}
+            end
+          end
+
         end
 
         def name

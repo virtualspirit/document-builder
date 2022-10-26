@@ -44,7 +44,6 @@ module Document
         def set_default_values
           self.class._all_default_attribute_values.each do |attribute, container|
             next unless new_record? || self.class._all_default_attribute_values_not_allowing_nil.include?(attribute)
-
             attribute_blank =
               if self.class.attribute_types[attribute]&.type == :boolean
                 send(attribute).nil?

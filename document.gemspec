@@ -31,6 +31,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'support'
   spec.add_dependency 'options_model'
   spec.add_dependency 'keisan'
-  spec.add_dependency 'truemail'
 
 end

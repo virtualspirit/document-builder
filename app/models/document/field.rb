@@ -3,6 +3,9 @@ module Document
     include Document::Concerns::Models::Field
     include Document::Concerns::Models::Fields::Helper
 
+    serialize :validations, ::Document::FieldOptions
+    serialize :options, ::Document::FieldOptions
+
     self.table_name = "document_fields"
 
     belongs_to :form, class_name: 'Document::BareForm', touch: true, optional: true, inverse_of: :fields
@@ -20,7 +23,6 @@ module Document
       self.data_type = stored_type
     end
 
-
     include RankedModel
     ranks :position, with_same: [:section_id, :form_id], class_name: self.name
 
@@ -36,9 +38,9 @@ module Document
               },
               allow_blank: false
 
-    # default_value_for :name,
-    #                   ->(_) { "field_#{SecureRandom.hex(3)}" },
-    #                   allow_nil: false
+    default_value_for :name,
+                      ->(_) { "field_#{SecureRandom.hex(3)}" },
+                      allow_nil: false
 
     def self.type_key
       model_name.name.demodulize.underscore.to_sym

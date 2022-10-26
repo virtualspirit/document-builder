@@ -43,6 +43,7 @@ module Document
       def set_default_values
         self.class._all_default_attribute_values.each do |attribute, container|
           next unless new_record? || self.class._all_default_attribute_values_not_allowing_nil.include?(attribute)
+          next unless respond_to? attribute
 
           connection_default_value_defined = new_record? && respond_to?("#{attribute}_changed?") && !send("#{attribute}_changed?")
 
