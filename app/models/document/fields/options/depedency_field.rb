@@ -144,6 +144,12 @@ module Document
 
       end
 
+      class SimpleView < Document::FieldOptions
+      end
+
+      class AdvancedView < Document::FieldOptions
+      end
+
     end
   end
 end
