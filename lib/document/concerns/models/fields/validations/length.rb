@@ -44,7 +44,7 @@ module Document
                         if: proc { |record| !record.maximum.zero? || !record.minimum.zero? }
 
               def interpret_to(model, field_name, _accessibility, _options = {})
-                return if minimum.zero? && maximum.zero? && is.zero?
+                return if minimum.to_i.zero? && maximum.to_i.zero? && is.to_i.zero?
 
                 if is.positive?
                   model.validates field_name, length: { is: is }, allow_blank: true

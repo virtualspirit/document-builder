@@ -20,7 +20,7 @@ module Document
             full_text_search query, options
           end
 
-          def search query, options={}
+          def heavy_search query, options={}
             ignore_case = options[:ignore_case]
             query = /#{query}/
             if ignore_case

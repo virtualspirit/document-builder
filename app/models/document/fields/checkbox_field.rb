@@ -9,7 +9,7 @@ module Document
         :array
       end
 
-      def interpret_to(model, overrides: {})
+      def interpret_as_field_for model, overrides: {}
         check_model_validity!(model)
 
         accessibility = overrides.fetch(:accessibility, self.accessibility)
@@ -18,12 +18,24 @@ module Document
         model.field name, type: Array, default: []
         model.attr_readonly name if accessibility == :readonly
         model.add_as_searchable_field name if options.try(:searchable)
-
-        interpret_validations_to model, accessibility, overrides
-        interpret_extra_to model, accessibility, overrides
-
         model
       end
+
+      # def interpret_to(model, overrides: {})
+      #   check_model_validity!(model)
+
+      #   accessibility = overrides.fetch(:accessibility, self.accessibility)
+      #   return model if accessibility == :hidden
+
+      #   model.field name, type: Array, default: []
+      #   model.attr_readonly name if accessibility == :readonly
+      #   model.add_as_searchable_field name if options.try(:searchable)
+
+      #   interpret_validations_to model, accessibility, overrides
+      #   interpret_extra_to model, accessibility, overrides
+
+      #   model
+      # end
 
       def has_choices_option?
         true

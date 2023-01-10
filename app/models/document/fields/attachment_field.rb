@@ -9,19 +9,23 @@ module Document
         :string
       end
 
-      def interpret_to(model, overrides: {})
+      def interpret_as_field_for model, overrides: {}
         check_model_validity!(model)
 
         accessibility = overrides.fetch(:accessibility, self.accessibility)
         return model if accessibility == :hidden
         model.has_one_attached name
-        model.attr_readonly name if accessibility == :readonly
-
-        interpret_validations_to model, accessibility, overrides
-        interpret_extra_to model, accessibility, overrides
-
         model
       end
+
+      # def interpret_to(model, overrides: {})
+      #   model.attr_readonly name if accessibility == :readonly
+
+      #   interpret_validations_to model, accessibility, overrides
+      #   interpret_extra_to model, accessibility, overrides
+
+      #   model
+      # end
 
       def interpret_validations_to model, accessibility, overrides
         file_validation = self.validations.file

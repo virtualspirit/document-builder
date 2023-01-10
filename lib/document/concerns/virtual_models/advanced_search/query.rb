@@ -24,7 +24,7 @@ module Document
           class << self
 
             def build virtual_model:, clauses: []
-              clauses = clauses.map{|clause| Clause.new(clause) }
+              clauses = clauses.map{|clause| clause.is_a?(Clause) ? clause : Clause.new(clause) }
               self.new(virtual_model: virtual_model, clauses: clauses)
             end
 

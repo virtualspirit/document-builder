@@ -43,18 +43,36 @@ module Document
           step_state != nil
         end
 
+        def to_virtual_view(model_name: virtual_model_name, fields_scope: proc{|fields| fields}, overrides: {})
+          model = virtual_model model_name
+          set_constant model_name, model
+          append_to_virtual_view(model, fields_scope: fields_scope, overrides: overrides)
+        end
+
+        def append_to_virtual_view model, fields_scope: proc { |fields| fields }, overrides: {}
+          check_model_validity! model
+          global_overrides = overrides.fetch(:_global, {})
+          fields_scope.call(fields).each do |f|
+            f.interpret_as_field_for model, overrides: global_overrides.merge(overrides.fetch(f.name, {}))
+          end
+          if self.is_a?(::Document::Form)
+            model.search_in model.get_searchable_fields
+          end
+          model
+        end
+
         def to_virtual_model(model_name: virtual_model_name,
                             fields_scope: proc { |fields| fields },
                             overrides: {})
-        if step_active?
-          fields_scope = proc {|fields|
-          section = sections.select{|sect| sect.position_rank == step_state }.first
-          unless section
-            section = sections.first
+          if step_active?
+            fields_scope = proc {|fields|
+              section = sections.select{|sect| sect.position_rank == step_state }.first
+              unless section
+                section = sections.first
+              end
+              section.try(:fields) || fields
+            }
           end
-          section.try(:fields) || fields
-          }
-        end
           model = virtual_model model_name
           set_constant model_name, model
           append_to_virtual_model(model, fields_scope: fields_scope, overrides: overrides)
@@ -75,16 +93,19 @@ module Document
           model
         end
 
+        # def append_to_virtual_model(model, fields_scope: proc { |fields| fields }, overrides: {})
+        #   global_overrides = overrides.fetch(:_global, {})
+        #   fields_scope.call(fields).each do |f|
+        #     f.interpret_to model, overrides: global_overrides.merge(overrides.fetch(f.name, {}))
+        #   end
+        #   if self.is_a?(::Document::Form)
+        #     model.search_in model.get_searchable_fields
+        #   end
+        #   model
+        # end
 
-        def append_to_virtual_model(model, fields_scope: proc { |fields| fields }, overrides: {})
-          global_overrides = overrides.fetch(:_global, {})
-          fields_scope.call(fields).each do |f|
-            f.interpret_to model, overrides: global_overrides.merge(overrides.fetch(f.name, {}))
-          end
-          if self.is_a?(::Document::Form)
-            model.search_in model.get_searchable_fields
-          end
-          model
+        def collection_name
+          "#{self.class.name.demodulize.downcase}-#{id}"
         end
 
         protected
@@ -93,8 +114,12 @@ module Document
             "#{name}#{id}".classify
           end
 
+          def virtual_view_model_name
+            "View#{name}#{id}".classify
+          end
+
           def virtual_model model_name
-            model = Document.virtual_model_class.build name: model_name, collection: "#{self.class.name.demodulize.downcase}-#{id}", step: step_active?
+            model = Document.virtual_model_class.build name: model_name, collection: collection_name, step: step_active?
             model.form_id = self.id
             model
           end

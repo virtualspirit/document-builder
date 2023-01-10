@@ -9,7 +9,7 @@ module Document
         :string
       end
 
-      def interpret_to(model, overrides: {})
+      def interpret_as_field_for(model, overrides: {})
         check_model_validity!(model)
 
         accessibility = overrides.fetch(:accessibility, self.accessibility)
@@ -20,8 +20,13 @@ module Document
         model.field field_name, type: ::Mongoid::Geospatial::Point, spatial: true
         model.field "#{id}#{options.location_field_suffix_name}", type: :string
 
-        model.attr_readonly field_name if accessibility == :readonly
         model.add_as_searchable_field field_name if options.try(:searchable)
+        model
+      end
+
+      def interpret_to(model, overrides: {})
+        model = interpret_as_field_for model, overrides: overrides
+        model.attr_readonly field_name if accessibility == :readonly
 
         # model.before_save do
         #   if will_save_change_to_attribute?(field_name)

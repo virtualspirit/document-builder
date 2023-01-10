@@ -1,6 +1,6 @@
 module Document
   module Fields::Formatters
-    class DateFormatter < Document::FieldOptions
+    class Date < Document::FieldOptions
 
       attribute :locale, :string, default: "en"
       attribute :format, :string
@@ -12,9 +12,9 @@ module Document
       def value val
         return val if val.blank? || format.blank?
         if(val.is_a?(Array))
-          val.map{|v| v.strftime(format)}
+          val.map{|v| v.try(:strftime, format) || v}
         else
-          val.strftime(format)
+          val.try(:strftime, format) || v
         end
       end
 

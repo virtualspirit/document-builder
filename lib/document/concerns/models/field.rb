@@ -33,18 +33,33 @@ module Document
             end
           end
 
+          attr_accessor :skip_options_validation
+          attr_accessor :skip_validations_validation
+
           validate do
-            unless validations.valid?
-              errors.add(:validations, :invalid)
-              validations.errors.each {|e| errors.import e, **e.options.merge(attribute: "options.#{e.attribute}")}
+            unless skip_options_validation
+              unless validations.valid?
+                errors.add(:validations, :invalid)
+                validations.errors.each {|e| errors.import e, **e.options.merge(attribute: "options.#{e.attribute}")}
+              end
             end
 
-            unless options.valid?
-              errors.add(:options, :invalid)
-              options.errors.each {|e| errors.import e, **e.options.merge(attribute: "options.#{e.attribute}")}
+            unless skip_options_validation
+              unless options.valid?
+                errors.add(:options, :invalid)
+                options.errors.each {|e| errors.import e, **e.options.merge(attribute: "options.#{e.attribute}")}
+              end
             end
           end
 
+        end
+
+        def skip_options_validation!
+          self.skip_options_validation = true
+        end
+
+        def skip_validations_validation!
+          self.skip_validations_validation = true
         end
 
         def name
@@ -67,7 +82,7 @@ module Document
           false
         end
 
-        def interpret_to(model, overrides: {})
+        def interpret_as_field_for model, overrides: {}
           check_model_validity!(model)
 
           accessibility = overrides.fetch(:accessibility, self.accessibility)
@@ -76,8 +91,14 @@ module Document
           default_value = overrides.fetch(:default_value, self.default_value)
           model.field name, type: stored_type, default: default_value
 
-          model.attr_readonly name if accessibility == :readonly
           model.add_as_searchable_field self.name if self.options.try(:searchable)
+
+          model
+        end
+
+        def interpret_to(model, overrides: {})
+          model = interpret_as_field_for model, overrides: overrides
+          model.attr_readonly name if accessibility == :readonly
 
           interpret_validations_to model, accessibility, overrides
           interpret_extra_to model, accessibility, overrides

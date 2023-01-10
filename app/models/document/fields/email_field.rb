@@ -9,7 +9,7 @@ module Document
         :string
       end
 
-      def interpret_to(model, overrides: {})
+      def interpret_as_field_for(model, overrides: {})
         check_model_validity!(model)
 
         accessibility = overrides.fetch(:accessibility, self.accessibility)
@@ -23,12 +23,16 @@ module Document
         model.attr_readonly name if accessibility == :readonly
 
         model.add_as_searchable_field name if options.try(:searchable)
-
-        interpret_validations_to model, accessibility, overrides
-        interpret_extra_to model, accessibility, overrides
-
         model
       end
+
+      # def interpret_to(model, overrides: {})
+
+      #   interpret_validations_to model, accessibility, overrides
+      #   interpret_extra_to model, accessibility, overrides
+
+      #   model
+      # end
 
     end
   end

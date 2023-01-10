@@ -1,6 +1,6 @@
 module Document
   module Fields::Formatters
-    class TextFormatter < Document::FieldOptions
+    class Text < Document::FieldOptions
 
       attribute :prefix, :string, default: ""
       attribute :suffix, :string, default: ""

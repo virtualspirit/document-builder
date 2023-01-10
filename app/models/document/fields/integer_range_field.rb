@@ -5,7 +5,7 @@ module Document
       serialize :validations, Validations::IntegerRangeField
       serialize :options, Options::IntegerRangeField
 
-      def interpret_to(model, overrides: {})
+      def interpret_as_field_for(model, overrides: {})
         check_model_validity!(model)
 
         accessibility = overrides.fetch(:accessibility, self.accessibility)
@@ -18,12 +18,16 @@ module Document
         model.embeds_one name, class_name: nested_model.name, validate: true
         model.accepts_nested_attributes_for name, reject_if: :all_blank
         model.add_as_searchable_field name if options.try(:searchable)
-
-        interpret_validations_to model, accessibility, overrides
-        interpret_extra_to model, accessibility, overrides
-
         model
       end
+
+      # def interpret_to(model, overrides: {})
+
+      #   interpret_validations_to model, accessibility, overrides
+      #   interpret_extra_to model, accessibility, overrides
+
+      #   model
+      # end
 
       def range_field?
         true

@@ -52,12 +52,12 @@ module Document
                 addresses = sanitized_values(value).map { |v| Address.new(v, options[:whitelist], options[:blacklist]) }
 
                 error(record, field) && return unless addresses.all?(&:valid?)
-                if options[:blacklist]
-                  error(record, field) && return if addresses.any?(&:blacklisted?)
-                end
 
                 if options[:whitelist]
-                  error(record, field) && return if addresses.any? { |address| !address.whitelisted? }
+                  addresses = addresses.filter { |address| !address.whitelisted? }
+                end
+                if options[:blacklist]
+                  error(record, field) && return if addresses.any?(&:blacklisted?)
                 end
 
               end

@@ -13,7 +13,7 @@ module Document
         true
       end
 
-      def interpret_to(model, overrides: {})
+      def interpret_as_field_for model, overrides: {}
         check_model_validity!(model)
 
         accessibility = overrides.fetch(:accessibility, self.accessibility)
@@ -25,11 +25,16 @@ module Document
         model.embeds_one name, class_name: "#{nested_model.name}", store_as: name, validate: true
         nested_model.embedded_in model.name.downcase.to_sym, class_name: model.name
         model.accepts_nested_attributes_for name, reject_if: :all_blank
-        model.attr_readonly name if accessibility == :readonly
-        interpret_validations_to model, accessibility, overrides
-        interpret_extra_to model, accessibility, overrides
         model
       end
+
+      # def interpret_to(model, overrides: {})
+      #   model = interpret_as_field_for model, overrides
+      #   model.attr_readonly name if accessibility == :readonly
+      #   interpret_validations_to model, accessibility, overrides
+      #   interpret_extra_to model, accessibility, overrides
+      #   model
+      # end
 
     end
   end

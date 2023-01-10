@@ -88,13 +88,13 @@ module Document
             cast_clause!
             if verified?
               if [:ilike, :like].include?(comparison_operator.to_sym)
-                val = comparison_operator.to_sym == :like ? /#{values}/ : /#{values}/i
+                val = comparison_operator.to_sym == :like ? /#{cast_value!}/ : /#{cast_value!}/i
                 {
                   "#{field}": val
                 }
               else
                 {
-                  "#{field}": { comparison_operators.deep_symbolize_keys[comparison_operator.to_sym][:symbol] => values }
+                  "#{field}": { comparison_operators.deep_symbolize_keys[comparison_operator.to_sym][:symbol] => cast_value! }
                 }
               end
             end
@@ -107,6 +107,39 @@ module Document
             else
               verified && !values.blank?
             end
+          end
+
+          def cast_value!
+            _values = case data_type.try(:name)
+              when "Integer"
+                Integer(values)
+              when "Float"
+                Float(values)
+              when "BigDecimal"
+                BigDecimal(values)
+              when "ActiveModel::Type::Boolean"
+                ActiveModel::Type::Boolean.new.cast(values)
+              when "Date"
+                Date.parse(values.to_s)
+              when "DateTime"
+                DateTime.parse(values.to_s)
+              when "BSON::ObjectId"
+                BSON::ObjectId(values.to_s)
+              when "Array"
+                JSON.parse values
+              when "Hash"
+                JSON.parse values
+              when "Time"
+                Time.parse values.to_s
+              else
+                values
+            end
+            if ['$in', '$nin'].include?(comparison_operators.deep_symbolize_keys[comparison_operator.to_sym][:symbol])
+              _values = _values.to_s.gsub(/\s+/, "").split(",") unless values.is_a?(Array)
+            end
+            _values
+          rescue => e
+            nil
           end
 
           class Choice < Document::FieldOptions
