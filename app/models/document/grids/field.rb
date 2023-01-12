@@ -98,6 +98,10 @@ module Document
           aggregation.to_aggregation
         end
 
+        def function_name
+          (namespace || []).dup.flatten.append(name).join(".")
+        end
+
         def aggregation_stages
           stages = []
           return stages if field.nil? || columns.blank?
@@ -109,9 +113,9 @@ module Document
               clauses = field.options.clauses
               matches = {}
               if field.is_a?(Document::Fields::DepedencyOneField)
-                matches.deep_merge!({"$expr".to_sym => { "$eq".to_sym => [ "$$#{ref_col.function_name}", "$_id" ] }})
+                matches.deep_merge!({"$expr".to_sym => { "$eq".to_sym => [ "$$#{ref_col.name}", "$_id" ] }})
               else
-                matches.deep_merge!({"$expr".to_sym => { "$in".to_sym => [ "$$#{ref_col.function_name}", "$_id" ] }})
+                matches.deep_merge!({"$expr".to_sym => { "$in".to_sym => [ "$_id", "$$#{ref_col.name}" ] }})
               end
               clauses.each do |c|
                 matches.deep_merge!(c.to_criteria) if c.to_criteria.is_a?(Hash)
@@ -123,29 +127,87 @@ module Document
                   pipeline.stages << stg
                 end
               end
-              lookup = AggregationStage.new(name: "$lookup", arguments_attributes: [
+
+              stages =[]
+
+              if(field.is_a?(Document::Fields::DepedencyManyField))
+                relation_field = AggregationStage.new({
+                  name: "$addFields", merge: false, order: 9997, arguments_attributes: [
+                    {
+                      function: "#{ref_col.function_name}",
+                      raw_parameter: {
+                        "$cond": {
+                          "if": {
+                            "$ne": [
+                              {
+                                "$type": "$#{ref_col.function_name}"
+                              },
+                              "array"
+                            ]
+                          },
+                          "then": [],
+                          "else": "$#{ref_col.function_name}"
+                        }
+                      }
+                    }
+                  ]
+                })
+                stages << relation_field
+              end
+
+              if (ref_col.namespace.present?)
+                ref_col.namespace.reduce([]){|arr, val|
+                  if val.is_a?(Array)
+                    unwind = AggregationStage.new(
+                      name: "$unwind",
+                      merge: false,
+                      parameters_as_array: false,
+                      order: 9996,
+                      arguments_attributes: [
+                        { function: "path", parameter: "$#{arr.concat(val).join(".")}" }
+                      ]
+                      )
+                    stages << unwind
+                  end
+                  arr.append(val)
+                }
+              end
+
+              lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
                 { function: "from", parameter: field.options.virtual_model.collection_name.to_s },
                 { function: "let", parameters_as_array: false, parameters_attributes: [
-                    { function: "#{ref_col.function_name}", parameter: "$#{ref_col.function_name}" }
+                    { function: "#{ref_col.name}", parameter: "$#{ref_col.function_name}" }
                   ]
                 },
                 { function:  "pipeline", raw_parameter: pipeline.to_aggregation },
                 { function: "as", parameter: name }
               ])
-              project = AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [ {function: "#{name}", parameter: 1} ])
-              unwind = AggregationStage.new(
-                name: "$unwind",
-                parameters_as_array: false,
-                order: 9998,
-                arguments_attributes: [
-                  {function: "path", parameter: "$#{name}"},
-                  { function: "preserveNullAndEmptyArrays", parameter: true }
-                ]
-              )
+              stages << lookup
+
               add_field = AggregationStage.new({
-                name: "$addFields", order: 9998, arguments_attributes: [{function: "#{name}", parameter: "$#{name}"}]
+                name: "$addFields", merge: false, order: 9998, arguments_attributes: [{function: "#{function_name}", parameter: "$#{name}"}]
               })
-              stages = [lookup, add_field, project, unwind]
+              stages << add_field
+
+              if field.is_a?(Document::Fields::DepedencyOneField)
+                unwind = AggregationStage.new(
+                  name: "$unwind",
+                  merge: false,
+                  parameters_as_array: false,
+                  order: 9998,
+                  arguments_attributes: [
+                    { function: "path", parameter: "$#{function_name}" },
+                    { function: "preserveNullAndEmptyArrays", parameter: true }
+                  ]
+                )
+                stages << unwind
+              end
+
+              project = AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [ {function: "#{function_name}", parameter: 1} ])
+              stages << project
+
+              stages
+              #stages = [relation_field, lookup, add_field, unwind, project].compact
             end
           elsif field.nested_form
             stages = aggregation.stages
@@ -167,8 +229,7 @@ module Document
               label: field.label,
               namespace: namespace,
             )
-            _namespace = namespace.dup << field.name.to_s
-
+            _namespace = namespace.dup.append field.is_a?(Document::Fields::NestedFormField) ? field.name.to_s : [field.name.to_s]
             _fields = []
 
             if field.nested_form || field.is_a?(Document::Fields::DepedencyManyField) || field.is_a?(Document::Fields::DepedencyOneField)
@@ -225,9 +286,17 @@ module Document
 
             _fields.each do |f|
               if f.nested_form.present? || f.is_a?(Document::Fields::DepedencyManyField) || f.is_a?(Document::Fields::DepedencyOneField)
-                nested.columns << self.build(grid, f, _namespace)
+                if field.is_a?(Document::Fields::DepedencyOneField) || field.is_a?(Document::Fields::DepedencyManyField)
+                  nested.columns << self.build(grid, f, [])
+                else
+                  nested.columns << self.build(grid, f, _namespace)
+                end
               else
-                nested.columns << Column.build(grid, f, field.is_a?(Document::Fields::DepedencyOneField) || field.is_a?(Document::Fields::DepedencyManyField) ? [] : _namespace)
+                if field.is_a?(Document::Fields::DepedencyOneField) || field.is_a?(Document::Fields::DepedencyManyField)
+                  nested.columns << Column.build(grid, f, [])
+                else
+                  nested.columns << Column.build(grid, f, _namespace)
+                end
               end
             end
 

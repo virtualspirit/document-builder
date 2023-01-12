@@ -24,8 +24,8 @@ module Document
         end
         if reference_class
           model.field "#{name}_id", type: BSON::ObjectId
-          model.belongs_to name, class_name: reference_class.name
-          reference_class.has_one model.name.downcase.to_sym, class_name: model.name
+          model.belongs_to name, class_name: reference_class.name, validate: false, autosave: false, optional: true
+          reference_class.has_one model.name.downcase.to_sym, class_name: model.name, validate: false, autosave: false
           model.attr_readonly name if accessibility == :readonly
 
           interpret_validations_to model, accessibility, overrides

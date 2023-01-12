@@ -4,7 +4,7 @@ module Document
 
       def value_for_preview
         att = @model.options.display_value_field
-        virtual_model.find(value).try(att)
+        target.send(@model.name).try(att)
       end
 
       def virtual_model
@@ -13,6 +13,14 @@ module Document
 
       def choices
         @choices ||= @model.options.choices
+      end
+
+      def value
+        begin
+          target.send("#{@model.name}_id")
+        rescue => e
+          puts e.backtrace
+        end
       end
 
     end

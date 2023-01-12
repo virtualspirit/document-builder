@@ -5,6 +5,7 @@ module Document
 
       attribute :name
       attribute :order, :integer, default: 0
+      attribute :merge, :boolean, default: true
 
       validates :name, presence: true, inclusion: { in: [ '$facet', '$match', '$group', '$project', '$sort', '$skip', '$limit', '$unwind', "$lookup", '$addFields'], allow_blank: true }
 

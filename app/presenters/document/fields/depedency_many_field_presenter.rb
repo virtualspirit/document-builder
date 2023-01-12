@@ -4,15 +4,19 @@ module Document
 
       def value_for_preview
         att = @model.options.display_value_field
-        virtual_model.find(value.to_a).map{|v| v.send(att) }.join(",")
-      end
-
-      def virtual_model
-        @virtual_model ||= @model.options.virtual_model
+        target&.send(@model.name).map{|v| v.send(att) }.join(",")
       end
 
       def choices
         @choices ||= @model.options.choices
+      end
+
+      def value
+        begin
+          target.send("#{@model.name}_ids")
+        rescue => e
+          puts e.backtrace
+        end
       end
 
     end

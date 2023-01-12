@@ -37,7 +37,7 @@ module Document
           attr_accessor :skip_validations_validation
 
           validate do
-            unless skip_options_validation
+            unless skip_validations_validation
               unless validations.valid?
                 errors.add(:validations, :invalid)
                 validations.errors.each {|e| errors.import e, **e.options.merge(attribute: "options.#{e.attribute}")}
