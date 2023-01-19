@@ -50,7 +50,7 @@ module Document
         attribute :namespace, :string
         attribute :logical_operator, :string
         attribute :logical_operators, :json
-        attribute :comparison_operators, :string, default: "eq"
+        attribute :comparison_operators, :string, default: {}
         # attribute :ignore_blank_values, :boolean
         serialize :comparison_operators, Hash
         attribute :values
@@ -97,8 +97,8 @@ module Document
 
         after_initialize do
           self.logical_operators ||= LOGICAL_OPERATORS
-          if(self.type)
-            self.comparison_operators ||= COMPARISON_OPERATORS.select{|k,v| v[:only] ? v[:only].include?(self.type.to_s.to_sym) : v }
+          if(self.type && self.comparison_operators.blank?)
+            self.comparison_operators = COMPARISON_OPERATORS.select{|k,v| v[:only] ? v[:only].include?(self.type.to_s.to_sym) : v }
           end
         end
 
