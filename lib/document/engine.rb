@@ -7,9 +7,11 @@ module Document
 
     config.after_initialize do
       klass = Document::Grape::Services::Base
-      require 'document/grape/cancan'
-      require 'document/grape/ability'
-      klass.send(:include, Document::Grape::Cancan)
+      if defined?(Cancan)
+        require 'document/grape/cancan'
+        require 'document/grape/ability'
+        klass.send(:include, Document::Grape::Cancan)
+      end
       if defined?(GrapeAPI::Resourceful::Resource)
         require 'document/grape/resource'
         klass.include Document::Grape::Resource
