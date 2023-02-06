@@ -1,7 +1,7 @@
 GIT
   remote: https://github.com/ihsaneddin/grape_api
-  revision: 031bbc4133ad592d6f96948724ff13c00608ca7e
-  tag: v2.0.0
+  revision: ec972f901f06ffe9092ce5ea160e8fe49f1f4230
+  branch: upgrade/rails-7
   specs:
     grape_api (2.0.0)
       grape
@@ -11,8 +11,8 @@ GIT
 
 GIT
   remote: https://github.com/ihsaneddin/support
-  revision: 2fcabc67ace800061f04d3a6f12769d69accc4e1
-  tag: v2.0.0
+  revision: 0abb28df52e6150ba2ad6dae0c5d9b7bd7314578
+  branch: upgrade/rails-7
   specs:
     support (2.0.0)
       aasm
@@ -39,7 +39,6 @@ PATH
   specs:
     document (2.0.0)
       activeentity (>= 6.1.0)
-      grape_api (>= 2.0.0)
       keisan
       mongoid
       mongoid-geospatial
@@ -47,7 +46,6 @@ PATH
       options_model
       rails (~> 7.0.3)
       ranked-model (~> 0.4.7)
-      support (>= 2.0.0)
       validates_timeliness (~> 6.0.0.alpha1)
 
 GEM
@@ -189,9 +187,9 @@ GEM
     mini_mime (1.1.2)
     mini_portile2 (2.8.1)
     minitest (5.17.0)
-    mongo (2.18.1)
+    mongo (2.18.2)
       bson (>= 4.14.1, < 5.0.0)
-    mongoid (8.0.2)
+    mongoid (8.0.3)
       activemodel (>= 5.1, < 7.1, != 7.0.0)
       mongo (>= 2.18.0, < 3.0.0)
       ruby2_keywords (~> 0.0.5)
@@ -294,7 +292,7 @@ DEPENDENCIES
   document!
   grape_api!
   keisan
-  mongoid
+  mongoid (>= 8.0.2)
   mongoid-geospatial
   mongoid_search!
   psych (< 4)
