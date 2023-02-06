@@ -1,6 +1,6 @@
 module Document
   module Generators
-    class ConfigGenerator < Rails::Generators::Base
+    class ConfigGenerator < ::Rails::Generators::Base
       source_root File.join(__dir__, "templates")
 
       def generate_config
