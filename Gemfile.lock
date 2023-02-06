@@ -40,7 +40,7 @@ PATH
     document (2.0.0)
       activeentity (>= 6.1.0)
       keisan
-      mongoid
+      mongoid (~> 8.0.1)
       mongoid-geospatial
       mongoid_search
       options_model

@@ -23,7 +23,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "rails", "~> 7.0.3"
   spec.add_dependency "activeentity", ">= 6.1.0"
-  spec.add_dependency 'mongoid'
+  spec.add_dependency 'mongoid', '~> 8.0.1'
   spec.add_dependency 'mongoid_search'
   spec.add_dependency 'mongoid-geospatial'
   spec.add_dependency "ranked-model", "~> 0.4.7"
