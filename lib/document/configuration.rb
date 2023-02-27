@@ -12,7 +12,7 @@ module Document
     end
 
     def form_model_class=(klass)
-      raise ArgumentError, "#{klass} should be sub-class of #{Document::Form}." unless klass && klass < Document::Form
+      raise ArgumentError, "#{klass} should be sub-class of #{Document::Form}." unless klass && klass.constantize < Document::Form
 
       @form_model_class = klass
     end

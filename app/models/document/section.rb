@@ -3,7 +3,7 @@ module Document
 
     self.table_name = "document_sections"
 
-    belongs_to :form, touch: true, inverse_of: :sections
+    belongs_to :form, touch: true, inverse_of: :sections, class_name: Document.form_model_class
 
     has_many :fields, -> { rank(:position) }, dependent: :nullify, inverse_of: :section, index_errors: true
     accepts_nested_attributes_for :fields, allow_destroy: true

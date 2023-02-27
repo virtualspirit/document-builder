@@ -15,7 +15,7 @@ module Document
       end
 
       def form
-        @form ||= Document::Form.includes(:fields).find_by_id(document_form_id)
+        @form ||= Document.form_model_class_constant.includes(:fields).find_by_id(document_form_id)
       end
 
       def clause_templates
