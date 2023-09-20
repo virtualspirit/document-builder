@@ -9,7 +9,7 @@ module Document
     self.table_name = "document_fields"
 
     belongs_to :form, class_name: 'Document::BareForm', touch: true, optional: true, inverse_of: :fields
-    belongs_to :section, class_name: "Document::Section", touch: true, optional: true, inverse_of: :fields
+    belongs_to :section, class_name: Document.section_model_class, touch: true, optional: true, inverse_of: :fields
     has_one :nested_form, as: :attachable, dependent: :destroy, inverse_of: :attachable
     accepts_nested_attributes_for :nested_form, allow_destroy: true
     belongs_to :field_group, class_name: "Document::FieldGroup", touch: true, optional: true, inverse_of: :fields

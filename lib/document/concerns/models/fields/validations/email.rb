@@ -15,6 +15,12 @@ module Document
               after_initialize do
                 build_email unless email
               end
+              validate do
+                unless email.valid?
+                  errors.add(:email, :invalid)
+                  email.errors.each {|e| errors.import e, **e.options.merge(attribute: "email.#{e.attribute}")}
+                end
+              end
             end
 
             def interpret_to(model, field_name, accessibility, options = {})

@@ -15,6 +15,12 @@ module Document
               after_initialize do
                 build_length unless length
               end
+              validate do
+                unless length.valid?
+                  errors.add(:length, :invalid)
+                  length.errors.each {|e| errors.import e, **e.options.merge(attribute: "length.#{e.attribute}")}
+                end
+              end
             end
 
             def interpret_to(model, field_name, accessibility, options = {})

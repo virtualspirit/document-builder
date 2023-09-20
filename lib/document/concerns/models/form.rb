@@ -111,7 +111,7 @@ module Document
         protected
 
           def virtual_model_name
-            "#{name}#{id}".classify
+            "#{name}#{id.to_s.underscore}".classify
           end
 
           def virtual_view_model_name

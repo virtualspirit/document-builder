@@ -13,8 +13,33 @@ module Document
 
     def form_model_class=(klass)
       # raise ArgumentError, "#{klass} should be sub-class of #{Document::Form}." unless klass && klass < Document::Form
-
       @form_model_class = klass
+    end
+
+    def field_model_class
+      @field_model_class ||= "Document::Field"
+    end
+
+    def field_model_class_constant
+      @field_model_class.is_a?(String) ? @field_model_class.constantize : @field_model_class
+    end
+
+    def field_model_class=(klass)
+      # raise ArgumentError, "#{klass} should be sub-class of #{Document::Form}." unless klass && klass < Document::Field
+      @field_model_class = klass
+    end
+
+    def section_model_class
+      @section_model_class ||= "Document::Section"
+    end
+
+    def section_model_class_constant
+      @section_model_class.is_a?(String) ? @field_model_class.constantize : @field_model_class
+    end
+
+    def section_model_class=(klass)
+      # raise ArgumentError, "#{klass} should be sub-class of #{Document::Form}." unless klass && klass < Document::Field
+      @section_model_class = klass
     end
 
     def virtual_model_class

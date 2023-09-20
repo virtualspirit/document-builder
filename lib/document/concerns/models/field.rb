@@ -37,6 +37,7 @@ module Document
           attr_accessor :skip_validations_validation
 
           validate do
+            debugger
             unless skip_validations_validation
               unless validations.valid?
                 errors.add(:validations, :invalid)

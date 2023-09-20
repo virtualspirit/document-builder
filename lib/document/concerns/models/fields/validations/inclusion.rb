@@ -15,6 +15,12 @@ module Document
               after_initialize do
                 build_inclusion unless inclusion
               end
+              validate do
+                unless inclusion.valid?
+                  errors.add(:inclusion, :invalid)
+                  inclusion.errors.each {|e| errors.import e, **e.options.merge(attribute: "inclusion.#{e.attribute}")}
+                end
+              end
             end
 
             def interpret_to(model, field_name, accessibility, options = {})

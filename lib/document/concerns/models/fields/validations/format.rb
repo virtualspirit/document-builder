@@ -15,6 +15,12 @@ module Document
               after_initialize do
                 build_format unless format
               end
+              validate do
+                unless format.valid?
+                  errors.add(:format, :invalid)
+                  format.errors.each {|e| errors.import e, **e.options.merge(attribute: "format.#{e.attribute}")}
+                end
+              end
             end
 
             def interpret_to(model, field_name, accessibility, options = {})
