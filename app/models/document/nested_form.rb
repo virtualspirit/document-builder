@@ -2,6 +2,7 @@ module Document
   class NestedForm < BareForm
 
     belongs_to :attachable, polymorphic: true, touch: true, inverse_of: :nested_form
+    belongs_to :nested_form_field, -> { where(document_forms: { attachable_type: 'Document::Field' }) }, foreign_key: 'attachable_id', class_name: "Document::Field"
 
     attr_accessor :virtual_fields
 

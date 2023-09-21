@@ -12,7 +12,12 @@ module Document
     include RankedModel
     ranks :position, with_same: [:form_id]
 
-    validates :title, presence: true, unless: :headless
+    before_validation do
+      if headless && title.blank?
+        self.title = SecureRandom.hex(5)
+      end
+    end
+    validates :title, presence: true, uniqueness: { scope: [:form_id], allow_nil: true }, unless: :headless
 
     after_create do
       if form.present? and form.step

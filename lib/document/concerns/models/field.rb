@@ -40,7 +40,7 @@ module Document
             unless skip_validations_validation
               unless validations.valid?
                 errors.add(:validations, :invalid)
-                validations.errors.each {|e| errors.import e, **e.options.merge(attribute: "options.#{e.attribute}")}
+                validations.errors.each {|e| errors.import e, **e.options.merge(attribute: "validations.#{e.attribute}")}
               end
             end
 
