@@ -6,7 +6,7 @@ module Document
       unless included_modules.include?(Document::Concerns::Models::ActiveStorageBridge::Attached::Macros::ActsAsUploadable)
         include Document::Concerns::Models::ActiveStorageBridge::Attached::Macros::ActsAsUploadable
       end
-      acts_as_uploadable name, metadata: true
+      acts_as_uploadable :attachment, metadata: true
 
       field :attachment_data, type: String
 
