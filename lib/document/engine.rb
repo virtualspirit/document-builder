@@ -3,16 +3,14 @@ module Document
     isolate_namespace Document
 
     config.after_initialize do
-      begin
-        require 'cancancan';
+      begin; require 'cancancan'; rescue LoadError; end
+      if defined?(CanCan) and defined?(Grape::API)
         klass = Document::Grape::Services::Base
         require 'document/grape/cancan'
         require 'document/grape/ability'
         klass.include Document::Grape::Cancan
         require 'document/grape/resource'
         klass.include Document::Grape::Resource
-      rescue LoadError; end
-      begin
       end
     end
 
