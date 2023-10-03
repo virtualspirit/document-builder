@@ -70,6 +70,15 @@ module Document
       @virtual_model_coder_class = klass
     end
 
+    def file_uploader_class
+      @file_uploader_class ||= 'Document::FileUploader::Attachment'
+      @file_uploader_class.constantize
+    end
+
+    def file_uploader_class=val
+      @file_uploader_class = val
+    end
+
     def setup &block
       yield self
     end

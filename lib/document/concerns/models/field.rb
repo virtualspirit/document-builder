@@ -15,7 +15,7 @@ module Document
 
           validates :name,
                     presence: true,
-                    uniqueness: { scope: [:section_id, :field_group_id, :form] },
+                    uniqueness: { scope: [:section_id, :field_group_id, :form_id] },
                     exclusion: { in: Document.reserved_names },
                     format: { with: NAME_REGEX }, if: :form_id
           validates :accessibility,

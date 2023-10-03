@@ -39,8 +39,9 @@ end
 end
 
 require 'document/patches/active_support/prependable'
+require 'ranked-model'
+require 'shrine'
 require 'grape_api'
-require 'support'
 require 'document/configuration/api'
 require 'document/configuration'
 require "document/version"

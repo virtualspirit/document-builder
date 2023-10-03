@@ -26,8 +26,10 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'mongoid', '~> 8.0.1'
   spec.add_dependency 'mongoid_search'
   spec.add_dependency 'mongoid-geospatial'
-  spec.add_dependency "ranked-model", "~> 0.4.7"
+  spec.add_dependency "ranked-model", "~> 0.4.9"
   spec.add_dependency 'validates_timeliness', '~> 6.0.0.alpha1'
+  spec.add_dependency 'shrine', '~> 3.4.0'
+
   # spec.add_dependency 'support', ">= 2.0.0"
   # spec.add_dependency 'grape_api', ">= 2.0.0"
   spec.add_dependency 'options_model'

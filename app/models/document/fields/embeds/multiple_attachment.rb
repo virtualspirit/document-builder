@@ -3,8 +3,10 @@ module Document
     class MultipleAttachment
 
       include Mongoid::Document
-      include Support::Uploadable::Models::Concerns::ActsAsUploadable
-      acts_as_uploadable :attachment, metadata: false, ranked: false, processing_state: false, belongs_to_owner: false
+      unless included_modules.include?(Document::Concerns::Models::ActiveStorageBridge::Attached::Macros::ActsAsUploadable)
+        include Document::Concerns::Models::ActiveStorageBridge::Attached::Macros::ActsAsUploadable
+      end
+      acts_as_uploadable name, metadata: true
 
       field :attachment_data, type: String
 
