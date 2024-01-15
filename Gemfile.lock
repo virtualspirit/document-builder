@@ -1,11 +1,4 @@
 GIT
-  remote: git@github.com:mixonic/ranked-model.git
-  revision: 014853c28376b14890651cc351d812025ca6220a
-  specs:
-    ranked-model (0.4.9)
-      activerecord (>= 5.2)
-
-GIT
   remote: https://github.com/ihsaneddin/grape_api
   revision: ec972f901f06ffe9092ce5ea160e8fe49f1f4230
   branch: upgrade/rails-7
@@ -52,7 +45,7 @@ PATH
       mongoid_search
       options_model
       rails (~> 7.0.3)
-      ranked-model (> 0.4.8)
+      ranked-model (>= 0.4.8)
       shrine (~> 3.4.0)
       validates_timeliness (~> 6.0.0.alpha1)
 
@@ -260,6 +253,8 @@ GEM
       thor (~> 1.0)
       zeitwerk (~> 2.5)
     rake (13.0.6)
+    ranked-model (0.4.9)
+      activerecord (>= 5.2)
     roo (2.9.0)
       nokogiri (~> 1)
       rubyzip (>= 1.3.0, < 3.0.0)
@@ -302,7 +297,6 @@ DEPENDENCIES
   mongoid-geospatial
   mongoid_search!
   psych (< 4)
-  ranked-model!
   sqlite3
   support!
   validates_timeliness (~> 6.0.0.alpha1)
