@@ -3,7 +3,7 @@ module Document
 
     %w[
       text boolean decimal integer
-      date datetime
+      date datetime time
       radio checkbox
       select multiple_select
       integer_range decimal_range date_range datetime_range
