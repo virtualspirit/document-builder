@@ -8,7 +8,7 @@ module Document
     end
 
     def form_model_class_constant
-      @form_model_class.is_a?(String) ? @form_model_class.constantize : @form_model_class
+      form_model_class.is_a?(String) ? @form_model_class.constantize : @form_model_class
     end
 
     def form_model_class=(klass)

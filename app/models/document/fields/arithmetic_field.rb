@@ -17,7 +17,7 @@ module Document
           precision = options.precision
           _name = name
           model.before_validation do
-            fields = formula.scan(/\{.*?\}/)
+            fields = formula.to_s.scan(/\{.*?\}/)
             fields.each do |f|
               field = f.gsub(/[{}]/, "")
               val = send(field) rescue 0
