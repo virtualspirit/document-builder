@@ -12,6 +12,14 @@ module Document
       end
     end
 
+    # def to_virtual_model(model_name: virtual_model_name,
+    #                         fields_scope: proc { |fields| fields },
+    #                         overrides: {})
+    #   model = virtual_model model_name
+    #   set_constant model_name, model
+    #   append_to_virtual_model(model, fields_scope: fields_scope, overrides: overrides)
+    # end
+
     def get_virtual_fields instance, _fields = nil
       _fields ||= fields.rank(:position)
       _fields.map do |field|
