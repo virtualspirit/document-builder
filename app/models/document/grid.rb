@@ -13,7 +13,7 @@ module Document
   class Grid < ApplicationRecord
 
     belongs_to :viewable, polymorphic: true
-    has_many :fields, class_name: "Document::Grids::Field", foreign_key: "view_id"
+    has_many :fields, class_name: "Document::Grids::Field", foreign_key: "grid_id"
     accepts_nested_attributes_for :fields, allow_destroy: true
 
     validates :name, presence: true
@@ -34,9 +34,9 @@ module Document
       configuration.aggregation.try(:stages) || []
     end
 
-    def fields_aggregation_stages _fields = fields
+    def fields_aggregation_stages _fields_ = fields
       # _fields.to_a.reduce([]) {|sum, field| sum << field.to_aggregation }.flatten.reduce({}, :deep_merge)
-      _fields = draw
+      _fields = draw (_fields_)
       _fields.to_a.map{|f| f.aggregation_stages }.flatten
     end
 
