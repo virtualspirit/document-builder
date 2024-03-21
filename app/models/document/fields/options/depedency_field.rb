@@ -10,6 +10,20 @@ module Document
       validates :document_form_id, presence: true
       validates :display_value_field, presence: true, inclusion: { in: -> (dof) { dof.fields } }
 
+      attr_accessor :_append_choices_as_json
+
+      def as_json
+        if _append_choices_as_json
+          super.merge({choices: choices})
+        else
+          super
+        end
+      end
+
+      def append_choices_as_json
+        self._append_choices_as_json = true
+      end
+
       def virtual_model
         @virtual_model ||= form.try(:to_virtual_view)
       end

@@ -2,6 +2,15 @@ module Document
   module Fields
     class DepedencyFieldPresenter < FieldPresenter
 
+      def initialize(model, section, options = {})
+        super(model)
+
+        @model = model
+        @section = section
+        @options = options
+        @options.append_choices_as_json
+      end
+
       def value_for_preview
         virtual_model.find(value)
       end
