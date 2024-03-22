@@ -2,6 +2,7 @@ module Document
   module Fields::Options
     class TimeField < BaseOptions
 
+      attribute :format, :string
       attribute :begin_from, :string, default: "unlimited"
       enum begin_from: {
         unlimited: "unlimited",
@@ -26,6 +27,7 @@ module Document
       attribute :end_to_now_minutes_offset, :integer, default: 0
       attribute :minutes_since_begin, :integer, default: 1
 
+      validates :format, inclusion: { in: ["24", "AM/PM"] }
       validates :begin_from, :end_to,
                 presence: true
 
