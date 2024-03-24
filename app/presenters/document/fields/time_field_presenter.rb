@@ -8,7 +8,14 @@ module Document
 
       def value_for_preview
         value = self.value
-        I18n.l(value) if value
+        # I18n.l(value) if value
+        if value.is_a?(Time)
+          if @options.format == '24'
+            value.strftime("%H:%M")
+          elsif @options.format == 'AM/PM'
+            value.strftime("%I:%M %P")
+          end
+        end
       end
 
       def field_options
