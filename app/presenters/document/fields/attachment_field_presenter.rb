@@ -7,7 +7,7 @@ module Document
       def value_for_preview
         value = target.send name
         return if value.blank?
-        url = "#{ENV['BASE_URL'] || 'http://localhost:3000'}"
+        url = "#{ENV['BASE_URL']}"
         link_to value.original_filename, "#{url}#{value.url}"
       end
 

@@ -16,15 +16,15 @@ module Document
         end
       end
 
-      attr_accessor :_append_choices_as_json
+      #attr_accessor :_append_choices_as_json
 
-      def as_json options=nil
-        if _append_choices_as_json
-          super(options).merge({choices: choices})
-        else
-          super(options)
-        end
-      end
+      # def as_json options=nil
+      #   if _append_choices_as_json
+      #     super(options).merge({choices: choices})
+      #   else
+      #     super(options)
+      #   end
+      # end
 
       def append_choices_as_json
         self._append_choices_as_json = true

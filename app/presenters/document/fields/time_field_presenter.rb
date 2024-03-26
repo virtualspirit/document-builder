@@ -57,6 +57,14 @@ module Document
         options
       end
 
+      def min
+        field_options[:min]
+      end
+
+      def max
+        field_options[:max]
+      end
+
     end
   end
 end

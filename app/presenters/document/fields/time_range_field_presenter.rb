@@ -25,11 +25,7 @@ module Document
       private
 
         def format
-          if @options.format == '24'
-            "%H:%M"
-          elsif @options.format == 'AM/PM'
-            "%I:%M%P"
-          end
+          @model.options.time_format
         end
 
         def end_required?
