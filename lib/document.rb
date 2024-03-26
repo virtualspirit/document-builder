@@ -3,9 +3,12 @@ require_relative 'concern.rb'
 require 'validates_timeliness'
 require 'mongoid'
 require 'mongoid_search'
-# debugger
 require 'mongoid/geospatial'
 require 'keisan'
+require 'options_model'
+# require 'activeentity'
+require 'ranked-model'
+require 'shrine'
 
 require 'document/coder'
 require 'document/coders/hash_coder'
@@ -39,8 +42,6 @@ end
 end
 
 require 'document/patches/active_support/prependable'
-require 'ranked-model'
-require 'shrine'
 require 'document/configuration/api'
 require 'document/configuration'
 require "document/version"

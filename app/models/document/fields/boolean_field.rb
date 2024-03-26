@@ -3,7 +3,7 @@ module Document
     class BooleanField < Document::Field
 
       serialize :validations, Validations::BooleanField
-      serialize :options, ::Document::NonConfigurableField
+      serialize :options, Options::BooleanField
 
       def stored_type
         :boolean

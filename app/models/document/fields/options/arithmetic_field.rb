@@ -4,12 +4,12 @@ module Document
 
       attribute :precision, :integer, default: 0
       attribute :formula
-      attribute :order, :integer, default: 0
+      #attribute :order, :integer, default: 0
 
       validates :formula, presence: true
       validates :precision, presence: true, numericality: { only_integer: true, allow_blank: true, greater_than_or_equal_to: 0 }
-      validates :order, numericality: { only_integer: true, allow_blank: true }
-      validate :valid_formula?
+      #validates :order, numericality: { only_integer: true, allow_blank: true }
+      validate :valid_formula?, if: :formula
 
       def valid_formula?
         str = formula

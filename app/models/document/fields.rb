@@ -6,7 +6,7 @@ module Document
       date datetime time
       radio checkbox
       select multiple_select
-      integer_range decimal_range date_range datetime_range
+      integer_range decimal_range date_range datetime_range time_range
       nested_form multiple_nested_form attachment multiple_attachment
       depedency_one depedency_many arithmetic signature geolocation email
     ].each do |type|

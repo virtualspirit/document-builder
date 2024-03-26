@@ -2,7 +2,7 @@ module Document
   module Fields
     class ArithmeticField < Document::Field
 
-      serialize :validations, Validations::ArithmeticField
+      serialize :validations, ::Document::NonConfigurableField
       serialize :options, Options::ArithmeticField
 
       def stored_type

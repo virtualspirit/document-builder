@@ -13,7 +13,7 @@ module Document
           if @options.format == '24'
             value.strftime("%H:%M")
           elsif @options.format == 'AM/PM'
-            value.strftime("%I:%M %P")
+            value.strftime("%I:%M%P")
           end
         end
       end
@@ -26,31 +26,31 @@ module Document
 
         if @model.options.begin_from_now?
           begin_minutes_offset = @model.options.begin_from_now_minutes_offset.minutes.to_i
-          options[:min] = current_time + begin_minutes_offset
+          options[:min] = (current_time + begin_minutes_offset).strftime("%H:%M")
         elsif @model.options.begin_from_time?
-          options[:min] = @model.options.begin
+          options[:min] = @model.options.begin.strftime("%H:%M")
         elsif @model.options.begin_from_minutes_before_end?
           minutes_before_end = @model.options.minutes_before_end.minutes
           if @model.options.end_to_now?
             end_minutes_offset = @model.options.end_to_now_minutes_offset.minutes.to_i
-            options[:min] = current_time + end_minutes_offset - minutes_before_end
+            options[:min] = (current_time + end_minutes_offset - minutes_before_end).strftime("%H:%M")
           elsif @model.options.end_to_time?
-            options[:min] = @model.options.end - minutes_before_end
+            options[:min] = (@model.options.end - minutes_before_end).strftime("%H:%M")
           end
         end
 
         if @model.options.end_to_now?
           end_minutes_offset = @model.options.end_to_now_minutes_offset.minutes.to_i
-          options[:max] = current_time + end_minutes_offset
+          options[:max] = (current_time + end_minutes_offset).strftime("%H:%M")
         elsif @model.options.end_to_time?
-          options[:max] = @model.options.end
+          options[:max] = @model.options.end.strftime("%H:%M")
         elsif @model.options.end_to_minutes_since_begin?
           minutes_since_begin = @model.options.minutes_since_begin.minutes.to_i
           if @model.options.begin_from_now?
             begin_minutes_offset = @model.options.begin_from_now_minutes_offset.minutes.to_i
-            options[:max] = current_time + begin_minutes_offset + minutes_since_begin
+            options[:max] = (current_time + begin_minutes_offset + minutes_since_begin).strftime("%H:%M")
           elsif @model.options.begin_from_time?
-            options[:max] = @model.options.begin + minutes_since_begin
+            options[:max] = (@model.options.begin + minutes_since_begin).strftime("%H:%M")
           end
         end
 

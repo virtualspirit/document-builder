@@ -72,7 +72,7 @@ module Document
       validates :end,
                 timeliness: {
                   after: -> { Time.zone.now.change(sec: 0, usec: 0) + r.begin_from_now_minutes_offset.minutes },
-                  type: :datetimetime
+                  type: :time
                 },
                 allow_blank: false,
                 if: %i[begin_from_now? end_to_time?]
@@ -101,23 +101,23 @@ module Document
         if begin_from_now?
           begin_minutes_offset = begin_from_now_minutes_offset.minutes.to_i
           timeliness[:on_or_after] = -> { Time.zone.now.change(sec: 0, usec: 0) + begin_minutes_offset }
-        elsif begin_from_time?
-          timeliness[:on_or_after] = self.begin
+        elsif begin_from_time?validates
+          timeliness[:on_or_after] = self.begin.strftime("%H:%M")
         elsif begin_from_minutes_before_end?
           minutes_before_end = self.minutes_before_end.minutes
           if end_to_now?
             end_minutes_offset = end_to_now_minutes_offset.minutes.to_i
             timeliness[:on_or_after] = lambda {
-              Time.zone.now.change(sec: 0, usec: 0) + end_minutes_offset - minutes_before_end
+              (Time.zone.now.change(sec: 0, usec: 0) + end_minutes_offset - minutes_before_end).strftime("%H:%M")
             }
           elsif end_to_time?
-            timeliness[:on_or_after] = self.end - minutes_before_end
+            timeliness[:on_or_after] = (self.end - minutes_before_end).strftime("%H:%M")
           end
         end
 
         if end_to_now?
           end_minutes_offset = end_to_now_minutes_offset.minutes.to_i
-          timeliness[:on_or_before] = -> { Time.zone.now.change(sec: 0, usec: 0) + end_minutes_offset }
+          timeliness[:on_or_before] = -> { (Time.zone.now.change(sec: 0, usec: 0) + end_minutes_offset).strftime("%H:%M") }
         elsif end_to_time?
           timeliness[:on_or_before] = self.end
         elsif end_to_minutes_since_begin?
@@ -125,10 +125,10 @@ module Document
           if begin_from_now?
             begin_minutes_offset = begin_from_now_minutes_offset.minutes.to_i
             timeliness[:on_or_before] = lambda {
-              Time.zone.now.change(sec: 0, usec: 0) + begin_minutes_offset + minutes_since_begin
+              (Time.zone.now.change(sec: 0, usec: 0) + begin_minutes_offset + minutes_since_begin).strftime("%H:%M")
             }
           elsif begin_from_time?
-            timeliness[:on_or_before] = self.begin + minutes_since_begin
+            timeliness[:on_or_before] = (self.begin + minutes_since_begin).strftime("%H:%M")
           end
         end
 

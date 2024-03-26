@@ -7,7 +7,7 @@ module Document
       end
 
       serialize :validations, Validations::NestedFormField
-      serialize :options, Document::NonConfigurableField
+      serialize :options, Options::NestedFormField
 
       def attached_nested_form?
         true
