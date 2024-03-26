@@ -70,7 +70,7 @@ module Document
 
       validates :end_value,
                 numericality: {
-                  only_integer: true,
+                  only_numeric: true,
                   greater_than: :begin_value
                 },
                 allow_blank: false,
@@ -94,7 +94,7 @@ module Document
 
       validates :begin_value, :end_value,
                 numericality: {
-                  only_integer: true
+                  only_numeric: true
                 },
                 allow_blank: true
 

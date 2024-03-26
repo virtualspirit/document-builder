@@ -2,6 +2,7 @@ module Document
   module Fields::Options
     class TimeRangeField < BaseOptions
 
+      attribute :format, :string, default: "24"
       attribute :begin_from, :string, default: "unlimited"
       enum begin_from: {
         unlimited: "unlimited",
@@ -32,6 +33,7 @@ module Document
       attribute :minimum_distance, :integer, default: 0
       attribute :maximum_distance, :integer, default: 0
 
+      validates :format, inclusion: { in: ["24", "AM/PM", "am/pm"] }
       validates :begin_from, :end_to,
                 presence: true
 
@@ -67,7 +69,7 @@ module Document
 
       validates :begin,
                 timeliness: {
-                  before: ->(r) { (Time.zone.now.change(sec: 0, usec: 0) + r.end_to_now_minutes_offset.minutes).strftime("%H:%M") },
+                  before: ->(r) { (Time.zone.now.change(sec: 0, usec: 0) + r.end_to_now_minutes_offset.minutes).strftime(r.time_format) },
                   type: :time
                 },
                 allow_blank: false,
@@ -75,7 +77,7 @@ module Document
 
       validates :end,
                 timeliness: {
-                  after: -> { (Time.zone.now.change(sec: 0, usec: 0) + r.begin_from_now_minutes_offset.minutes).strftime("%H:%M") },
+                  after: -> { (Time.zone.now.change(sec: 0, usec: 0) + r.begin_from_now_minutes_offset.minutes).strftime(r.time_format) },
                   type: :time
                 },
                 allow_blank: false,
@@ -83,7 +85,7 @@ module Document
 
       validates :end,
                 timeliness: {
-                  after: :begin,
+                  after: -> (r) { r.begin.strftime(r.time_format) },
                   type: :time
                 },
                 allow_blank: false,
@@ -139,18 +141,18 @@ module Document
 
           klass.validates :begin,
                           timeliness: {
-                            on_or_after: -> { (Time.zone.now.change(sec: 0, usec: 0) + begin_minutes_offset).strftime("%H:%M") },
+                            on_or_after: -> { (Time.zone.now.change(sec: 0, usec: 0) + begin_minutes_offset).strftime(time_format) },
                             type: :time
                           },
                           allow_blank: true
           klass.default_value_for :begin,
-                                  ->(_) { (Time.zone.now.change(sec: 0, usec: 0) + begin_minutes_offset).strftime("%H:%M") },
+                                  ->(_) { (Time.zone.now.change(sec: 0, usec: 0) + begin_minutes_offset).strftime(time_format) },
                                   allow_nil: false
           klass.attr_readonly :begin if fixed_begin
         elsif begin_from_time?
           klass.validates :begin,
                           timeliness: {
-                            on_or_after: self.begin.strftime("%H:%M"),
+                            on_or_after: self.begin.strftime(time_format),
                             type: :time
                           },
                           allow_blank: true
@@ -162,7 +164,7 @@ module Document
           minutes_before_end = self.minutes_before_end.minutes.to_i
           klass.validates :begin,
                           timeliness: {
-                            on_or_after: ->(r) { (r.end - minutes_before_end).strftime("%H:%M") },
+                            on_or_after: ->(r) { (r.end - minutes_before_end).strftime(time_format) },
                             type: :time
                           },
                           allow_blank: true
@@ -173,18 +175,18 @@ module Document
 
           klass.validates :end,
                           timeliness: {
-                            on_or_before: -> { (Time.zone.now.change(sec: 0, usec: 0) + end_minutes_offset).strftime("%H:%M") },
+                            on_or_before: -> { (Time.zone.now.change(sec: 0, usec: 0) + end_minutes_offset).strftime(time_format) },
                             type: :time
                           },
                           allow_blank: true
           klass.default_value_for :end,
-                                  ->(_) { (Time.zone.now.change(sec: 0, usec: 0) + end_minutes_offset).strftime("%H:%M") },
+                                  ->(_) { (Time.zone.now.change(sec: 0, usec: 0) + end_minutes_offset).strftime(time_format) },
                                   allow_nil: false
           klass.attr_readonly :end if fixed_end
         elsif end_to_time?
           klass.validates :end,
                           timeliness: {
-                            on_or_before: self.end.strftime("%H:%M"),
+                            on_or_before: self.end.strftime(time_format),
                             type: :time
                           },
                           allow_blank: true
@@ -196,7 +198,7 @@ module Document
           minutes_since_begin = self.minutes_since_begin.minutes.to_i
           klass.validates :end,
                           timeliness: {
-                            on_or_before: ->(r) { (r.begin + minutes_since_begin).strftime("%H:%M") },
+                            on_or_before: ->(r) { (r.begin + minutes_since_begin).strftime(time_format) },
                             type: :time
                           },
                           allow_blank: true
@@ -207,7 +209,7 @@ module Document
           if fixed_begin || begin_from_now? || begin_from_time? || end_to_minutes_since_begin?
             klass.validates :end,
                             timeliness: {
-                              on_or_after: ->(r) { (r.begin + minimum_distance_minutes).strftime("%H:%M") },
+                              on_or_after: ->(r) { (r.begin + minimum_distance_minutes).strftime(time_format) },
                               type: :time
                             },
                             allow_blank: false,
@@ -215,7 +217,7 @@ module Document
           elsif fixed_end || end_to_now? || end_to_time? || begin_from_minutes_before_end?
             klass.validates :begin,
                             timeliness: {
-                              on_or_before: ->(r) { (r.end - minimum_distance_minutes).strftime("%H:%M") },
+                              on_or_before: ->(r) { (r.end - minimum_distance_minutes).strftime(time_format) },
                               type: :time
                             },
                             allow_blank: false,
@@ -223,7 +225,7 @@ module Document
           else
             klass.validates :end,
                             timeliness: {
-                              on_or_after: ->(r) { (r.begin + minimum_distance_minutes).strftime("%H:%M") },
+                              on_or_after: ->(r) { (r.begin + minimum_distance_minutes).strftime(time_format) },
                               type: :time
                             },
                             allow_blank: false,
@@ -236,7 +238,7 @@ module Document
           if fixed_begin || begin_from_now? || begin_from_time? || end_to_minutes_since_begin?
             klass.validates :end,
                             timeliness: {
-                              on_or_before: ->(r) { (r.begin + maximum_distance_minutes).strftime("%H:%M") },
+                              on_or_before: ->(r) { (r.begin + maximum_distance_minutes).strftime(time_format) },
                               type: :time
                             },
                             allow_blank: false,
@@ -244,7 +246,7 @@ module Document
           elsif fixed_end || end_to_now? || end_to_time? || begin_from_minutes_before_end?
             klass.validates :end,
                             timeliness: {
-                              on_or_after: ->(r) { (r.end - maximum_distance_minutes).strftime("%H:%M") },
+                              on_or_after: ->(r) { (r.end - maximum_distance_minutes).strftime(time_format) },
                               type: :time
                             },
                             allow_blank: false,
@@ -252,12 +254,20 @@ module Document
           else
             klass.validates :end,
                             timeliness: {
-                              on_or_before: ->(r) { (r.begin + maximum_distance_minutes).strftime("%H:%M") },
+                              on_or_before: ->(r) { (r.begin + maximum_distance_minutes).strftime(time_format) },
                               type: :time
                             },
                             allow_blank: false,
                             if: -> { read_attribute(:begin).present? }
           end
+        end
+      end
+
+      def time_format
+        if format == '24'
+          "%k:%M"
+        else
+          "%l:%M%P"
         end
       end
 

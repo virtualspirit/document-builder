@@ -2,21 +2,27 @@ module Document
   module Fields::Options
     class DepedencyField < BaseOptions
 
-      attribute :document_form_id, :integer
+      attribute :document_form_id, :string
       attribute :display_value_field, :string, default: "_id"
+      attribute :display_value_fields, :string, array: true, default: ["_id"]
       embeds_many :clauses, class_name: "Document::Fields::Options::DepedencyField::Clause"
       accepts_nested_attributes_for :clauses, allow_destroy: true
 
       validates :document_form_id, presence: true
-      validates :display_value_field, presence: true, inclusion: { in: -> (dof) { dof.fields } }
+      validates :display_value_field, presence: true, inclusion: { in: -> (dof) { dof.fields } }, if: :form
+      validate do
+        unless form
+          errors.add(:document_form_id, :invalid)
+        end
+      end
 
       attr_accessor :_append_choices_as_json
 
-      def as_json
+      def as_json options=nil
         if _append_choices_as_json
-          super.merge({choices: choices})
+          super(options).merge({choices: choices})
         else
-          super
+          super(options)
         end
       end
 
@@ -29,7 +35,18 @@ module Document
       end
 
       def form
-        @form ||= Document.form_model_class_constant.includes(:fields).find_by_id(document_form_id)
+        @form ||= Document.form_model_class_constant.includes(:fields).find_by_id(document_form_id_value)
+      end
+
+      def document_form_id_value
+        case Document::Form.column_for_attribute(:id).type
+        when :uuid
+          document_form_id.to_s
+        when :integer
+          document_for_id.to_s.to_i
+        else
+          document_form_id
+        end
       end
 
       def clause_templates
@@ -48,6 +65,11 @@ module Document
             logical_operator = clause.logical_operator || :where
             @collection = @collection.send(logical_operator, clause.to_criteria)
           end
+          projection = ([display_value_field] + display_value_fields).uniq.select{|f| f != '_id'}.reduce({}) { |p,f|
+            p[f] = 1
+            p
+          }
+          @collection.project(p)
         end
         @collection || []
       end

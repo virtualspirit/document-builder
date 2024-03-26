@@ -2,7 +2,7 @@ module Document
   module Fields::Options
     class TimeField < BaseOptions
 
-      attribute :format, :string
+      attribute :format, :string, default: "24"
       attribute :begin_from, :string, default: "unlimited"
       enum begin_from: {
         unlimited: "unlimited",
@@ -27,7 +27,7 @@ module Document
       attribute :end_to_now_minutes_offset, :integer, default: 0
       attribute :minutes_since_begin, :integer, default: 1
 
-      validates :format, inclusion: { in: ["24", "AM/PM"] }
+      validates :format, inclusion: { in: ["24", "AM/PM", "am/pm"] }
       validates :begin_from, :end_to,
                 presence: true
 
@@ -63,7 +63,7 @@ module Document
 
       validates :begin,
                 timeliness: {
-                  before: ->(r) { Time.zone.now.change(sec: 0, usec: 0) + r.end_to_now_minutes_offset.minutes },
+                  before: ->(r) { (Time.zone.now.change(sec: 0, usec: 0) + r.end_to_now_minutes_offset.minutes).strftime(r.time_format) },
                   type: :time
                 },
                 allow_blank: false,
@@ -71,7 +71,7 @@ module Document
 
       validates :end,
                 timeliness: {
-                  after: -> { Time.zone.now.change(sec: 0, usec: 0) + r.begin_from_now_minutes_offset.minutes },
+                  after: -> { (Time.zone.now.change(sec: 0, usec: 0) + r.begin_from_now_minutes_offset.minutes).strftime(r.time_format) },
                   type: :time
                 },
                 allow_blank: false,
@@ -79,7 +79,9 @@ module Document
 
       validates :end,
                 timeliness: {
-                  after: :begin,
+                  after: -> (r) {
+                    r.begin.strftime(r.time_format)
+                  },
                   type: :time
                 },
                 allow_blank: false,
@@ -100,24 +102,24 @@ module Document
 
         if begin_from_now?
           begin_minutes_offset = begin_from_now_minutes_offset.minutes.to_i
-          timeliness[:on_or_after] = -> { Time.zone.now.change(sec: 0, usec: 0) + begin_minutes_offset }
+          timeliness[:on_or_after] = -> { (Time.zone.now.change(sec: 0, usec: 0) + begin_minutes_offset).strftime(time_format) }
         elsif begin_from_time?validates
-          timeliness[:on_or_after] = self.begin.strftime("%H:%M")
+          timeliness[:on_or_after] = self.begin.strftime(time_format)
         elsif begin_from_minutes_before_end?
           minutes_before_end = self.minutes_before_end.minutes
           if end_to_now?
             end_minutes_offset = end_to_now_minutes_offset.minutes.to_i
             timeliness[:on_or_after] = lambda {
-              (Time.zone.now.change(sec: 0, usec: 0) + end_minutes_offset - minutes_before_end).strftime("%H:%M")
+              (Time.zone.now.change(sec: 0, usec: 0) + end_minutes_offset - minutes_before_end).strftime(time_format)
             }
           elsif end_to_time?
-            timeliness[:on_or_after] = (self.end - minutes_before_end).strftime("%H:%M")
+            timeliness[:on_or_after] = (self.end - minutes_before_end).strftime(time_format)
           end
         end
 
         if end_to_now?
           end_minutes_offset = end_to_now_minutes_offset.minutes.to_i
-          timeliness[:on_or_before] = -> { (Time.zone.now.change(sec: 0, usec: 0) + end_minutes_offset).strftime("%H:%M") }
+          timeliness[:on_or_before] = -> { (Time.zone.now.change(sec: 0, usec: 0) + end_minutes_offset).strftime(time_format) }
         elsif end_to_time?
           timeliness[:on_or_before] = self.end
         elsif end_to_minutes_since_begin?
@@ -125,16 +127,24 @@ module Document
           if begin_from_now?
             begin_minutes_offset = begin_from_now_minutes_offset.minutes.to_i
             timeliness[:on_or_before] = lambda {
-              (Time.zone.now.change(sec: 0, usec: 0) + begin_minutes_offset + minutes_since_begin).strftime("%H:%M")
+              (Time.zone.now.change(sec: 0, usec: 0) + begin_minutes_offset + minutes_since_begin).strftime(time_format)
             }
           elsif begin_from_time?
-            timeliness[:on_or_before] = (self.begin + minutes_since_begin).strftime("%H:%M")
+            timeliness[:on_or_before] = (self.begin + minutes_since_begin).strftime(time_format)
           end
         end
 
         model.validates field_name,
                         timeliness: timeliness,
                         allow_blank: true
+      end
+
+      def time_format
+        if format == '24'
+          "%k:%M"
+        else
+          "%l:%M%P"
+        end
       end
 
     end

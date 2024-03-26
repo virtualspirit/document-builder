@@ -6,7 +6,7 @@ module Document
       serialize :options, Options::DateField
 
       def stored_type
-        :datetime
+        :date
       end
 
       protected

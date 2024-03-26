@@ -6,7 +6,7 @@ module Document
       serialize :options, Options::DateRangeField
 
       def stored_type
-        :date_time
+        :date
       end
 
       def interpret_as_field_for model, overrides: {}
