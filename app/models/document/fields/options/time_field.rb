@@ -103,7 +103,7 @@ module Document
         if begin_from_now?
           begin_minutes_offset = begin_from_now_minutes_offset.minutes.to_i
           timeliness[:on_or_after] = -> { (Time.zone.now.change(sec: 0, usec: 0) + begin_minutes_offset).strftime(time_format) }
-        elsif begin_from_time?validates
+        elsif begin_from_time?
           timeliness[:on_or_after] = self.begin.strftime(time_format)
         elsif begin_from_minutes_before_end?
           minutes_before_end = self.minutes_before_end.minutes

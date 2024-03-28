@@ -1,8 +1,6 @@
 module Document
   module Fields::Embeds
-    class TimeRange
-
-      include Mongoid::Document
+    class TimeRange < Base
 
       field :begin, type: :time
       field :end, type: :time

@@ -1,8 +1,6 @@
 module Document
   module Fields::Embeds
-    class Geocode
-
-      include Mongoid::Document
+    class Geocode < Base
 
       field :coordinates, type: Array
       field :location, type: String

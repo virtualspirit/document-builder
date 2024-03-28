@@ -43,10 +43,11 @@ module Document
           step_state != nil
         end
 
-        def to_virtual_view(model_name: virtual_model_name, fields_scope: proc{|fields| fields}, overrides: {})
-          model = virtual_model model_name
+        def to_virtual_view(model_name: virtual_view_model_name, fields_scope: proc{|fields| fields}, overrides: {})
+          model = _virtual_model model_name
           set_constant model_name, model
           append_to_virtual_view(model, fields_scope: fields_scope, overrides: overrides)
+          model
         end
 
         def append_to_virtual_view model, fields_scope: proc { |fields| fields }, overrides: {}
@@ -73,7 +74,7 @@ module Document
               section.try(:fields) || fields
             }
           end
-          model = virtual_model model_name
+          model = _virtual_model model_name
           set_constant model_name, model
           append_to_virtual_model(model, fields_scope: fields_scope, overrides: overrides)
         end
@@ -91,6 +92,14 @@ module Document
             model.search_in model.get_searchable_fields
           end
           model
+        end
+
+        def virtual_model
+          Object.const_get(virtual_model_name) rescue to_virtual_model
+        end
+
+        def virtual_view
+          Object.const_get(virtual_view_model_name) rescue to_virtual_view
         end
 
         # def append_to_virtual_model(model, fields_scope: proc { |fields| fields }, overrides: {})
@@ -115,10 +124,10 @@ module Document
           end
 
           def virtual_view_model_name
-            "View#{name}#{id}".classify
+            "View#{name.classify}#{id.to_s.underscore}".classify
           end
 
-          def virtual_model model_name
+          def _virtual_model model_name
             model = Document.virtual_model_class.build name: model_name, collection: collection_name, step: step_active?
             model.form_id = self.id
             model

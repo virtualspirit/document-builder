@@ -1,8 +1,7 @@
 module Document
   module Fields::Embeds
-    class MultipleAttachment
+    class MultipleAttachment < Base
 
-      include Mongoid::Document
       unless included_modules.include?(Document::Concerns::Models::ActiveStorageBridge::Attached::Macros::ActsAsUploadable)
         include Document::Concerns::Models::ActiveStorageBridge::Attached::Macros::ActsAsUploadable
       end

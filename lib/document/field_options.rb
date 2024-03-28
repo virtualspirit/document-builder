@@ -1,5 +1,6 @@
 
 require 'active_entity'
+require 'active_support/hash_with_indifferent_access'
 
 module Document
   class FieldOptions < ActiveEntity::Base
@@ -72,7 +73,9 @@ module Document
           end
         end
 
-        WHITELIST_CLASSES = [BigDecimal, Date, Time, Symbol].freeze
+        #WHITELIST_CLASSES = [BigDecimal, Date, Time, Symbol].freeze
+        WHITELIST_CLASSES = [Symbol, Date, Time, ActiveSupport::TimeWithZone, ActiveSupport::TimeZone, ActiveSupport::HashWithIndifferentAccess, BigDecimal]
+
         def load_from_yaml(yaml)
           return new if yaml.blank?
           return new unless yaml.is_a?(String) && /^---/.match?(yaml)
@@ -94,6 +97,7 @@ module Document
 
           record = new hash[root_key_for_serialization]
           record.raw_attributes = hash.freeze
+
           record
         end
       end

@@ -1,6 +1,6 @@
 module Document
-  module Concerns
-    module Models
+  module Fields
+    module Embeds
       module ActsAsDefaultValue
         extend ActiveSupport::Concern
 
@@ -44,14 +44,21 @@ module Document
         def set_default_values
           self.class._all_default_attribute_values.each do |attribute, container|
             next unless new_record? || self.class._all_default_attribute_values_not_allowing_nil.include?(attribute)
-            attribute_blank =
-              if self.class.attribute_types[attribute]&.type == :boolean
-                send(attribute).nil? rescue nil
-              else
-                send(attribute).blank? rescue nil
-              end
-            next unless attribute_blank
+            next unless respond_to? attribute
 
+            connection_default_value_defined = new_record? && respond_to?("#{attribute}_changed?") && !send("#{attribute}_changed?")
+
+            #column = self.class.columns.detect { |c| c.name == attribute }
+            column = self.class.attribute_types.detect { |c| c[:name] == attribute }
+            attribute_blank =
+              if column && column[:type].to_s.underscore.to_sym == :boolean
+                send(attribute).nil?
+              else
+                send(attribute).blank?
+              end
+            next unless connection_default_value_defined || attribute_blank
+
+            # allow explicitly setting nil through allow nil option
             next if @initialization_attributes.is_a?(Hash) &&
                     (
                     @initialization_attributes.key?(attribute) ||
@@ -64,20 +71,39 @@ module Document
 
             send("#{attribute}=", container.evaluate(self))
 
-            clear_attribute_changes [attribute] if has_attribute?(attribute)
+            remove_change(attribute) if has_attribute?(attribute)
           end
         end
 
+        def attributes_for_create(attribute_names)
+          attribute_names += self.class._all_default_attribute_values.keys.map(&:to_s).find_all do |name|
+            self.class.fields.map{|f| f[0]}.include?(name.to_s)
+          end
+
+          super
+        end
+
         module ClassMethods
-          def _default_attribute_values
+
+          def attribute_types
+            fields.reduce([]) { |types, field|
+              hash = {}
+              hash[:name] = field[1].name.to_sym
+              hash[:type] = field[1].type.to_s.underscore.to_sym
+              types << hash
+              types
+            }
+          end
+
+          def _default_attribute_values # :nodoc:
             @default_attribute_values ||= {}
           end
 
-          def _default_attribute_values_not_allowing_nil
+          def _default_attribute_values_not_allowing_nil # :nodoc:
             @default_attribute_values_not_allowing_nil ||= Set.new
           end
 
-          def _all_default_attribute_values
+          def _all_default_attribute_values # :nodoc:
             if superclass.respond_to?(:_default_attribute_values)
               superclass._all_default_attribute_values.merge(_default_attribute_values)
             else
@@ -85,7 +111,7 @@ module Document
             end
           end
 
-          def _all_default_attribute_values_not_allowing_nil
+          def _all_default_attribute_values_not_allowing_nil # :nodoc:
             if superclass.respond_to?(:_default_attribute_values_not_allowing_nil)
               superclass._all_default_attribute_values_not_allowing_nil + _default_attribute_values_not_allowing_nil
             else

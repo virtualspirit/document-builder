@@ -23,6 +23,10 @@ module Document
 
         model.embeds_one name, class_name: nested_model.name, validate: true
         model.accepts_nested_attributes_for name, reject_if: :all_blank
+        field_name = name
+        model.after_initialize do
+          send("build_#{field_name}") unless send("#{field_name}")
+        end
         model.add_as_searchable_field name if options.try(:searchable)
         model
       end

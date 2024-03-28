@@ -135,7 +135,7 @@ module Document
         end
 
         if begin_from_today?
-          begin_days_offset = begin_from_today_days_offset.days.to_i
+          begin_days_offset = begin_from_today_days_offset.days
 
           klass.validates :begin,
                           timeliness: {
@@ -144,8 +144,9 @@ module Document
                           },
                           allow_blank: true
           klass.default_value_for :begin,
-                                  ->(_) { Time.zone.today + begin_days_offset },
-                                  allow_nil: nullable_begin
+                                  ->(_) {
+                                    Time.zone.today + begin_days_offset },
+                                  allow_nil: false
           klass.attr_readonly :begin if fixed_begin
         elsif begin_from_date?
           klass.validates :begin,
@@ -156,10 +157,10 @@ module Document
                           allow_blank: true
           klass.default_value_for :begin,
                                   self.begin,
-                                  allow_nil: nullable_begin
+                                  allow_nil: false
           klass.attr_readonly :begin if fixed_begin
         elsif begin_from_days_before_end?
-          days_before_end = self.days_before_end.days.to_i
+          days_before_end = self.days_before_end.days
           klass.validates :begin,
                           timeliness: {
                             on_or_after: ->(r) { r.end - days_before_end },
@@ -169,7 +170,7 @@ module Document
         end
 
         if end_to_today?
-          end_days_offset = end_to_today_days_offset.days.to_i
+          end_days_offset = end_to_today_days_offset.days
 
           klass.validates :end,
                           timeliness: {
@@ -193,7 +194,7 @@ module Document
                                   allow_nil: false
           klass.attr_readonly :end if fixed_end
         elsif end_to_days_since_begin?
-          days_since_begin = self.days_since_begin.days.to_i
+          days_since_begin = self.days_since_begin.days
           klass.validates :end,
                           timeliness: {
                             on_or_before: ->(r) { r.begin + days_since_begin },

@@ -10,12 +10,9 @@ module Document
         value = self.value
         # I18n.l(value) if value
         if value.is_a?(Time)
-          if @options.format == '24'
-            value.strftime("%H:%M")
-          elsif @options.format == 'AM/PM'
-            value.strftime("%I:%M%P")
-          end
+          value.in_time_zone.strftime(format)
         end
+        value
       end
 
       def field_options
@@ -63,6 +60,10 @@ module Document
 
       def max
         field_options[:max]
+      end
+
+      def format
+        @model.options.time_format
       end
 
     end

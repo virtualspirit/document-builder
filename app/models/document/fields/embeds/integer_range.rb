@@ -1,8 +1,6 @@
 module Document
   module Fields::Embeds
-    class IntegerRange
-
-      include Mongoid::Document
+    class IntegerRange < Base
 
       field :begin, type: :big_decimal
       field :end, type: :big_decimal

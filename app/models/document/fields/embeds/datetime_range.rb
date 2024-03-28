@@ -1,8 +1,6 @@
 module Document
   module Fields::Embeds
-    class DatetimeRange
-
-      include Mongoid::Document
+    class DatetimeRange < Base
 
       field :begin, type: :date_time
       field :end, type: :date_time

@@ -39,7 +39,6 @@ module Document
         def min_begin
           return if begin_disabled?
           return if @model.options.begin_from_unlimited?
-
           record = value
           if @model.options.begin_from_today?
             record.begin
