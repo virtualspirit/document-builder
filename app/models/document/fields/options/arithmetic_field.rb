@@ -24,8 +24,12 @@ module Document
         end
       end
 
-      def available_calculated_fields field = nil
+      def available_calculated_fields field = nil, form=nil
         @available_calculated_fields ||= (field.nil?? [] : field.form.fields).select{|f| ["Document::Fields::IntegerField", "Document::Fields::DecimalField"].include?(f.type) && field.id != f.id }
+      end
+
+      def available_calculated_fields_by_form form
+        form.fields.select{|f| ["Document::Fields::IntegerField", "Document::Fields::DecimalField"].include?(f.type) }
       end
 
       def self.calculator

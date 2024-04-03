@@ -3,8 +3,8 @@ module Document
 
     class Panel < Document::Grid
 
-      def draw
-      end
+      # def draw
+      # end
 
     end
 

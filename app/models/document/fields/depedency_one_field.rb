@@ -27,6 +27,20 @@ module Document
           model.belongs_to name, class_name: reference_class.name, validate: false, autosave: false, optional: true
           reference_class.has_one model.name.downcase.to_sym, class_name: model.name, validate: false, autosave: false
           model.attr_readonly name if accessibility == :readonly
+          model.class_eval <<-CODE
+            def serializable_hash(options= nil)
+              if options && options[:include]
+                options[:include] = [options[:include]].compact unless options[:include].is_a?(Array)
+                options[:include] << '#{name}'.to_sym
+              else
+                unless options.is_a?(Hash)
+                  options={}
+                end
+                options[:include]= '#{name}'.to_sym
+              end
+              super(options)
+            end
+          CODE
 
           interpret_validations_to model, accessibility, overrides
           interpret_extra_to model, accessibility, overrides

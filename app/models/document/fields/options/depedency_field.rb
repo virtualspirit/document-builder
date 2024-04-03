@@ -43,7 +43,7 @@ module Document
         when :uuid
           document_form_id.to_s
         when :integer
-          document_for_id.to_s.to_i
+          document_form_id.to_s.to_i
         else
           document_form_id
         end

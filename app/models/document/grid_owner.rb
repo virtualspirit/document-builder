@@ -9,6 +9,7 @@ module Document
 
     belongs_to :owner, polymorphic: true
     belongs_to :grid, class_name: "Document::Grid"
+    has_one :query_builder, class_name: "Document::QuerBuilder", as: :context
 
   end
 end

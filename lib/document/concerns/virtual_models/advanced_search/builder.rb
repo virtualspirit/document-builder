@@ -5,15 +5,26 @@ module Document
 
         class Builder < Document::FieldOptions
 
-          attribute :form_id, :integer
+          attribute :form_id, :string
           embeds_many :clauses, class_name: "Document::Concerns::VirtualModels::AdvancedSearch::Clause"
           accepts_nested_attributes_for :clauses, reject_if: :all_blank, allow_destroy: true
+
+          def form_id
+            case Document::Form.column_for_attribute(:id).type
+            when :uuid
+              form_id.to_s
+            when :integer
+              form_id.to_s.to_i
+            else
+              super
+            end
+          end
 
           class << self
 
             def build form
               fields = []
-              form.sections.each do |section|
+              form.sections.includes(:fields).each do |section|
                 fields = fields + section.fields
               end
               instance = self.new(form_id: form.id)
