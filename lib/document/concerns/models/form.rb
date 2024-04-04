@@ -68,10 +68,7 @@ module Document
           if step_active?
             fields_scope = proc {|fields|
               section = sections.select{|sect| sect.position_rank == step_state }.first
-              unless section
-                section = sections.first
-              end
-              section.try(:fields) || fields
+              section.try(:fields) || []
             }
           end
           model = _virtual_model model_name

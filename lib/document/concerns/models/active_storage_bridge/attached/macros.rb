@@ -225,7 +225,9 @@ module Document
                           end
                         end
                       end
-                    blobs = blobs.map{|blob| #{name}.build(attachment: blob) }
+                    blobs = blobs.map{|blob|
+                      #{name}.build(attachment: blob)
+                    }
                     blobs
                   end
                 CODE

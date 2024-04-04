@@ -18,7 +18,7 @@ module Document
         field_name = name
         model.include ::Mongoid::Geospatial
         model.field field_name, type: ::Mongoid::Geospatial::Point, spatial: true
-        model.field "#{id}#{options.location_field_suffix_name}", type: :string
+        model.field "#{name}#{options.location_field_suffix_name}", type: :string
 
         model.add_as_searchable_field field_name if options.try(:searchable)
         model
@@ -55,7 +55,7 @@ module Document
           end
 
           fill_method = options.fill_method
-          suffix_method = "#{id}#{options.location_field_suffix_name}"
+          suffix_method = "#{name}#{options.location_field_suffix_name}"
           field_name = name
           if ['automatic', 'automatic_with_location'].include?(fill_method)
             model.before_validation do

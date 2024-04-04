@@ -23,7 +23,7 @@ module Document
           reference_class = options.virtual_model
         end
         if reference_class
-          model.field "#{name}_ids", type: Array, default: []
+          #model.field "#{name}_ids", type: Array, default: []
           model.has_and_belongs_to_many name, class_name: reference_class.name
           # reference_class.has_and_belongs_to_many model.name.downcase.to_sym, class_name: model.name
           model.attr_readonly name if accessibility == :readonly
