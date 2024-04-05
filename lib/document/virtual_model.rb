@@ -71,6 +71,7 @@ module Document
         klass.include Document::Concerns::Models::ActiveStorageBridge::Attached::Macros
         klass.include Document::Concerns::VirtualModels::GeneralSearch
         klass.include Document::Concerns::VirtualModels::AdvancedSearch
+
         if step
           klass.include Document::Concerns::VirtualModels::Steps
         end

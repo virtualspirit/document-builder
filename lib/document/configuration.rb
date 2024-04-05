@@ -56,8 +56,15 @@ module Document
     def reserved_names
       @reserved_names ||= Set.new(
         %i[def class module private public protected allocate new parent superclass] +
-          virtual_model_class.instance_methods(true)
+          virtual_model_class.instance_methods(true) +
+        %i[form_id _step _current_step _total_step steps_keywords keywords created_at updated_at]
       )
+    end
+
+    def reserved_names= names=[]
+      res = reserved_names
+      res = res.to_a + names
+      @reserved_names = Set.new(res)
     end
 
     def virtual_model_coder_class

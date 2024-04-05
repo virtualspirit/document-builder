@@ -18,17 +18,25 @@ module Document
           end
         end
 
-        def activate_step_from_uid uid
+        def get_current_step_from_uid uid
           fs = Document::FormStep.where(document_uid: uid).first
-          if fs
-            if self.step_options.total < fs.step
-              activate_step self.step_options.total
-            else
-              activate_step fs.step
-            end
-          else
-            activate_step 0
+          fs.try(:step).to_i
+        end
+
+        def activate_step_from_uid uid
+          current_step = get_current_step_from_uid uid
+          unless self.step_options.total < current_step
+            activate_step current_step
           end
+          # if fs
+          #   if self.step_options.total < fs.step
+          #     activate_step self.step_options.total
+          #   else
+          #     activate_step fs.step
+          #   end
+          # else
+          #   activate_step 0
+          # end
         end
 
         def activate_step current_step = 0
