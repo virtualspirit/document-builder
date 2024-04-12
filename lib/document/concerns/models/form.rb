@@ -51,6 +51,12 @@ module Document
           step_state != nil
         end
 
+        def active_step_section
+          if step_active?
+            [sections.rank(:position)[step_state]]
+          end
+        end
+
         def to_virtual_view(model_name: virtual_view_model_name, fields_scope: proc{|fields| fields}, overrides: {})
           model = _virtual_model model_name
           set_constant model_name, model
