@@ -2,6 +2,7 @@ module Document
   class Field < ApplicationRecord
     include Document::Concerns::Models::Field
     include Document::Concerns::Models::Fields::Helper
+    include Document::Concerns::Models::ActsAsGridField
 
     serialize :validations, ::Document::FieldOptions
     serialize :options, ::Document::FieldOptions

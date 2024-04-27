@@ -9,9 +9,7 @@ module Document
       end
 
       def fields_aggregation_stages _fields_ = fields
-        # _fields.to_a.reduce([]) {|sum, field| sum << field.to_aggregation }.flatten.reduce({}, :deep_merge)
-        _fields = draw (_fields_)
-        _fields.to_a.map{|f| f.aggregation_stages }.flatten
+        _fields_.to_a.map{|f| f.aggregation_stages }.flatten
       end
 
       def pagination_aggregation_stage page=nil, per_page=nil
@@ -19,7 +17,8 @@ module Document
         per_page ||= configuration.pagination.per_page
         Document::Grids::AggregationStage.new(name: "$facet", order: 100001, arguments_attributes: [
           { function: 'meta', parameters_attributes: [{ function: '$count', parameter: 'total' }] },
-          { function: 'data', parameters_attributes: [ { function: "$limit", parameter: per_page }, { function: "$skip", parameter: per_page * (page-1) } ] }
+          { function: 'data', parameters_attributes: [ { function: "$limit", parameter: per_page },
+          { function: "$skip", parameter: per_page * (page-1) } ] }
         ])
       end
 
@@ -85,7 +84,7 @@ module Document
         stage
       end
 
-      def to_aggregation params={}
+      def to_aggregation(params={}, fields_scope = proc{|fields| fields})
         page = params[:page] || configuration.pagination.page
         per = params[:per] || configuration.pagination.per_page
         search = params[:search] || {}
@@ -93,7 +92,7 @@ module Document
           default_aggregation_stages,
           initial_scopes_aggregation_stage,
           query_aggregation_stage(search),
-          fields_aggregation_stages,
+          fields_aggregation_stages(fields_scope.call(fields)),
           sort_aggregation_stage,
           pagination_aggregation_stage
         ].flatten.compact_blank
@@ -102,8 +101,8 @@ module Document
         aggregation.to_aggregation
       end
 
-      def data params={}
-        virtual_view.collection.aggregate(to_aggregation(params))
+      def data(params={}, fields_scope = proc{|fields| fields})
+        virtual_view.collection.aggregate(to_aggregation(params, fields_scope))
       end
 
       class Configuration < Document::FieldOptions
@@ -120,12 +119,13 @@ module Document
         embeds_one :query_builder, class_name: "Document::Concerns::VirtualModels::AdvancedSearch::Builder"
         accepts_nested_attributes_for :query_builder, allow_destroy: true
 
-        embeds_one :pagination, class_name: "Document::Grid::Pagination"
+        embeds_one :pagination, class_name: "Document::Grids::List::Pagination"
         accepts_nested_attributes_for :pagination, allow_destroy: true
         validates :pagination, presence: true
 
-        embeds_many :default_sorts, class_name: "Document::Grid::Sort"
+        embeds_many :default_sorts, class_name: "Document::Grids::List::Sort"
         accepts_nested_attributes_for :default_sorts, allow_destroy: true
+
         validates :sort, presence: true
 
         attribute :allow_search, :boolean, default: true
@@ -167,8 +167,17 @@ module Document
 
       end
 
-      serialize :configuration, Document::Grids::Table::Configuration
-      serialize :options, Document::Grids::Table::Options
+      serialize :configuration, Configuration
+      serialize :options, Options
+
+      after_initialize do
+        if respond_to? :configuration
+          self.configuration ||= {}
+        end
+        if respond_to? :options
+          self.options ||= {}
+        end
+      end
 
     end
   end

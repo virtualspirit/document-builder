@@ -3,7 +3,9 @@ module Document
 
     class Aggregation < Document::FieldOptions
 
+      attribute :default, :boolean, default: true
       embeds_many :stages, class_name: "Document::Grids::AggregationStage"
+      accepts_nested_attributes_for :stages, reject_if: :all_blank, allow_destroy: true
 
       def to_aggregation
         # project = {}

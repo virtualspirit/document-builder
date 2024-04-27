@@ -1,6 +1,8 @@
 module Document
   class Section < ApplicationRecord
 
+    include Document::Concerns::Models::ActsAsGridSection
+
     self.table_name = "document_sections"
 
     belongs_to :form, touch: true, inverse_of: :sections, class_name: Document.form_model_class

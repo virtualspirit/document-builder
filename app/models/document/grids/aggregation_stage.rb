@@ -26,6 +26,54 @@ module Document
         to_stage["#{name}".to_sym].blank? && to_stage["#{name}"].blank?
       end
 
+      class AddFields < AggregationStage
+
+      end
+
+      class Bucket < AggregationStage
+
+      end
+
+      class Count < AggregationStage
+
+      end
+
+      class Group < AggregationStage
+
+      end
+
+      class Limit < AggregationStage
+
+      end
+
+      class Facet < AggregationStage
+
+      end
+
+      class Match < AggregationStage
+
+      end
+
+      class Lookup < AggregationStage
+
+      end
+
+      class Merge < AggregationStage
+
+      end
+
+      class Sort < AggregationStage
+
+      end
+
+      class Skip < AggregationStage
+
+      end
+
+      class Unwind < AggregationStage
+
+      end
+
 
     end
 

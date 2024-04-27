@@ -9,8 +9,6 @@ module Document
         :date_time
       end
 
-      protected
-
       def interpret_as_field_for model, overrides: {}
         check_model_validity!(model)
 

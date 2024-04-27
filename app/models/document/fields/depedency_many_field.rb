@@ -9,6 +9,10 @@ module Document
         :array
       end
 
+      def depedency_field?
+        true
+      end
+
       def interpret_as_field_for model, overrides: {}
         check_model_validity!(model)
 
