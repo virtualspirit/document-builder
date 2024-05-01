@@ -1,10 +1,8 @@
 module Document
   class Form < BareForm
 
-    has_many :sections, -> { rank(:position) }, class_name: "Document::Section", dependent: :destroy, inverse_of: :form, index_errors: true
     belongs_to :owner, polymorphic: true, optional: true
     belongs_to :documentable, polymorphic: true, optional: true
-    has_many :grids, class_name: "Document::Grid", as: :viewable
     accepts_nested_attributes_for :sections, allow_destroy: true
 
     serialize :step_options, FormStepOptions

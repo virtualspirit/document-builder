@@ -14,7 +14,7 @@ module Document
           end
         end
 
-        def build_default_aggregation_stages
+        def build_default_aggregation
           if name
             if field.attached_nested_form?
               super

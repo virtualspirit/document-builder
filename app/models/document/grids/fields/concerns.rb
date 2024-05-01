@@ -8,28 +8,34 @@ module Document
           extend ActiveSupport::Concern
           included do
             belongs_to :field, class_name: 'Document::Field', foreign_key: "field_id"
+            belongs_to :section, class_name: "Document::Section", optional: true, foreign_key: "section_id"
 
-            before_save :set_section
+            # before_save :set_section
             before_save :build_default_aggregation, if: :default_aggregation
+
           end
 
-          def set_section
-            if grid.is_panel? && field.section_id && section.nil?
-              self.section = grid.sections.find_by(section_id: field.section_id)
-              if section.nil?
-                sect = grid.append_section(field.section)
-                sect.save
-                self.section = sect
-              end
-            end
-          end
+          # def set_section
+          #   if grid.is_panel? && field.section_id && section.nil?
+          #     self.section = grid.sections.find_by(section_id: field.section_id)
+          #     if section.nil?
+          #       sect = grid.append_section(field.section)
+          #       sect.save
+          #       self.section = sect
+          #     end
+          #   end
+          # end
 
 
           def build_default_aggregation
-            if name
+            if name && aggregation
               aggregation.stages = []
-              aggregation.stages.new(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", parameter: 1}])
+              aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", parameter: 1}])
             end
+          end
+
+          def nested?
+            false
           end
 
 
@@ -64,7 +70,8 @@ module Document
                 namespace: namespace,
                 position: field.position,
                 field: field,
-                field_id: field.id
+                field_id: field.id,
+                section_id: field.section_id
               )
               gf
             end
@@ -96,15 +103,32 @@ module Document
 
             def create_default_grids
               if field.depedency_field?
-                unless grid_list
-                  build_grid_list(default: true, name: field.label, viewable: viewable)
-                  grid_list.append_default_fields
-                  grid_list.save
-                end
                 unless grid_panel
                   build_grid_panel(default: true, name: field.label, viewable: viewable)
-                  grid_panel.append_default_fields
+                 #grid_panel.append_default_fields
                   grid_panel.save
+                end
+                if field.type == "Document::Fields::DepedencyManyField"
+                  unless grid_list
+                    build_grid_list(default: true, name: field.label, viewable: viewable)
+                    #grid_list.append_default_fields
+                    grid_list.save
+                  end
+                end
+              elsif field.attached_nested_form?
+                if field.nested_form
+                  unless grid_panel
+                    build_grid_panel(default: true, name: field.label, viewable: viewable, nested_field: self)
+                    #grid_panel.append_default_fields
+                    grid_panel.save
+                  end
+                  if field.type == "Document::Fields::MultipleNestedFormField"
+                    unless grid_list
+                      build_grid_list(default: true, name: field.label, viewable: viewable, nested_field: self)
+                      #grid_list.append_default_fields
+                      grid_list.save
+                    end
+                  end
                 end
               end
             end
@@ -119,10 +143,26 @@ module Document
 
           def viewable
             if field.attached_nested_form?
-              field.form
+              field.nested_form
             else
               field.options.form
             end
+          end
+
+          def depedency_field?
+            field.try(:depedency_field?)
+          end
+
+          def has_attached_nested_form?
+            field.try(:has_attached_nested_form?)
+          end
+
+          def nested?
+            true
+          end
+
+          def multiple?
+            false
           end
 
         end

@@ -34,5 +34,7 @@ Gem::Specification.new do |spec|
   # spec.add_dependency 'grape_api', ">= 2.0.0"
   spec.add_dependency 'options_model'
   spec.add_dependency 'keisan'
+  # spec.add_dependency "identity_cache"
+  # spec.add_dependency "dalli"
 
 end

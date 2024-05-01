@@ -18,11 +18,48 @@ module Document
           if name
             if field.attached_nested_form?
               super
+              aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}_count", parameter: 1}])
             else
               aggregation.stages = []
-              aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}_id", parameter: 1}])
+              if field.depedency_field?
+                aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}_ids", parameter: 1}])
+                aggregation.stages.build({
+                  name: "$addFields", merge: false, order: 9997, arguments_attributes: [
+                    {
+                      function: "#{name}_ids",
+                      raw_parameter: {
+                        "$cond": {
+                          "if": {
+                            "$ne": [
+                              {
+                                "$type": "$#{name}_ids"
+                              },
+                              "array"
+                            ]
+                          },
+                          "then": [],
+                          "else": "$#{name}_ids"
+                        }
+                      }
+                    }
+                  ]
+                })
+                aggregation.stages.build(name: "$addFields", merge: false, order: 9997,
+                  arguments_attributes: [
+                    function: "#{name}_count",
+                    raw_parameter: {
+                      "$size": "$#{"#{name}_ids"}"
+                    }
+                  ]
+                )
+                aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}_count", parameter: 1}])
+              end
             end
           end
+        end
+
+        def multiple?
+          true
         end
 
         # def build_aggregation

@@ -20,7 +20,6 @@ module Document
       self.table_name = 'document_grid_fields'
 
       belongs_to :grid, class_name: 'Document::Grid'
-      belongs_to :section, class_name: "Document::Grids::Section", optional: true
 
       include RankedModel
       ranks :position, with_same: [:section_id, :grid_id], class_name: self.name

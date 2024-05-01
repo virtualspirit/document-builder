@@ -83,8 +83,6 @@ module Document
 
       end
 
-      class SubGridColumn < Field
-      end
 
       class NestedColumn < Field
 

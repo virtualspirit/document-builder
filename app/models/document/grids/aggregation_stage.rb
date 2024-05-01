@@ -4,6 +4,7 @@ module Document
     class AggregationStage < Document::FieldOptions
 
       attribute :name
+      attribute :id, :string
       attribute :order, :integer, default: 0
       attribute :merge, :boolean, default: true
 
@@ -19,7 +20,13 @@ module Document
       end
 
       def to_arguments
+        begin
         arguments.reduce({}) {|hash, args| hash.deep_merge! args.to_argument }
+        rescue => e
+          debugger
+          raise e
+        end
+
       end
 
       def blank?

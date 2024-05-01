@@ -41,8 +41,9 @@ module Document
         nested_model = nested_form.to_virtual_model(overrides: { _global: { accessibility: accessibility } })
         if nested_model
           nested_model.field "#{name}_id", type: BSON::ObjectId
+          model.field "#{name}_count".to_sym, type: :integer, default: 0
           model.has_many name, class_name: nested_model.name, foreign_key: "#{name}_id"
-          nested_model.belongs_to model.name.downcase.to_sym, class_name: model.name, optional: true, inverse_of: "#{name}".to_sym
+          nested_model.belongs_to model.name.downcase.to_sym, class_name: model.name, optional: true, inverse_of: "#{name}".to_sym, counter_cache: "#{name}_count".to_sym
           model.accepts_nested_attributes_for name, reject_if: :all_blank, allow_destroy: true
 
           model.class_eval <<-CODE
