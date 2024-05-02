@@ -20,9 +20,14 @@ module Document
         end
 
         def create_gried_field
+        begin
           viewable.grids.each do |grid|
             grid.add_field self
           end
+        rescue => e
+          debugger
+          raise e
+        end
         end
 
         def update_grid_field
@@ -44,7 +49,7 @@ module Document
 
         def viewable
           @viewable ||= if form.is_a?(Document::NestedForm)
-              form.attachable
+              form
             else
               form
             end

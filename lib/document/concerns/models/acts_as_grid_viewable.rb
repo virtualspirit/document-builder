@@ -43,7 +43,11 @@ module Document
         end
 
         def grid_title
-          title
+          if type == "Document::NestedForm"
+            attachable.label
+          else
+            title
+          end
         end
 
       end
