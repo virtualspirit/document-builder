@@ -12,12 +12,24 @@ module Document
       def build_default_aggregation
         aggregation.stages = []
         if nested_field
-          lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
+
+          if nested_field.depedency_field? && nested_field.field.type == "Document::Fields::DepedencyManyField"
+            lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
                 { function: "from", parameter: viewable.collection_name },
-                { function: "localField", parameter: nested_field.depedency_field? ? "#{nested_field.name}_id" : "_id"},
-                { function: "foreignField", parameter: nested_field.depedency_field? ? "_id" : "#{nested_field.name}_id"},
-                { function: "as", parameter: nested_field.name },
-          ])
+                { function: "let", parameters_as_array: false, parameters_attributes: [
+                    { function: "#{nested_field.name}_ids", parameter: "$#{nested_field.name}_ids" }
+                  ]
+                },
+                { function: "as", parameter: nested_field.name }
+              ])
+          else
+            lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
+                  { function: "from", parameter: viewable.collection_name },
+                  { function: "localField", parameter: nested_field.depedency_field? ? "#{nested_field.name}_id" : "_id"},
+                  { function: "foreignField", parameter: nested_field.depedency_field? ? "_id" : "#{nested_field.name}_id"},
+                  { function: "as", parameter: nested_field.name },
+            ])
+          end
           aggregation.stages << lookup
           project = AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "#{nested_field.name}_count", parameter: 1}])
           aggregation.stages << project

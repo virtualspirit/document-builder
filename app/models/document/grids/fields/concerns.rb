@@ -11,7 +11,7 @@ module Document
             belongs_to :section, class_name: "Document::Section", optional: true, foreign_key: "section_id"
 
             # before_save :set_section
-            before_save :build_default_aggregation, if: :default_aggregation
+            after_initialize :build_default_aggregation, if: :default_aggregation
 
           end
 

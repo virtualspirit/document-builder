@@ -24,7 +24,7 @@ module Document
               if field.depedency_field?
                 aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}_ids", parameter: 1}])
                 aggregation.stages.build({
-                  name: "$addFields", merge: false, order: 9997, arguments_attributes: [
+                  name: "$addFields", merge: false, order: 9996, arguments_attributes: [
                     {
                       function: "#{name}_ids",
                       raw_parameter: {

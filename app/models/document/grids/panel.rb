@@ -50,6 +50,8 @@ module Document
             stages = stages + field.aggregation.stages
           end
         end
+        stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "created_at", parameter: 1}])
+        stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "updated_at", parameter: 1}])
         stages
       end
 

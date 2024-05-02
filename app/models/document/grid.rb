@@ -127,6 +127,8 @@ module Document
           stages = stages + field.aggregation.stages
         end
       end
+      stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "created_at", parameter: 1}])
+      stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "updated_at", parameter: 1}])
       stages
     end
 
@@ -135,7 +137,14 @@ module Document
       if nested_field
         stages = aggregation.stages.map{|stg|
           if stg.name == "$lookup"
+            matches = {}
+            if nested_field.depedency_field? && nested_field.field.type == "Document::Fields::DepedencyManyField"
+              matches.deep_merge!({"$expr".to_sym => { "$in".to_sym => [ "$_id", "$$#{nested_field.name}_ids" ] }})
+            end
             agg = aggregation.class.new
+            unless matches.blank?
+              agg.stages.build({name: "$match", arguments_attributes: matches.reduce([]){|arr, h| arr << { function: h[0], raw_parameter: h[1] } }})
+            end
             agg.stages.append(aggregation_stages(params, field_scope))
             stg.arguments.build(function: "pipeline", raw_parameter:  agg.to_aggregation)
           end
