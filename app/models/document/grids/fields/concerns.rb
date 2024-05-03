@@ -103,11 +103,6 @@ module Document
 
             def create_default_grids
               if field.depedency_field?
-                unless grid_panel
-                  build_grid_panel(default: true, name: field.label, viewable: viewable)
-                 #grid_panel.append_default_fields
-                  grid_panel.save
-                end
                 if field.type == "Document::Fields::DepedencyManyField"
                   unless grid_list
                     build_grid_list(default: true, name: field.label, viewable: viewable)
@@ -115,19 +110,24 @@ module Document
                     grid_list.save
                   end
                 end
+                unless grid_panel
+                  build_grid_panel(default: true, name: field.label, viewable: viewable, list: grid_list)
+                 #grid_panel.append_default_fields
+                  grid_panel.save
+                end
               elsif field.attached_nested_form?
                 if field.nested_form
-                  unless grid_panel
-                    build_grid_panel(default: true, name: field.label, viewable: viewable, nested_field: self)
-                    #grid_panel.append_default_fields
-                    grid_panel.save
-                  end
                   if field.type == "Document::Fields::MultipleNestedFormField"
                     unless grid_list
                       build_grid_list(default: true, name: field.label, viewable: viewable, nested_field: self)
                       #grid_list.append_default_fields
                       grid_list.save
                     end
+                  end
+                  unless grid_panel
+                    build_grid_panel(default: true, name: field.label, viewable: viewable, nested_field: self, list: grid_list)
+                    #grid_panel.append_default_fields
+                    grid_panel.save
                   end
                 end
               end

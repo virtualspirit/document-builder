@@ -17,6 +17,14 @@ module Document
           grids.where(default: true, container_id: nil)
         end
 
+        def default_grid_panel
+          default_grids.where(type: "Document::Grids::Panel").first
+        end
+
+        def default_list_panel
+          default_grids.where(type: "Document::Grids::List").first
+        end
+
         def create_default_grids
           # if type == "Document::NestedForm"
           #   created_default_grid_panel
@@ -24,21 +32,22 @@ module Document
           #     create_default_grid_list
           #   end
           # end
-          create_default_grid_panel
           create_default_grid_list
+          create_default_grid_panel
         end
 
         def create_default_grid_list
-          list = grid_lists.where(default: true).first
-          unless list
-            grid_lists.create(default: true, name: grid_title)#, nested_field: type == "Document::NestedForm" ? attachable : nil)
+          @list ||= grid_lists.where(default: true).first
+          unless @list
+            @list = grid_lists.create(default: true, name: grid_title)#, nested_field: type == "Document::NestedForm" ? attachable : nil)
           end
+          @list
         end
 
         def create_default_grid_panel
           panel = grid_panels.where(default: true).first
           unless panel
-            grid_panels.create(default: true, name: grid_title)#, nested_field: type == "Document::NestedForm" ? attachable : nil)
+            grid_panels.create(default: true, name: grid_title, list: create_default_grid_list)#, nested_field: type == "Document::NestedForm" ? attachable : nil)
           end
         end
 

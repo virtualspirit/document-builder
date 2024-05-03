@@ -63,8 +63,10 @@ class <%= migration_class_name %> < ActiveRecord::Migration<%= migration_version
     end
 
     create_table :document_grids do |t|
-      t.references :viewable, polymorphic: true
+      t.references :viewable
       t.references :nested_field
+      t.references :container
+      t.references :list
       t.string :name
       t.text :options
       t.integer :order

@@ -49,6 +49,7 @@ module Document
     belongs_to :container, class_name: "Document::Grid", foreign_key: "container_id", optional: true
     has_many :nested_grids, class_name: "Document::Grid", foreign_key: "container_id"
     has_many :fields, -> { rank(:position) }, class_name: "Document::Grids::Field", dependent: :destroy, foreign_key: "grid_id", inverse_of: :grid, index_errors: true
+    has_many :grid_owners, class_name: "Document::GridOwner", foreign_key: "grid_id", dependent: :destroy
 
     accepts_nested_attributes_for :fields, allow_destroy: true
 

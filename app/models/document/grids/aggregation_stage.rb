@@ -20,13 +20,7 @@ module Document
       end
 
       def to_arguments
-        begin
         arguments.reduce({}) {|hash, args| hash.deep_merge! args.to_argument }
-        rescue => e
-          debugger
-          raise e
-        end
-
       end
 
       def blank?

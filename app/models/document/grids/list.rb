@@ -3,7 +3,10 @@ module Document
     class List < Document::Grid
 
       has_many :query_builders, class_name: "Document::QueryBuilder", as: :context
+      has_one :panel, class_name: "Document::Grids::Panel", foreign_key: "list_id"
       has_one :default_query_builder, -> { where(default: true) }, class_name: "Document::QueryBuilder", as: :context
+
+      accepts_nested_attributes_for :panel, reject_if: :all_blank, allow_destroy: true
 
       def is_list?
         true
@@ -141,6 +144,7 @@ module Document
         alias :default_sorts :_default_sorts
         alias :default_sorts= :_default_sorts_attributes=
 
+        attribute :show_grid_panel, :boolean, default: true
         attribute :allow_search, :boolean, default: true
         attribute :allowed_search_types, :string, array: true, default: ['lazy_search']
 
