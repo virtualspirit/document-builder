@@ -30,7 +30,16 @@ module Document
           def build_default_aggregation
             if name && aggregation
               aggregation.stages = []
-              aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", parameter: 1}])
+              case field.type
+              when "Document::Fields::GeolocationField"
+                aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", parameter: 1}])
+                aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}#{field.options.location_field_suffix_name}", parameter: 1}])
+              when "Document::Fields::AttachmentField"
+                aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}_data", parameter: 1}])
+                aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}_metadata", parameter: 1}])
+              else
+                aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", parameter: 1}])
+              end
             end
           end
 
