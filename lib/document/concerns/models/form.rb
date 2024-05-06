@@ -87,7 +87,34 @@ module Document
           end
           model = _virtual_model model_name
           set_constant model_name, model
-          append_to_virtual_model(model, fields_scope: fields_scope, overrides: overrides)
+          model = append_to_virtual_model(model, fields_scope: fields_scope, overrides: overrides)          
+          model.class_eval <<-CODE
+            def serializable_hash(options= nil)
+              relations = [:has_one, :belongs_to, :has_many, :has_and_belongs_to_many].reduce([]) { |arr, rel| arr + self.class.reflect_on_all_associations(rel).map(&:name) } 
+              unless relations.blank?
+                options ||= {}
+                if options[:include].is_a?(Array)
+                  options[:include] = [options[:include]].compact unless options[:include].is_a?(Array)
+                  options[:include] = options[:include] + relations
+                else
+                  options[:include] = relations
+                end
+              end
+              hash = super(options)
+              self.class.reflect_on_all_associations(:embeds_one).map(&:name).each do |rname|            
+                unless hash.keys.include?(rname.to_s)
+                  hash[rname.to_s] = nil
+                end
+              end
+              self.class.reflect_on_all_associations(:embeds_many).map(&:name).each do |rname|
+                unless hash.keys.include?(rname.to_s)
+                  hash[rname.to_s] = []
+                end
+              end
+              hash
+            end
+          CODE
+          model
         end
 
         def append_to_virtual_model(model,
