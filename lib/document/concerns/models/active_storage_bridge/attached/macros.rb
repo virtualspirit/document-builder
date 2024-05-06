@@ -62,15 +62,15 @@ module Document
 
                     _meta = uploadable_metadata(fieldname: field)
 
-                    if _meta
-                      field "#{field}_metadata", type: Hash
-                      before_validation do
-                        send("#{field}_metadata=", {}) if send("#{field}_metadata").nil?
-                      end
-                      after_initialize do
-                        send("#{field}_metadata=", {}) if send("#{field}_metadata").nil?
-                      end
-                    end
+                    # if _meta
+                    #   field "#{field}_metadata", type: Hash
+                    #   before_validation do
+                    #     send("#{field}_metadata=", {}) if send("#{field}_metadata").nil?
+                    #   end
+                    #   after_initialize do
+                    #     send("#{field}_metadata=", {}) if send("#{field}_metadata").nil?
+                    #   end
+                    # end
 
                   end
 
@@ -206,7 +206,7 @@ module Document
 
               def has_many_attached(name)
                 class_eval <<-CODE, __FILE__, __LINE__ + 1
-                  def #{name}=(attachables)
+                  def #{name}=(attachables=[])
                     blobs =
                       attachables.flatten.collect do |attachable|
                         case attachable

@@ -14,7 +14,7 @@ module Document
 
         accessibility = overrides.fetch(:accessibility, self.accessibility)
         return model if accessibility == :hidden
-        model.has_one_attached name
+        model.has_one_attached name        
         model
       end
 

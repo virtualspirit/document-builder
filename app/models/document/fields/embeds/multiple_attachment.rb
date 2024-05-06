@@ -18,6 +18,18 @@ module Document
         end
       end
 
+      def serializable_hash options=nil
+        hash = super(options)
+        (self.class._uploadable_config[self.class.name] || {}).each do |f,v|
+          fd = f.to_s + "_data"
+          hash.delete(f.to_s + "_data")
+          data = send(f).try(:data) || {}
+          data['derivatives'] = send(f.to_s + "_derivatives") unless send(f.to_s + "_derivatives").blank?
+          hash[f.to_s] = { "url": send(f.to_s + "_url"), "data": data }         
+        end
+        hash        
+      end
+
     end
   end
 end
