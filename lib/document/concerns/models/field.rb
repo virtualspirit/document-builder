@@ -68,8 +68,9 @@ module Document
                   arr << field_name + "_ids"
                 when "attachment_field"
                   arr << field_name + "_data"
+                  arr << "_" + field_name + "_url"
                 when "geolocation_field"
-                  arr << field_name + options.location_field_suffix_name.to_s
+                  arr << field_name + field.options.location_field_suffix_name.to_s
                 end
               end
               arr

@@ -39,6 +39,23 @@ module Document
         end
       end
 
+      def fields_stages field_scope= proc{|field| field}
+        stages = []
+        fields.each do |field|
+          if field_scope.call(field)
+            if field.nested?
+              unless field.multiple?
+                stages = stages + field.grid_panel.nested_aggregation_stages({}, field_scope)
+              end
+            end
+            stages = stages + field.aggregation.stages
+          end
+        end
+        stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "created_at", parameter: 1}])
+        stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "updated_at", parameter: 1}])
+        stages
+      end
+
       def query_aggregation_stage params = {}
         stage = Document::Grids::AggregationStage.new(name: "$match")
         if options.allow_search && params.is_a?(Hash)
@@ -100,7 +117,7 @@ module Document
         search = params[:search] || {}
         stages << query_aggregation_stage(search)
         stages << sort_aggregation_stage
-        stages << pagination_aggregation_stage
+        stages << pagination_aggregation_stage unless options.pagination.disabled
         stages
       end
 
@@ -162,6 +179,7 @@ module Document
         attribute :page, :integer, default: 1
         attribute :pages, :integer, array: true, default: [25, 50, 100]
         attribute :per_page, :integer, default: 25
+        attribute :disabled, :boolean, default: false
         validates :page, presence: true, numericality: { greater_than: 0, only_integer: true, allow_blank: true }
         validates :per_page, presence: true, numericality: { greater_than: 0, only_integer: true, allow_blank: true }
 
@@ -184,6 +202,11 @@ module Document
       end
 
       serialize :options, Options
+      before_save do 
+        if nested_field
+          options.pagination.disabled= true
+        end
+      end
 
     end
   end

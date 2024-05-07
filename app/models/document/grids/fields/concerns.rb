@@ -30,12 +30,33 @@ module Document
           def build_default_aggregation
             if name && aggregation
               aggregation.stages = []
-              case field.type
-              when "Document::Fields::GeolocationField"
+              case field.type.demodulize.underscore
+              when "geolocation_field"
                 aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", parameter: 1}])
                 aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}#{field.options.location_field_suffix_name}", parameter: 1}])
-              when "Document::Fields::AttachmentField"
+              when "attachment_field"
+                aggregation.stages.build(name: "$addFields", merge: false, order: 9997,
+                  arguments_attributes: [
+                    function: "#{name}",
+                    parameter: "$_#{name}_url"
+                  ]
+                )
+                aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", parameter: 1}])
                 aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}_data", parameter: 1}])
+              when "multiple_attachment_field"
+                aggregation.stages.build(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
+                  { function: "from", parameter: Document::Fields::Embeds::MultipleAttachment.collection_name.to_s },
+                  { function: "localField", parameter: "_id"},
+                  { function: "foreignField", parameter: "attachable_id"},
+                  { function: "as", parameter: name },
+                  { function: "pipeline", raw_parameter: 
+                    [ 
+                      {"$addFields" => { "attachment": "$_attachment_url" }},
+                      {"$project" => { "_id": 1, "attachment": 1, "attachment_data": 1 }} 
+                    ]
+                  }
+                ])
+                aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", parameter: 1}])
               else
                 aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", parameter: 1}])
               end
@@ -124,7 +145,7 @@ module Document
                   grid_panel.save
                 end
               elsif field.attached_nested_form?
-                if field.nested_form
+                # if field.nested_form
                   if field.type == "Document::Fields::MultipleNestedFormField"
                     unless grid_list
                       build_grid_list(default: true, name: field.label, viewable: viewable, nested_field: self)
@@ -137,7 +158,7 @@ module Document
                     #grid_panel.append_default_fields
                     grid_panel.save
                   end
-                end
+                # end
               end
             end
 

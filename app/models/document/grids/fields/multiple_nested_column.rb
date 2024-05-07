@@ -17,10 +17,11 @@ module Document
         def build_default_aggregation
           if name
             if field.attached_nested_form?
-              super
+              super if grid.is_panel?
               aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}_count", parameter: 1}])
             else
               aggregation.stages = []
+              super if grid.is_panel?
               if field.depedency_field?
                 aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}_ids", parameter: 1}])
                 aggregation.stages.build({

@@ -3,7 +3,7 @@ module Document
     class Panel < Document::Grid
 
       # has_many :sections, -> { rank(:position) }, class_name: "Document::Grids::Section", foreign_key: "grid_id", dependent: :destroy, index_errors: true\
-      belongs_to :list, class_name: "Document::Grids::List", foreign_key: "list_id"
+      belongs_to :list, class_name: "Document::Grids::List", foreign_key: "list_id", optional: true
       has_many :sections, through: :viewable, source: :sections
       accepts_nested_attributes_for :sections, allow_destroy: true
 

@@ -20,6 +20,7 @@ module Document
               super
             else
               aggregation.stages = []
+              super
               aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}_id", parameter: 1}])
             end
           end

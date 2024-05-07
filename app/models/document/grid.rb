@@ -44,7 +44,7 @@
 module Document
   class Grid < ApplicationRecord
 
-    belongs_to :viewable, class_name: "Document::BareForm", foreign_key: "viewable_id"
+    belongs_to :viewable, class_name: "Document::BareForm", foreign_key: "viewable_id", optional: true
     belongs_to :nested_field, class_name: "Document::Grids::Field", foreign_key: "nested_field_id", optional: true
     belongs_to :container, class_name: "Document::Grid", foreign_key: "container_id", optional: true
     has_many :nested_grids, class_name: "Document::Grid", foreign_key: "container_id"
@@ -54,7 +54,8 @@ module Document
     accepts_nested_attributes_for :fields, allow_destroy: true
 
     validates :name, presence: true
-    validates :viewable, presence: true
+    validates :viewable, presence: true, unless: :nested_field
+    validates :nested_field, presence: true, unless: :viewable
 
     validate do
       if viewable

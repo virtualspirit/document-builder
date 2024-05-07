@@ -34,6 +34,7 @@ require 'document/virtual_options'
 require 'document/concerns/virtual_models/general_search'
 require 'document/concerns/virtual_models/advanced_search'
 require 'document/concerns/virtual_models/steps'
+require 'document/shrine_plugins/embedded_mongoid_support'
 
 require 'document/concerns/models/field'
 require 'document/concerns/models/form'

@@ -59,6 +59,18 @@ module Document
                       end
                     end
                     include Document.file_uploader_class.new(field)
+                    after_save do 
+                      if self.send(field).present?
+                        urls = {original: send("#{field}_url")}
+                        versions = send("#{field}_derivatives") rescue {}
+                        versions.keys.each do |v|
+                          urls[v] = send("#{field}_url", v)
+                        end
+                        self.set("_#{field}_url" => urls)
+                      else
+                        self.set("_#{field}_url" => {})
+                      end
+                    end
 
                     _meta = uploadable_metadata(fieldname: field)
 
@@ -176,7 +188,8 @@ module Document
 
               def has_one_attached(name)
 
-                field "#{name}_data", type: String
+                field "#{name}_data", type: Hash
+                field "_#{name}_url", type: Hash, default: {}
 
                 unless included_modules.include?(ActsAsUploadable)
                   include ActsAsUploadable

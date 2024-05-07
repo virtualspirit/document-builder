@@ -9,7 +9,8 @@ module Document
           has_many :grid_lists, class_name: "Document::Grids::List", foreign_key: "viewable_id"
           has_many :grid_panels, class_name: "Document::Grids::Panel", foreign_key: "viewable_id"
 
-          after_create :create_default_grids
+          after_create :create_default_grids, if: proc{|gv| gv.type != "Document::NestedForm" }
+          after_create :attach_to_default_grids, if: proc{|gv| gv.type == "Document::NestedForm" }
 
         end
 
@@ -21,7 +22,7 @@ module Document
           default_grids.where(type: "Document::Grids::Panel").first
         end
 
-        def default_list_panel
+        def default_grid_list
           default_grids.where(type: "Document::Grids::List").first
         end
 
@@ -48,6 +49,14 @@ module Document
           panel = grid_panels.where(default: true).first
           unless panel
             grid_panels.create(default: true, name: grid_title, list: create_default_grid_list)#, nested_field: type == "Document::NestedForm" ? attachable : nil)
+          end
+        end
+
+        def attach_to_default_grids
+          if type == "Document::NestedForm"
+            if attachable
+              Grid.where(nested_field_id: attachable.grid_fields.pluck(:id)).update_all(viewable_id: self.id)
+            end
           end
         end
 

@@ -112,11 +112,7 @@ module Document
                 end
               end
               (self.class._uploadable_config[self.class.name] || {}).each do |f,v|
-                fd = f.to_s + "_data"
-                hash.delete(f.to_s + "_data")
-                data = send(f).try(:data) || {}
-                data['derivatives'] = send(f.to_s + "_derivatives") unless send(f.to_s + "_derivatives").blank?
-                hash[f.to_s] = { "url": send(f.to_s + "_url"), "data": data }         
+                hash[f] = self.send("_"+f.to_s+"_url") rescue {}
               end
               hash
             end
@@ -169,7 +165,7 @@ module Document
           end
 
           def virtual_view_model_name
-            "View#{name.classify}#{id.to_s.underscore}".classify
+            "#{name.classify}#{id.to_s.underscore}".classify
           end
 
           def _virtual_model model_name
