@@ -59,15 +59,18 @@ module Document
           drn = []
           if form
             drn = form.fields.where(type: DYNAMIC_FIELD_NAMES_TYPES).reduce([]) do |arr, field|
-              case field.type.demodulize.underscore
-              when "depedency_one_field"
-                arr << field.name + "_id"
-              when "depedency_many_field"
-                arr << field.name + "_ids"
-              when "attachment_field"
-                arr << field.name + "_data"
-              when "geolocation_field"
-                arr << field.name + options.location_field_suffix_name.to_s
+              if field.id != self.id
+                field_name = field.name.to_s
+                case field.type.demodulize.underscore
+                when "depedency_one_field"
+                  arr << field_name + "_id"
+                when "depedency_many_field"
+                  arr << field_name + "_ids"
+                when "attachment_field"
+                  arr << field_name + "_data"
+                when "geolocation_field"
+                  arr << field_name + options.location_field_suffix_name.to_s
+                end
               end
               arr
             end
