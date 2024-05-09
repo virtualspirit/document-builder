@@ -9,9 +9,12 @@ module Document
           included do
             belongs_to :field, class_name: 'Document::Field', foreign_key: "field_id"
             belongs_to :section, class_name: "Document::Section", optional: true, foreign_key: "section_id"
+            has_many :grids, class_name: "Document::Grid", foreign_key: "nested_field_id", dependent: :destroy
+            has_one :grid_panel, class_name: "Document::Grids::Panel", foreign_key: "nested_field_id", dependent: :destroy
+            has_one :grid_list, class_name: "Document::Grids::List", foreign_key: "nested_field_id", dependent: :destroy
 
             # before_save :set_section
-            after_initialize :build_default_aggregation, if: :default_aggregation
+            after_initialize :build_default_aggregation, if: Proc.new{|f| f.default_aggregation && f.persisted? }
 
           end
 
@@ -67,6 +70,22 @@ module Document
             false
           end
 
+          def multiple?
+            false
+          end
+
+          def column_names
+            aggregation.stages.select{|stage| stage.name == "$project" }.map{|stage| stage.arguments.map(&:function) }.flatten 
+          end
+
+          def field_type
+            field.try(:type)
+          end
+
+          def field_identifier
+            field.try(:identifier)
+          end
+
 
         end
 
@@ -115,10 +134,6 @@ module Document
 
           included do
 
-            has_many :grids, class_name: "Document::Grid", foreign_key: "nested_field_id", dependent: :destroy
-            has_one :grid_panel, class_name: "Document::Grids::Panel", foreign_key: "nested_field_id", dependent: :destroy
-            has_one :grid_list, class_name: "Document::Grids::List", foreign_key: "nested_field_id", dependent: :destroy
-
             validate :valid_field, if: :field
 
             after_create :create_default_grids
@@ -131,34 +146,36 @@ module Document
             end
 
             def create_default_grids
-              if field.depedency_field?
-                if field.type == "Document::Fields::DepedencyManyField"
-                  unless grid_list
-                    build_grid_list(default: true, name: field.label, viewable: viewable)
-                    #grid_list.append_default_fields
-                    grid_list.save
-                  end
-                end
-                unless grid_panel
-                  build_grid_panel(default: true, name: field.label, viewable: viewable, list: grid_list)
-                 #grid_panel.append_default_fields
-                  grid_panel.save
-                end
-              elsif field.attached_nested_form?
-                # if field.nested_form
-                  if field.type == "Document::Fields::MultipleNestedFormField"
+              if grid.default
+                if field.depedency_field?
+                  if field.type == "Document::Fields::DepedencyManyField"
                     unless grid_list
-                      build_grid_list(default: true, name: field.label, viewable: viewable, nested_field: self)
+                      build_grid_list(default: true, name: field.label, viewable: viewable)
                       #grid_list.append_default_fields
                       grid_list.save
                     end
                   end
                   unless grid_panel
-                    build_grid_panel(default: true, name: field.label, viewable: viewable, nested_field: self, list: grid_list)
-                    #grid_panel.append_default_fields
+                    build_grid_panel(default: true, name: field.label, viewable: viewable, list: grid_list)
+                   #grid_panel.append_default_fields
                     grid_panel.save
                   end
-                # end
+                elsif field.attached_nested_form?
+                  # if field.nested_form
+                    if field.type == "Document::Fields::MultipleNestedFormField"
+                      unless grid_list
+                        build_grid_list(default: true, name: field.label, viewable: viewable, nested_field: self)
+                        #grid_list.append_default_fields
+                        grid_list.save
+                      end
+                    end
+                    unless grid_panel
+                      build_grid_panel(default: true, name: field.label, viewable: viewable, nested_field: self, list: grid_list)
+                      #grid_panel.append_default_fields
+                      grid_panel.save
+                    end
+                  # end
+                end
               end
             end
 

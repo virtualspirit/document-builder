@@ -70,7 +70,7 @@ module Document
           fields_scope.call(fields).each do |f|
             f.interpret_as_field_for model, overrides: global_overrides.merge(overrides.fetch(f.name, {}))
           end
-          if self.is_a?(::Document::Form)
+          if self.is_a?(::Document::BareForm)
             model.search_in model.get_searchable_fields
           end
           model
@@ -111,8 +111,10 @@ module Document
                   hash[rname.to_s] = []
                 end
               end
-              (self.class._uploadable_config[self.class.name] || {}).each do |f,v|
-                hash[f] = self.send("_"+f.to_s+"_url") rescue {}
+              if self.class.respond_to?(:_uploadable_config)
+                (self.class._uploadable_config[self.class.name] || {}).each do |f,v|
+                  hash[f] = self.send("_"+f.to_s+"_url") rescue {}
+                end
               end
               hash
             end

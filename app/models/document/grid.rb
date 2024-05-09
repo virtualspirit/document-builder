@@ -50,6 +50,7 @@ module Document
     has_many :nested_grids, class_name: "Document::Grid", foreign_key: "container_id"
     has_many :fields, -> { rank(:position) }, class_name: "Document::Grids::Field", dependent: :destroy, foreign_key: "grid_id", inverse_of: :grid, index_errors: true
     has_many :grid_owners, class_name: "Document::GridOwner", foreign_key: "grid_id", dependent: :destroy
+    has_many :sections, through: :viewable, source: :sections
 
     accepts_nested_attributes_for :fields, allow_destroy: true
 
@@ -70,8 +71,15 @@ module Document
         self.container = nested_field.grid
       end
     end
+    
+    before_destroy do 
+      if default
+        errors.add(:default, :invalid) 
+        throw :abort
+      end
+    end
 
-    after_initialize :build_default_aggregation, if: Proc.new{ aggregation.default }
+    after_initialize :build_default_aggregation, if: Proc.new{|f| f.default_aggregation && f.persisted? }#if: :default_aggregation
 
     before_create :append_default_fields
 
@@ -131,6 +139,13 @@ module Document
       end
       stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "created_at", parameter: 1}])
       stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "updated_at", parameter: 1}])
+      stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "version", parameter: 1}])
+      if viewable.step?
+        stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_step", parameter: 1}])
+        stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_current_step", parameter: 1}])
+        stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_total_step", parameter: 1}])
+        stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_steps_keywords", parameter: 1}])
+      end
       stages
     end
 
@@ -180,22 +195,11 @@ module Document
 
 
     class Options < Document::FieldOptions
-      embeds_many :_default_scopes, class_name: "Document::Concerns::VirtualModels::AdvancedSearch::Clause"
-      accepts_nested_attributes_for :_default_scopes, allow_destroy: true
-      alias :default_scopes :_default_scopes
-      alias :default_scopes= :_default_scopes_attributes=
+      embeds_many :default_scopes, class_name: "Document::Concerns::VirtualModels::AdvancedSearch::Clause"
+      accepts_nested_attributes_for :default_scopes, allow_destroy: true
 
-      embeds_many :_html_options, class_name: "Document::Grid::Options::HtmlOptions"
-      accepts_nested_attributes_for :_html_options, allow_destroy: true
-
-      alias :html_options :_html_options
-      alias :html_options= :_html_options_attributes=
-
-      def as_json options=nil
-        hash = super(options)
-        hash["html_options"]= hash.delete("_html_options")
-        hash
-      end
+      embeds_many :html_options, class_name: "Document::Grid::Options::HtmlOptions"
+      accepts_nested_attributes_for :html_options, allow_destroy: true
 
       class HtmlOptions < Document::FieldOptions
         attribute :name, :string
@@ -206,6 +210,18 @@ module Document
 
     serialize :options, Options
     serialize :aggregation, Document::Grids::Aggregation
+
+    class << self
+      
+      def get_default_grid_for(grid_owner, form)
+        where(viewable_id: form.id, nested_field_id: nil).left_joins(:grid_owners).scoping do
+          merge(where(document_grid_owners: { owner_type: grid_owner.class.base_class.name, owner_id: grid_owner.id }))
+          .or(merge(where(default: true)))
+        end.order("document_grids.default asc").first
+        #form_grids.find_by(viewable: form, type: "Document::Grids::Panel") || form.default_grid_panel
+      end
+
+    end
 
   end
 end

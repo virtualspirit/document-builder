@@ -117,7 +117,7 @@ module Document
         search = params[:search] || {}
         stages << query_aggregation_stage(search)
         stages << sort_aggregation_stage
-        stages << pagination_aggregation_stage unless options.pagination.disabled
+        stages << pagination_aggregation_stage #unless options.pagination.disabled
         stages
       end
 
@@ -149,17 +149,12 @@ module Document
 
       class Options < Document::Grid::Options
 
-        embeds_one :_pagination, class_name: "Document::Grids::List::Pagination"
-        accepts_nested_attributes_for :_pagination, allow_destroy: true
-        alias :pagination :_pagination
-        alias :pagination= :_pagination_attributes=
-        alias :build_pagination :build__pagination
+        embeds_one :pagination, class_name: "Document::Grids::List::Pagination"
+        accepts_nested_attributes_for :pagination, allow_destroy: true
         validates :pagination, presence: true
 
-        embeds_many :_default_sorts, class_name: "Document::Grids::List::Sort"
-        accepts_nested_attributes_for :_default_sorts, allow_destroy: true
-        alias :default_sorts :_default_sorts
-        alias :default_sorts= :_default_sorts_attributes=
+        embeds_many :default_sorts, class_name: "Document::Grids::List::Sort"
+        accepts_nested_attributes_for :default_sorts, allow_destroy: true
 
         attribute :show_grid_panel, :boolean, default: true
         attribute :allow_search, :boolean, default: true

@@ -73,6 +73,7 @@ class <%= migration_class_name %> < ActiveRecord::Migration<%= migration_version
       t.string :type
       t.text :aggregation
       t.boolean :default, default: false
+      t.boolean :default_aggregation, default: true
       t.timestamps
     end
 
