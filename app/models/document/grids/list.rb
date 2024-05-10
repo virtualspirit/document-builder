@@ -83,16 +83,19 @@ module Document
             end
           end
           if res.is_a?(::Mongoid::Criteria)
-            res = res.project(:id => "id").pipeline.filter{|p| p["$match"].present? }[0]
-            if res && res["$match"].is_a?(Hash)
-              res["$match"].each do |k,v|
-                if v.is_a?(Hash)
-                  stage.arguments << Document::Grids::AggregationArgument.new(function: k, parameters: v.map{|s,c| {function: s, parameter: c} })
-                else
-                  stage.arguments << Document::Grids::AggregationArgument.new(function: k, parameter: v)
-                end
-              end
+            res.selector.each do |k,v|
+              stage.arguments.build(function: k, raw_parameter: v)              
             end
+            # res = res.project(:id => "id").pipeline.filter{|p| p["$match"].present? }[0]
+            # if res && res["$match"].is_a?(Hash)
+            #   res["$match"].each do |k,v|
+            #     if v.is_a?(Hash)
+            #       stage.arguments << Document::Grids::AggregationArgument.new(function: k, parameters: v.map{|s,c| {function: s, parameter: c} })
+            #     else
+            #       stage.arguments << Document::Grids::AggregationArgument.new(function: k, parameter: v)
+            #     end
+            #   end
+            # end
           end
         end
         stage
