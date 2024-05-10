@@ -16,13 +16,14 @@ module Document
       def build_default_aggregation
         aggregation.stages = []
         if nested_field
+          aggregation.nested_stages = []
           lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
                 { function: "from", parameter: form.collection_name },
                 { function: "localField", parameter: nested_field.depedency_field? ? "#{nested_field.name}_id" : "_id"},
                 { function: "foreignField", parameter: nested_field.depedency_field? ? "_id" : "#{nested_field.name}_id"},
                 { function: "as", parameter: nested_field.name },
               ])
-          aggregation.stages << lookup
+          aggregation.nested_stages << lookup
           unwind = AggregationStage.new(
                   name: "$unwind",
                   merge: false,
@@ -33,7 +34,7 @@ module Document
                     { function: "preserveNullAndEmptyArrays", parameter: true }
                   ]
                 )
-          aggregation.stages << unwind
+          aggregation.nested_stages << unwind
         end
       end
 
@@ -41,6 +42,7 @@ module Document
         stages = []
         fields.each do |field|
           if field_scope.call(field)
+            field.build_default_aggregation if field.default_aggregation
             if field.nested?
               if field.multiple?
                 stages = stages + field.grid_list.nested_aggregation_stages({}, field_scope)
@@ -56,13 +58,6 @@ module Document
         stages
       end
 
-      def to_aggregation(params={}, field_scope = proc{|field| field})
-        stages = aggregation_stages(params, field_scope)
-        agg = aggregation.class.new
-        agg.stages.append(stages)
-        agg.to_aggregation
-      end
-
       def data(params={}, field_scope = proc{|field| field})
         raw_stages = []
         res = virtual_view.where(id: params[:id])
@@ -70,18 +65,6 @@ module Document
         aggregates = raw_stages + to_aggregation(params, field_scope)
         virtual_view.collection.aggregate(aggregates).first
       end
-
-      # def append_section(section)
-      #   sections.build(title: section.title, position: section.position, description: section.description, section_id: section.id, headless: section.headless)
-      # end
-
-      # def append_sections
-      #   if form.type == "Document::Form"
-      #     form.sections.each do |s|
-      #       append_section(s)
-      #     end
-      #   end
-      # end
 
     end
   end

@@ -15,13 +15,15 @@ module Document
         end
 
         def build_default_aggregation
-          if name
-            if field.attached_nested_form?
-              super
-            else
-              aggregation.stages = []
-              super
-              aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}_id", parameter: 1}])
+          if default_aggregation
+            if name
+              if field.attached_nested_form?
+                super
+              else
+                aggregation.stages = []
+                super
+                aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}_id", parameter: 1}])
+              end
             end
           end
         end

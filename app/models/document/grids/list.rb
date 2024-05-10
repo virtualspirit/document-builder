@@ -21,7 +21,7 @@ module Document
       def build_default_aggregation
         aggregation.stages = []
         if nested_field
-
+          aggregation.nested_stages = []
           if nested_field.depedency_field? && nested_field.field.type == "Document::Fields::DepedencyManyField"
             lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
                 { function: "from", parameter: form.collection_name },
@@ -39,9 +39,9 @@ module Document
                   { function: "as", parameter: nested_field.name },
             ])
           end
-          aggregation.stages << lookup
+          aggregation.nested_stages << lookup
           project = AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "#{nested_field.name}_count", parameter: 1}])
-          aggregation.stages << project
+          aggregation.nested_stages << project
         end
       end
 
@@ -49,6 +49,7 @@ module Document
         stages = []
         fields.each do |field|
           if field_scope.call(field)
+            field.build_default_aggregation if field.default_aggregation
             if field.nested?
               unless field.multiple?
                 stages = stages + field.grid_panel.nested_aggregation_stages({}, field_scope)
@@ -57,8 +58,6 @@ module Document
             stages = stages + field.aggregation.stages
           end
         end
-        stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "created_at", parameter: 1}])
-        stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "updated_at", parameter: 1}])
         stages
       end
 
@@ -86,16 +85,6 @@ module Document
             res.selector.each do |k,v|
               stage.arguments.build(function: k, raw_parameter: v)              
             end
-            # res = res.project(:id => "id").pipeline.filter{|p| p["$match"].present? }[0]
-            # if res && res["$match"].is_a?(Hash)
-            #   res["$match"].each do |k,v|
-            #     if v.is_a?(Hash)
-            #       stage.arguments << Document::Grids::AggregationArgument.new(function: k, parameters: v.map{|s,c| {function: s, parameter: c} })
-            #     else
-            #       stage.arguments << Document::Grids::AggregationArgument.new(function: k, parameter: v)
-            #     end
-            #   end
-            # end
           end
         end
         stage
@@ -106,7 +95,7 @@ module Document
           arr << Sort.new(field: key, direction: val)
         end
         sorts = options.default_sorts.to_a.concat(sorts)
-        Document::Grids::AggregationStage.new(name: "$sort", order: 100000,arguments_attributes: sorts.map{|s| {function: s.field, parameter: s.direction_to_integer}})
+        Document::Grids::AggregationStage.new(name: "$sort", order: 9999,arguments_attributes: sorts.map{|s| {function: s.field, parameter: s.direction_to_integer}})
       end
 
       def pagination_aggregation_stage page: nil, per_page: nil
@@ -115,7 +104,6 @@ module Document
         Document::Grids::AggregationStage.new(name: "$facet", order: 10000, arguments_attributes: [          
           { function: 'data', parameters_attributes: 
             [ 
-              { function: "$sort",  raw_parameter: { "_id": -1 } },
               { function: "$limit", parameter: per_page.to_i * page.to_i },
               { function: "$skip", parameter: per_page.to_i * (page.to_i-1) } 
             ]
@@ -130,41 +118,8 @@ module Document
         search = params[:search] || {}
         stages << query_aggregation_stage(search)
         stages << sort_aggregation_stage
-        stages << pagination_aggregation_stage(page: params[:page], per_page: params[:per_page]) #unless options.pagination.disabled
+        stages << pagination_aggregation_stage(page: params[:page], per_page: params[:per_page]) unless options.pagination.disabled
         stages
-      end
-
-      def to_aggregation(params={}, field_scope = proc{|field| field})
-        stages = aggregation_stages(params, field_scope)
-        agg = aggregation.class.new
-        agg.stages.append(stages)
-        # gg = [
-        #   { :$addFields=>{ :employees_ids=>{"$cond"=>{"if"=>{"$ne"=>[{"$type"=>"$employees_ids"}, "array"]}, "then"=>[], "else"=>"$employees_ids"}}}},
-        #   { :$addFields=>{ :attachment=>"$_attachment_url"}},
-        #   { :$addFields=>{ :employees_count=>{"$size"=>"$employees_ids"}}},
-        #   { :$lookup=>{ :from=>"nestedform-c2dd0763-2674-49f9-a034-98eaf652b4cc", :localField=>"_id", :foreignField=>"nested_form_id", :as=>"nested_form", :pipeline=>[{ :$project=>{ :nested_text=>1, :created_at=>1, :updated_at=>1, :version=>1}}]}},
-        #   { :$lookup=>{ :from=>"document_embeds_multiple_attachments", :localField=>"_id", :foreignField=>"attachable_id", :as=>"multiple_attachment", :pipeline=>[{:$addFields=>{:"attachment"=>"$_attachment_url"}}, {:$project=>{:"_id"=>1, :"attachment"=>1, :"attachment_data"=>1}}]}},
-        #   { :$lookup=>{ :from=>"form-747581dd-cb55-413e-ba98-a4150b4b0a91", :localField=>"employee_id", :foreignField=>"_id", :as=>"employee", :pipeline=>[{ :$project=>{ :employee_id=>1, :title=>1, :name=>1, :dob=>1, :start_date=>1, :address=>1, :department=>1, :phone_number=>1, :email=>1, :marital_status=>1, :salary=>1, :created_at=>1, :updated_at=>1, :version=>1}}]}},
-        #   { :$lookup=>{ :from=>"fbuilder_virtual_model_submitters", :localField=>"submitter_id", :foreignField=>"_id", :as=>"submitter"}},
-        #   { :$unwind=>{ :path=>"$nested_form", :preserveNullAndEmptyArrays=>true}},
-        #   { :$unwind=>{ :path=>"$employee", :preserveNullAndEmptyArrays=>true}},
-        #   { :$unwind=>{ :path=>"$submitter", :preserveNullAndEmptyArrays=>true}},
-        #   { :$project=>{ :text=>1, :boolean=>1, :checkbox=>1, :date=>1, :date_range=>1, :datetime=>1, :datetime_range=>1, :decimal=>1, :formula=>1, :attachment=>1, :attachment_data=>1, :decimal_range=>1, :email=>1, :geolocation=>1, :geolocation_location=>1, :nested_form=>1, :integer_range=>1, :multiple_select=>1, :radio=>1, :select=>1, :signature=>1, :time=>1, :multiple_attachment=>1, :time_range=>1, :employee=>1, :employee_id=>1, :employees_ids=>1, :employees_count=>1, :multiple_nested_form_count=>1, :integer=>1, :created_at=>1, :updated_at=>1, :submitter_id=>1, :submitter=>1}},
-        #   {:$match=>{:text=>[{:$eq=>"foo"}]}},
-        #   { :$facet=>{ 
-        #       :data=>[
-        #         { :$sort=>{ "_id"=>-1 }},
-        #         { :$limit=>2 },
-        #         { :$skip=>1 }
-        #       ], 
-        #       :meta=>[
-        #         { :$count=>"total" }
-        #       ]
-        #     }
-        #   },
-        #   { :$sort=>{ :updated_at=>-1 }}
-        # ]
-        agg.to_aggregation
       end
 
       def data(params={}, field_scope = proc{|field| field})
@@ -201,11 +156,6 @@ module Document
         attribute :allowed_search_types, :string, array: true, default: ['lazy_search']
 
         SEARCH_TYPES = ['lazy_search', 'heavy_search', 'configured_advanced_search', 'advanced_search']
-
-        # after_initialize do
-        #   build_pagination if pagination.blank?
-        #   default_sorts.build(field: "updated_at", direction: "desc") if default_sorts.blank?
-        # end
 
       end
 
