@@ -43,11 +43,12 @@ module Document
         end
 
         def form
-          @form ||= if form.is_a?(Document::NestedForm)
-              form
-            else
-              form
-            end
+          @form = Document::Form.find(self.form_id)
+          # @form ||= if form.is_a?(Document::NestedForm)
+          #     form
+          #   else
+          #     form
+          #   end
         end
 
       end
