@@ -150,13 +150,13 @@ module Document
                 if field.depedency_field?
                   if field.type == "Document::Fields::DepedencyManyField"
                     unless grid_list
-                      build_grid_list(default: true, name: field.label, viewable: viewable)
+                      build_grid_list(default: true, name: field.label, form: form)
                       #grid_list.append_default_fields
                       grid_list.save
                     end
                   end
                   unless grid_panel
-                    build_grid_panel(default: true, name: field.label, viewable: viewable, list: grid_list)
+                    build_grid_panel(default: true, name: field.label, form: form, list: grid_list)
                    #grid_panel.append_default_fields
                     grid_panel.save
                   end
@@ -164,13 +164,13 @@ module Document
                   # if field.nested_form
                     if field.type == "Document::Fields::MultipleNestedFormField"
                       unless grid_list
-                        build_grid_list(default: true, name: field.label, viewable: viewable, nested_field: self)
+                        build_grid_list(default: true, name: field.label, form: form, nested_field: self)
                         #grid_list.append_default_fields
                         grid_list.save
                       end
                     end
                     unless grid_panel
-                      build_grid_panel(default: true, name: field.label, viewable: viewable, nested_field: self, list: grid_list)
+                      build_grid_panel(default: true, name: field.label, form: form, nested_field: self, list: grid_list)
                       #grid_panel.append_default_fields
                       grid_panel.save
                     end
@@ -187,7 +187,7 @@ module Document
             end
           end
 
-          def viewable
+          def form
             if field.attached_nested_form?
               field.nested_form
             else

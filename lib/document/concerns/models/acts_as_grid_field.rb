@@ -20,7 +20,7 @@ module Document
         end
 
         def create_gried_field
-          viewable.grids.each do |grid|
+          form.grids.each do |grid|
             grid.add_field self
           end
         end
@@ -42,8 +42,8 @@ module Document
           end
         end
 
-        def viewable
-          @viewable ||= if form.is_a?(Document::NestedForm)
+        def form
+          @form ||= if form.is_a?(Document::NestedForm)
               form
             else
               form

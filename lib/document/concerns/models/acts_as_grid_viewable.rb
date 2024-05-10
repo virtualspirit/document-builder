@@ -5,9 +5,9 @@ module Document
         extend ActiveSupport::Concern
 
         included  do
-          has_many :grids, class_name: "Document::Grid", foreign_key: "viewable_id", dependent: :destroy
-          has_many :grid_lists, class_name: "Document::Grids::List", foreign_key: "viewable_id"
-          has_many :grid_panels, class_name: "Document::Grids::Panel", foreign_key: "viewable_id"
+          has_many :grids, class_name: "Document::Grid", foreign_key: "form_id", dependent: :destroy
+          has_many :grid_lists, class_name: "Document::Grids::List", foreign_key: "form_id"
+          has_many :grid_panels, class_name: "Document::Grids::Panel", foreign_key: "form_id"
 
           after_create :create_default_grids, if: proc{|gv| gv.type != "Document::NestedForm" }
           after_create :attach_to_default_grids, if: proc{|gv| gv.type == "Document::NestedForm" }
@@ -19,11 +19,11 @@ module Document
         end
 
         def default_grid_panel
-          default_grids.where(type: "Document::Grids::Panel").first
+          default_grids.where(type: "Document::Grids::Panel").first || create_default_grid_panel
         end
 
         def default_grid_list
-          default_grids.where(type: "Document::Grids::List").first
+          default_grids.where(type: "Document::Grids::List").first || create_default_grid_list
         end
 
         def create_default_grids
@@ -55,7 +55,7 @@ module Document
         def attach_to_default_grids
           if type == "Document::NestedForm"
             if attachable
-              Grid.where(nested_field_id: attachable.grid_fields.pluck(:id)).update_all(viewable_id: self.id)
+              Grid.where(nested_field_id: attachable.grid_fields.pluck(:id)).update_all(form_id: self.id)
             end
           end
         end
@@ -73,9 +73,9 @@ module Document
       #   extend ActiveSupport::Concern
 
       #   included  do
-      #     has_many :grids, class_name: "Document::Grid", as: :viewable, dependent: :destroy
-      #     has_many :grid_lists, class_name: "Document::Grids::List", as: :viewable
-      #     has_many :grid_panels, class_name: "Document::Grids::Panel", as: :viewable
+      #     has_many :grids, class_name: "Document::Grid", as: :form, dependent: :destroy
+      #     has_many :grid_lists, class_name: "Document::Grids::List", as: :form
+      #     has_many :grid_panels, class_name: "Document::Grids::Panel", as: :form
 
       #     after_create :create_default_grids
 

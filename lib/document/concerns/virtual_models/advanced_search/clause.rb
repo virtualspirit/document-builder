@@ -62,7 +62,7 @@ module Document
 
           after_initialize do
             self.logical_operators ||= LOGICAL_OPERATORS
-            if(self.type && self.comparison_operators)
+            if(self.type && self.comparison_operators.blank?)
               self.comparison_operators ||= COMPARISON_OPERATORS.select{|k,v| v[:only] ? v[:only].include?(self.type.to_sym) : v }
             end
           end

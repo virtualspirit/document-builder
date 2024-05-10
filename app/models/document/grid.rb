@@ -1,5 +1,5 @@
 # create_table :document_grids do |t|
-#   t.references :viewable, polymorphic: true
+#   t.references :form, polymorphic: true
 #   t.string :name
 #   t.text :options
 #   t.integer :order
@@ -12,14 +12,14 @@
 # module Document
 #   class Grid < ApplicationRecord
 
-#     belongs_to :viewable, polymorphic: true
+#     belongs_to :form, polymorphic: true
 #     has_many :fields, class_name: "Document::Grids::Field", foreign_key: "grid_id", dependent: :destroy
 #     accepts_nested_attributes_for :fields, allow_destroy: true
 
 #     validates :name, presence: true
 #     validates :type, presence: true, inclusion: { in: ['Document::Grids::List', 'Document::Grids::Panel'] }
 
-#     def draw fields_collection = viewable.try(:fields) || [], namespace = []
+#     def draw fields_collection = form.try(:fields) || [], namespace = []
 #       fields_collection.each do |field|
 #         self.fields << Document::Grids::Field.build(self, field, namespace)
 #       end
@@ -27,14 +27,14 @@
 #     end
 
 #     def virtual_view
-#       if viewable
-#         @virtual_view ||= viewable.to_virtual_view
+#       if form
+#         @virtual_view ||= form.to_virtual_view
 #       end
 #     end
 
 #     def virtual_view!
-#       if viewable
-#         @virtual_view = viewable.to_virtual_view
+#       if form
+#         @virtual_view = form.to_virtual_view
 #       end
 #     end
 
@@ -44,24 +44,24 @@
 module Document
   class Grid < ApplicationRecord
 
-    belongs_to :viewable, class_name: "Document::BareForm", foreign_key: "viewable_id", optional: true
+    belongs_to :form, class_name: "Document::BareForm", foreign_key: "form_id", optional: true
     belongs_to :nested_field, class_name: "Document::Grids::Field", foreign_key: "nested_field_id", optional: true
     belongs_to :container, class_name: "Document::Grid", foreign_key: "container_id", optional: true
     has_many :nested_grids, class_name: "Document::Grid", foreign_key: "container_id"
     has_many :fields, -> { rank(:position) }, class_name: "Document::Grids::Field", dependent: :destroy, foreign_key: "grid_id", inverse_of: :grid, index_errors: true
     has_many :grid_owners, class_name: "Document::GridOwner", foreign_key: "grid_id", dependent: :destroy
-    has_many :sections, through: :viewable, source: :sections
+    has_many :sections, through: :form, source: :sections
 
     accepts_nested_attributes_for :fields, allow_destroy: true
 
     validates :name, presence: true
-    validates :viewable, presence: true, unless: :nested_field
-    validates :nested_field, presence: true, unless: :viewable
+    validates :form, presence: true, unless: :nested_field
+    validates :nested_field, presence: true, unless: :form
 
     validate do
-      if viewable
-        unless viewable.class.included_modules.include?(Document::Concerns::Models::ActsAsGridViewable)
-          errors.add(:viewable, :invalid)
+      if form
+        unless form.class.included_modules.include?(Document::Concerns::Models::ActsAsGridViewable)
+          errors.add(:form, :invalid)
         end
       end
     end
@@ -81,11 +81,11 @@ module Document
 
     after_initialize :build_default_aggregation, if: Proc.new{|f| f.default_aggregation && f.persisted? }#if: :default_aggregation
 
-    before_create :append_default_fields
+    before_create :append_default_fields, if: :default
 
     def virtual_view
-      if viewable
-        @virtual_view ||= viewable.to_virtual_view
+      if form
+        @virtual_view ||= form.to_virtual_view
       end
     end
 
@@ -108,7 +108,7 @@ module Document
     end
 
     def append_default_fields
-      append_fields(viewable.fields)
+      append_fields(form.fields)
     end
 
     def append_fields _fields = []
@@ -140,7 +140,7 @@ module Document
       stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "created_at", parameter: 1}])
       stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "updated_at", parameter: 1}])
       stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "version", parameter: 1}])
-      if viewable.step?
+      if form.step?
         stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_step", parameter: 1}])
         stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_current_step", parameter: 1}])
         stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_total_step", parameter: 1}])
@@ -211,14 +211,23 @@ module Document
     serialize :options, Options
     serialize :aggregation, Document::Grids::Aggregation
 
+    scope :only_container, -> { where(nested_field_id: nil) } 
+    scope :owned_or_default, -> (grid_owner, form) {
+      Document::Grid.where(form_id: form.id).left_joins(:grid_owners).scoping do
+        merge(Document::Grid.where(document_grid_owners: { owner_type: grid_owner.class.base_class.name, owner_id: grid_owner.id }))
+        .or(merge(Document::Grid.where(default: true)))
+      end
+    }
+    
     class << self
+
       
       def get_default_grid_for(grid_owner, form)
-        where(viewable_id: form.id, nested_field_id: nil).left_joins(:grid_owners).scoping do
+        only_container.where(form_id: form.id).left_joins(:grid_owners).scoping do
           merge(where(document_grid_owners: { owner_type: grid_owner.class.base_class.name, owner_id: grid_owner.id }))
           .or(merge(where(default: true)))
         end.order("document_grids.default asc").first
-        #form_grids.find_by(viewable: form, type: "Document::Grids::Panel") || form.default_grid_panel
+        #form_grids.find_by(form: form, type: "Document::Grids::Panel") || form.default_grid_panel
       end
 
     end

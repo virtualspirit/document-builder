@@ -4,7 +4,7 @@ module Document
 
       # has_many :sections, -> { rank(:position) }, class_name: "Document::Grids::Section", foreign_key: "grid_id", dependent: :destroy, index_errors: true\
       belongs_to :list, class_name: "Document::Grids::List", foreign_key: "list_id", optional: true
-      # has_many :sections, through: :viewable, source: :sections
+      # has_many :sections, through: :form, source: :sections
       accepts_nested_attributes_for :sections, allow_destroy: true
 
       #before_create :append_sections
@@ -17,7 +17,7 @@ module Document
         aggregation.stages = []
         if nested_field
           lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
-                { function: "from", parameter: viewable.collection_name },
+                { function: "from", parameter: form.collection_name },
                 { function: "localField", parameter: nested_field.depedency_field? ? "#{nested_field.name}_id" : "_id"},
                 { function: "foreignField", parameter: nested_field.depedency_field? ? "_id" : "#{nested_field.name}_id"},
                 { function: "as", parameter: nested_field.name },
@@ -76,8 +76,8 @@ module Document
       # end
 
       # def append_sections
-      #   if viewable.type == "Document::Form"
-      #     viewable.sections.each do |s|
+      #   if form.type == "Document::Form"
+      #     form.sections.each do |s|
       #       append_section(s)
       #     end
       #   end

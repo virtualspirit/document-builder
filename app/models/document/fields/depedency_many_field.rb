@@ -45,6 +45,7 @@ module Document
           #     super(options)
           #   end
           # CODE
+          model.add_as_searchable_field({field_name.to_sym => options.display_value_field.to_sym}) if options.try(:searchable)
           interpret_validations_to model, accessibility, overrides
           interpret_extra_to model, accessibility, overrides
         end

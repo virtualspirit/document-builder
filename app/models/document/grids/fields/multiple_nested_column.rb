@@ -9,7 +9,7 @@ module Document
         self.valid_field_types = ['Document::Fields::MultipleNestedFormField', 'Document::Fields::DepedencyManyField']
 
         def to_virtual_view
-          if viewable
+          if form
             @virtual_view ||= field.options.form.to_virtual_view
           end
         end

@@ -56,7 +56,11 @@ module Document
               super(options)
             end
           CODE
-
+          # if options.try(:searchable)
+          #   nested_model.fields.each do |arr, f|
+          #     model.add_as_searchable_field({field_name.to_sym => f.name.to_sym}) if f.options.try(:searchable)
+          #   end
+          # end
           interpret_validations_to model, accessibility, overrides
           interpret_extra_to model, accessibility, overrides
         end

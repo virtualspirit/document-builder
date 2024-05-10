@@ -71,7 +71,7 @@ module Document
             f.interpret_as_field_for model, overrides: global_overrides.merge(overrides.fetch(f.name, {}))
           end
           if self.is_a?(::Document::BareForm)
-            model.search_in model.get_searchable_fields
+            model.search_in *model.get_searchable_fields
           end
           model
         end
@@ -132,7 +132,7 @@ module Document
             f.interpret_to model, overrides: global_overrides.merge(overrides.fetch(f.name, {}))
           end
           if self.is_a?(::Document::Form)
-            model.search_in model.get_searchable_fields
+            model.search_in *model.get_searchable_fields
           end
           model
         end
