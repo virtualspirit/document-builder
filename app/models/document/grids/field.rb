@@ -23,9 +23,18 @@ module Document
 
       self.table_name = 'document_grid_fields'
 
-      #belongs_to :grid, class_name: 'Document::Grid'
+      belongs_to :field, class_name: 'Document::Field', foreign_key: "field_id", optional: true
+      belongs_to :section, class_name: "Document::Section", optional: true, foreign_key: "section_id"
       has_many :grid_fields, class_name: "Document::Grids::GridField", foreign_key: "field_id", dependent: :destroy
       has_many :grids, through: :grid_fields
+      has_many :grid_panels, lambda { where(type: "Document::Grids::Panel") }, through: :grid_fields, source: :grid
+      has_many :grid_lists, lambda { where(type: "Document::Grids::List") }, through: :grid_fields, source: :grid
+      has_many :grid_nested_fields, class_name: "Document::Grids::GridNestedField", foreign_key: "nested_field_id", dependent: :destroy
+      has_many :nested_grids, through: :grid_nested_fields, class_name: "Document::Grid"
+      has_one :grid_list_nested_field, -> { where(grid_type: "Document::Grids::List") }, class_name: "Document::Grids::GridNestedField", foreign_key: "nested_field_id"
+      has_one :nested_grid_list, through: :grid_list_nested_field, source: :nested_grid
+      has_one :grid_panel_nested_field, -> { where(grid_type: "Document::Grids::Panel") }, class_name: "Document::Grids::GridNestedField", foreign_key: "nested_field_id"
+      has_one :nested_grid_panel, through: :grid_panel_nested_field, source: :nested_grid
 
       include RankedModel
       ranks :position, with_same: [:section_id, :grid_id], class_name: self.name
@@ -54,7 +63,7 @@ module Document
       end
 
       def column_names
-        aggregation.stages.select{|stage| stage.name == "$project" }.map{|stage| stage.arguments.map(&:function) }.flatten 
+        aggregation.stages.select{|stage| stage.name == "$project" }.map{|stage| stage.arguments.map(&:function) }.flatten
       end
 
       def build_default_aggregation

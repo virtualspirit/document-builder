@@ -7,16 +7,18 @@ module Document
 
           extend ActiveSupport::Concern
           included do
-            belongs_to :field, class_name: 'Document::Field', foreign_key: "field_id"
-            belongs_to :section, class_name: "Document::Section", optional: true, foreign_key: "section_id"
-            
-            has_many :nested_grids, class_name: "Document::Grid", foreign_key: "nested_field_id", dependent: :destroy
-            has_one :grid_panel, class_name: "Document::Grids::Panel", foreign_key: "nested_field_id", dependent: :destroy
-            has_one :grid_list, class_name: "Document::Grids::List", foreign_key: "nested_field_id", dependent: :destroy
+
+            validates :field, presence: true
+            # before_destroy do
+            #   if default
+            #     errors.add(:default, :invalid)
+            #     throw :abort
+            #   end
+            # end
 
           end
 
-          def build_default_aggregation
+          def build_default_aggregation(grid_container=nil)
             if default_aggregation
               if name
                 aggregation.stages = []
@@ -39,10 +41,10 @@ module Document
                     { function: "localField", parameter: "_id"},
                     { function: "foreignField", parameter: "attachable_id"},
                     { function: "as", parameter: name },
-                    { function: "pipeline", raw_parameter: 
-                      [ 
+                    { function: "pipeline", raw_parameter:
+                      [
                         {"$addFields" => { "attachment": "$_attachment_url" }},
-                        {"$project" => { "_id": 1, "attachment": 1, "attachment_data": 1 }} 
+                        {"$project" => { "_id": 1, "attachment": 1, "attachment_data": 1 }}
                       ]
                     }
                   ])
@@ -52,7 +54,7 @@ module Document
                 end
               end
             end
-          end          
+          end
 
           def field_type
             field.try(:type)
@@ -110,14 +112,14 @@ module Document
 
           included do
 
+            accepts_nested_attributes_for :nested_grid_list, reject_if: :all_blank
+            accepts_nested_attributes_for :nested_grid_panel, reject_if: :all_blank
+
             validate :valid_field, if: :field
 
             class_attribute :valid_field_types
             self.valid_field_types = []
 
-            def default_grids
-              grids.where(default: true, nested_field: self)
-            end
 
           end
 

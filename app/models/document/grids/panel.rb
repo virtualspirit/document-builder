@@ -42,13 +42,20 @@ module Document
         stages = []
         fields.each do |field|
           if field_scope.call(field)
-            field.build_default_aggregation if field.default_aggregation
             if field.nested?
-              if field.multiple?
-                stages = stages + field.grid_list.nested_aggregation_stages({}, field_scope)
+              nested_grid = if field.multiple?
+                field.nested_grid_list
               else
-                stages = stages + field.grid_panel.nested_aggregation_stages({}, field_scope)
+                field.nested_grid_panel
               end
+              if nested_grid
+                nested_grid.nested_field= field
+                nested_grid.build_default_aggregation if nested_grid.default_aggregation
+                stages = stages + nested_grid.nested_aggregation_stages({}, field_scope)
+              end
+            end
+            if field.default_aggregation
+              field.multiple?? field.build_default_aggregation(self) : field.build_default_aggregation
             end
             stages = stages + field.aggregation.stages
           end

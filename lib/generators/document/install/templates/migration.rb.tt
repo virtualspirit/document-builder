@@ -114,5 +114,11 @@ class <%= migration_class_name %> < ActiveRecord::Migration<%= migration_version
       t.timestamps
     end
 
+    create_table :document_grids_nested_fields do |t|
+      t.references :field
+      t.references :grid
+      t.timestamps
+    end
+
   end
 end

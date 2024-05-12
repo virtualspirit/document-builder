@@ -8,41 +8,52 @@ module Document
           has_many :grids, class_name: "Document::Grid", foreign_key: "form_id", dependent: :destroy
           has_many :grid_lists, class_name: "Document::Grids::List", foreign_key: "form_id"
           has_many :grid_panels, class_name: "Document::Grids::Panel", foreign_key: "form_id"
-          has_one :default_grid_panel, -> { where(default: true, nested_field_id: nil) }, class_name: "Document::Grids::Panel", foreign_key: "form_id"
-          has_one :default_grid_list, -> { where(default: true, nested_field_id: nil) }, class_name: "Document::Grids::List", foreign_key: "form_id"
+          has_one :default_grid_panel, -> { where(default: true) }, class_name: "Document::Grids::Panel", foreign_key: "form_id"
+          has_one :default_grid_list, -> { where(default: true) }, class_name: "Document::Grids::List", foreign_key: "form_id"
 
           after_create :create_default_grids
 
         end
 
         def create_default_grids
+          if default_grid_panel.blank? && default_grid_list.blank?
+            create_or_get_default_grids
+          else
+            [default_grid_panel, default_grid_list]
+          end
+        end
+
+        def create_or_get_default_grids
           if type == "Document::Form"
-            _create_default_grid_list
-            _create_default_grid_panel
+            create_or_get_default_grid_list
+            create_or_get_default_grid_panel
           end
           if type == "Document::NestedForm"
             if attachable.present?
               if attachable.type == 'Document::Fields::MultipleNestedFormField'
-                _create_default_grid_list(attachable.default_grid_field)
+                create_or_get_default_grid_list(attachable.create_or_get_default_gried_field)
               end
-              _create_default_grid_list(attachable.default_grid_field)
+              create_or_get_default_grid_panel(attachable.create_or_get_default_gried_field)
             end
           end
+          [create_or_get_default_grid_panel, create_or_get_default_grid_list]
         end
 
-        def _create_default_grid_list(nested_field= nil)
-          @list ||= grid_lists.only_default.where(nested_field: nested_field).first
+        def create_or_get_default_grid_list(nested_field=nil)
+          @list ||= default_grid_list
           unless @list
-            @list = create_default_grid_list(default: true, name: grid_title, nested_field: nested_field)
+            @list = create_default_grid_list(default: true, name: grid_title)
           end
+          @list.nested_fields << nested_field if nested_field
           @list
         end
 
-        def _create_default_grid_panel(nested_field= nil)
-          panel = grid_panels.only_default.where(nested_field: nested_field).first
+        def create_or_get_default_grid_panel(nested_field=nil)
+          panel = default_grid_panel
           unless panel
-            panel = create_default_grid_panel(default: true, name: grid_title, nested_field: nested_field, list: default_grid_list)
+            panel = create_default_grid_panel(default: true, name: grid_title, list: default_grid_list)
           end
+          panel.nested_fields << nested_field if nested_field
           panel
         end
 
@@ -55,7 +66,7 @@ module Document
         end
 
       end
-      
+
     end
   end
 end

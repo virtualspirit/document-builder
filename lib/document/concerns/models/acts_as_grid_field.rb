@@ -21,33 +21,35 @@ module Document
         end
 
         def append_default_grid_field_to_grids
-          gf = _create_default_gried_field
+          gf = create_or_get_default_gried_field
           form.grids.only_default.each do |grid|
             grid.append_field gf
           end
         end
 
-        def _create_default_gried_field
-          gf = Document::Grids::Field.build(self)
-          gf.default = true
-          gf.default_aggregation = true
-          gf.field = self        
-          gf.save
-          if attached_nested_form?
-            if nested_form
-              if type == "Document::Fields::MultipleNestedFormField"                
-                nested_form._create_default_grid_list(gf)
+        def create_or_get_default_gried_field
+          gf = default_grid_field
+          unless gf
+            gf = Document::Grids::Field.build(self)
+            gf.default = true
+            gf.default_aggregation = true
+            gf.field = self
+            gf.save
+            if attached_nested_form?
+              if nested_form
+                if type == "Document::Fields::MultipleNestedFormField"
+                  nested_form.create_or_get_default_grid_list(gf)
+                end
+                nested_form.create_or_get_default_grid_panel(gf)
               end
-              nested_form._create_default_grid_panel(gf)
             end
-          end
-          if depedency_field?
-            if options.form
-              if type == "Document::Fields::DepedencyManyField"                
-                options.form._create_default_grid_list(gf)
+            if depedency_field?
+              if options.form
+                if type == "Document::Fields::DepedencyManyField"
+                  options.form.create_or_get_default_grid_list(gf)
+                end
+                options.form.create_or_get_default_grid_panel(gf)
               end
-              options.form._create_default_grid_panel(gf)
-
             end
           end
           gf
@@ -62,11 +64,14 @@ module Document
             if @previous_document_form_id.present?
               current_df = options.document_form_id
               if @previous_document_form_id != current_df
-                gf.nested_grids.each(&:destroy)
-                gf.create_default_grids
+                gf.grid_nested_fields.each(&:destroy)
+                if type == "Document::Fields::DepedencyManyField"
+                  options.form.create_or_get_default_grid_list(gf)
+                end
+                options.form.create_or_get_default_grid_panel(gf)
               end
             end
-          end          
+          end
         end
 
       end

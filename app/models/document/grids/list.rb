@@ -7,7 +7,7 @@ module Document
       has_one :default_query_builder, -> { where(default: true) }, class_name: "Document::QueryBuilder", as: :context
 
       accepts_nested_attributes_for :panel, reject_if: :all_blank, allow_destroy: true
-      before_save do 
+      before_save do
         if self.default
           options.build_pagination if options.pagination.blank?
           options.default_sorts.build(field: "updated_at", direction: "desc") if options.default_sorts.blank?
@@ -52,7 +52,12 @@ module Document
             field.build_default_aggregation if field.default_aggregation
             if field.nested?
               unless field.multiple?
-                stages = stages + field.grid_panel.nested_aggregation_stages({}, field_scope)
+                nested_grid = field.nested_grid_panel
+                if nested_grid
+                  nested_grid.nested_field = field
+                  nested_grid.build_default_aggregation if nested_grid.default_aggregation
+                  stages = stages + nested_grid.nested_aggregation_stages({}, field_scope)
+                end
               end
             end
             stages = stages + field.aggregation.stages
@@ -83,7 +88,7 @@ module Document
           end
           if res.is_a?(::Mongoid::Criteria)
             res.selector.each do |k,v|
-              stage.arguments.build(function: k, raw_parameter: v)              
+              stage.arguments.build(function: k, raw_parameter: v)
             end
           end
         end
@@ -101,11 +106,11 @@ module Document
       def pagination_aggregation_stage page: nil, per_page: nil
         page ||= options.pagination.page
         per_page ||= options.pagination.per_page
-        Document::Grids::AggregationStage.new(name: "$facet", order: 10000, arguments_attributes: [          
-          { function: 'data', parameters_attributes: 
-            [ 
+        Document::Grids::AggregationStage.new(name: "$facet", order: 10000, arguments_attributes: [
+          { function: 'data', parameters_attributes:
+            [
               { function: "$limit", parameter: per_page.to_i * page.to_i },
-              { function: "$skip", parameter: per_page.to_i * (page.to_i-1) } 
+              { function: "$skip", parameter: per_page.to_i * (page.to_i-1) }
             ]
           },
           { function: 'meta', parameters_attributes: [{ function: '$count', parameter: 'total' }] }
@@ -135,7 +140,6 @@ module Document
           end
           raw_stages << criteria.project(:id => "id").pipeline.filter{|p| p["$match"].present? }[0]
           aggregates = raw_stages + to_aggregation(params, field_scope)
-          debugger
           virtual_view.collection.aggregate(aggregates)
         else
           super(params, field_scope)
@@ -187,11 +191,6 @@ module Document
       end
 
       serialize :options, Options
-      before_save do 
-        if nested_field
-          options.pagination.disabled= false
-        end
-      end
 
     end
   end
