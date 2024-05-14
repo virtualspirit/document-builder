@@ -8,14 +8,29 @@ module Document
           extend ActiveSupport::Concern
           included do
 
-            validates :field, presence: true
-            # before_destroy do
-            #   if default
-            #     errors.add(:default, :invalid)
-            #     throw :abort
-            #   end
-            # end
+            attr_accessor :prevent_default_destroy
 
+            validates :field, presence: true
+
+            after_save do
+              if field_id.present?
+                if default && (default_previously_was == false || default_previously_was == nil)
+                  self.class.where.not(id: self.id).where(default: true, field_id: field_id, type: self.type).update_all(default: false)
+                end
+              end
+            end
+
+            before_destroy do
+              if default && prevent_default_destroy
+                errors.add(:default, :invalid)
+                throw :abort
+              end
+            end
+
+          end
+
+          def prevent_default_destroy!
+            self.prevent_default_destroy= true
           end
 
           def build_default_aggregation(grid_container=nil)
@@ -115,6 +130,17 @@ module Document
             accepts_nested_attributes_for :nested_grid_panel, reject_if: :all_blank
 
             validate :valid_field, if: :field
+
+            after_save do
+              if field_id.present?
+                if default && (default_previously_was == false || default_previously_was == nil)
+                  previous_default = self.class.where.not(id: self.id).where(default: true, field_id: field_id, type: self.type).each do |pd|
+                    pd.nested_grids.update_all nested_field_id: self.id
+                    pd.update_column :default, false
+                  end
+                end
+              end
+            end
 
             class_attribute :valid_field_types
             self.valid_field_types = []

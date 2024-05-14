@@ -54,6 +54,10 @@ module Document
         end
       end
 
+      def set_as_default
+        update(default: true)
+      end
+
       def aggregation_stages
         aggregation.try(:stages) || []
       end

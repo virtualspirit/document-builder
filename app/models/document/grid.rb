@@ -51,9 +51,11 @@ module Document
     has_many :grid_fields, class_name: "Document::Grids::GridField", foreign_key: "grid_id", dependent: :destroy, inverse_of: :grid
     has_many :fields, -> { rank(:position) }, through: :grid_fields, class_name: "Document::Grids::Field"
     has_many :grid_owners, class_name: "Document::GridOwner", foreign_key: "grid_id", dependent: :destroy
-    has_many :sections, through: :form, source: :sections
+    #has_many :owners, through: :grid_owners, source: :owner
+    has_many :sections, through: :form, source: :sections, source_type: :
     has_many :grid_nested_fields, class_name: "Document::Grids::GridNestedField", foreign_key: "nested_grid_id"
     has_many :nested_fields, through: :grid_nested_fields, class_name: "Document::Grids::Field"
+    has_many :query_builders, class_name: "Document::QueryBuilder", as: :configurable
 
     accepts_nested_attributes_for :fields, allow_destroy: true, reject_if: :all_blank
 
@@ -89,10 +91,14 @@ module Document
       end
     end
 
-    attr_accessor :nested_field
+    attr_accessor :nested_field, :prevent_default_destroy
+
+    def prevent_default_destroy!
+      self.prevent_default_destroy= true
+    end
 
     before_destroy do
-      if default
+      if default && prevent_default_destroy
         errors.add(:default, :invalid)
         throw :abort
       end
@@ -100,8 +106,13 @@ module Document
 
     after_create :append_default_fields, if: :default
     after_save do
-      if default && (default_previously_was == false || default_previously_was == nil)
-        self.class.where.not(id: self.id).where(default: true, form_id: form.id).update_all(default: false)
+      if form_id.present?
+        if default && (default_previously_was == false || default_previously_was == nil)
+          previous_default = self.class.where.not(id: self.id).where(default: true, form_id: form_id, type: self.type).each do |pd|#.update_all(default: false)
+            pd.grid_nested_fields.update_all(nested_grid_id: self.id)
+            pd.update_column(:default, false)
+          end
+        end
       end
     end
 
@@ -253,12 +264,21 @@ module Document
 
     scope :only_container, -> { where(nested_field_id: nil) }
     scope :owned_or_default, -> (grid_owner, form) {
-      where(form_id: form.id).left_joins(:grid_owners).scoping do
-        merge(where(document_grid_owners: { owner_type: grid_owner.class.base_class.name, owner_id: grid_owner.id }))
-        .or(merge(where(default: true)))
-      end
+      # where(form_id: form.id).left_joins(:grid_owners).scoping do
+      #   merge(where(document_grid_owners: { owner_type: grid_owner.class.base_class.name, owner_id: grid_owner.id }))
+      #   .or(merge(where(default: true)))
+      # end
+      owned_by(grid_owner).or(only_default).only_form(form)
     }
-    scope :only_default, -> { only_container.where(default: true) }
+    scope :owned_by, -> (grid_owner) {
+      # where(form_id: form.id).left_joins(:grid_owners).scoping do
+      #   where(document_grid_owners: { owner_type: grid_owner.class.base_class.name, owner_id: grid_owner.id })
+      # end
+      left_joins(:grid_owners)
+      .where(document_grid_owners: { owner_type: grid_owner.class.base_class.name, owner_id: grid_owner.id })
+    }
+    scope :only_default, -> { where(default: true) }
+    scope :only_form, -> (form) { where(form_id: form.id) }
 
     class << self
 

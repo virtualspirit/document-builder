@@ -3,6 +3,14 @@ module Document
     module Fields
       class AggregateColumn < ::Document::Grids::Field
 
+        before_save do
+          self.default_aggregation = false
+        end
+
+        def set_as_default
+          # update(default: true)
+        end
+
         class << self
 
           def created_at
