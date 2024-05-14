@@ -64,7 +64,6 @@ module Document
             field.try(:identifier)
           end
 
-
         end
 
         module Buildable
@@ -151,6 +150,79 @@ module Document
 
           def multiple?
             false
+          end
+
+          def build_default_nested_grid_panel_aggregation(params={}, field_scope = proc{|field| field})
+            if nested_grid_panel && nested_grid_panel.default_aggregation
+              matches = {}
+              if depedency_field? && field.type == "Document::Fields::DepedencyManyField"
+                matches.deep_merge!({"$expr".to_sym => { "$in".to_sym => [ "$_id", "$$#{name}_ids" ] }})
+              end
+              agg = aggregation.class.new
+              unless matches.blank?
+                agg.stages.build({name: "$match", arguments_attributes: matches.reduce([]){|arr, h| arr << { function: h[0], raw_parameter: h[1] } }})
+              end
+              agg.stages.append(nested_grid_panel.aggregation_stages(params, field_scope))
+              nested_grid_panel.aggregation.nested_stages = []
+              lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
+                { function: "from", parameter: nested_grid_panel.form.collection_name },
+                { function: "localField", parameter: depedency_field? ? "#{name}_id" : "_id"},
+                { function: "foreignField", parameter: depedency_field? ? "_id" : "#{name}_id"},
+                { function: "as", parameter: name },
+                { function: "pipeline", raw_parameter: agg.to_aggregation }
+              ])
+              nested_grid_panel.aggregation.nested_stages << lookup
+              unwind = AggregationStage.new(
+                name: "$unwind",
+                merge: false,
+                parameters_as_array: false,
+                order: 9998,
+                arguments_attributes: [
+                  { function: "path", parameter: "$#{name}" },
+                  { function: "preserveNullAndEmptyArrays", parameter: true }
+                ]
+              )
+              nested_grid_panel.aggregation.nested_stages << unwind
+            end
+            nested_grid_panel ? nested_grid_panel.aggregation.nested_stages : []
+          end
+
+          def build_default_nested_grid_list_aggregation(params={}, field_scope = proc{|field| field})
+            if nested_grid_list && nested_grid_list.default_aggregation
+              nested_grid_list.aggregation.nested_stages = []
+              matches = {}
+              if depedency_field? && field.type == "Document::Fields::DepedencyManyField"
+                matches.deep_merge!({"$expr".to_sym => { "$in".to_sym => [ "$_id", "$$#{name}_ids" ] }})
+              end
+              agg = aggregation.class.new
+              unless matches.blank?
+                agg.stages.build({name: "$match", arguments_attributes: matches.reduce([]){|arr, h| arr << { function: h[0], raw_parameter: h[1] } }})
+              end
+              agg.stages.append(nested_grid_list.aggregation_stages(params, field_scope))
+              if depedency_field? && field.type == "Document::Fields::DepedencyManyField"
+                lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
+                    { function: "from", parameter: nested_grid_list.form.collection_name },
+                    { function: "let", parameters_as_array: false, parameters_attributes: [
+                        { function: "#{name}_ids", parameter: "$#{name}_ids" }
+                      ]
+                    },
+                    { function: "as", parameter: name },
+                    { function: "pipeline", raw_parameter: agg.to_aggregation }
+                  ])
+              else
+                lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
+                      { function: "from", parameter: nested_grid_list.form.collection_name },
+                      { function: "localField", parameter: depedency_field? ? "#{name}_id" : "_id"},
+                      { function: "foreignField", parameter: depedency_field? ? "_id" : "#{name}_id"},
+                      { function: "as", parameter: name },
+                      { function: "pipeline", raw_parameter: agg.to_aggregation }
+                ])
+              end
+              nested_grid_list.aggregation.nested_stages << lookup
+              project = AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}_count", parameter: 1}])
+              nested_grid_list.aggregation.nested_stages << project
+            end
+            nested_grid_list ? nested_grid_list.aggregation.nested_stages : []
           end
 
         end

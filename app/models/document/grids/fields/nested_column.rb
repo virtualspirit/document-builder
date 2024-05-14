@@ -18,7 +18,7 @@ module Document
           if default_aggregation
             if name
               super
-              if field.attached_nested_form?
+              if field.depedency_field?
                 aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}_id", parameter: 1}])
               end
             end

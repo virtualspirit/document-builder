@@ -9,6 +9,22 @@ module Document
 
       #before_create :append_sections
 
+      validate do
+        if self.nested_field
+          record.add(:nested_field, :invalid) unless nested_field.nested? && !nested_field.multiple?
+        end
+      end
+
+      before_create do
+        if self.nested_field
+          if nested_field.multiple?
+            if nested_field.nested_grid_list
+              self.list_id= nested_field.nested_grid_list.id
+            end
+          end
+        end
+      end
+
       def is_panel?
         true
       end
@@ -43,15 +59,20 @@ module Document
         fields.each do |field|
           if field_scope.call(field)
             if field.nested?
-              nested_grid = if field.multiple?
-                field.nested_grid_list
+              # nested_grid = if field.multiple?
+              #   field.nested_grid_list
+              # else
+              #   field.nested_grid_panel
+              # end
+              # if nested_grid
+              #   nested_grid.nested_field= field
+              #   nested_grid.build_default_aggregation if nested_grid.default_aggregation
+              #   stages = stages + nested_grid.nested_aggregation_stages({}, field_scope)
+              # end
+              if field.multiple?
+                stages = stages + field.build_default_nested_grid_list_aggregation
               else
-                field.nested_grid_panel
-              end
-              if nested_grid
-                nested_grid.nested_field= field
-                nested_grid.build_default_aggregation if nested_grid.default_aggregation
-                stages = stages + nested_grid.nested_aggregation_stages({}, field_scope)
+                stages = stages + field.build_default_nested_grid_panel_aggregation
               end
             end
             if field.default_aggregation
@@ -60,14 +81,14 @@ module Document
             stages = stages + field.aggregation.stages
           end
         end
-        stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "created_at", parameter: 1}])
-        stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "updated_at", parameter: 1}])
+        # stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "created_at", parameter: 1}])
+        # stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "updated_at", parameter: 1}])
         stages
       end
 
       def data(params={}, field_scope = proc{|field| field})
         raw_stages = []
-        res = virtual_view.where(id: params[:id])
+        res = virtual_view.where(id: params[:id] || params[:instance_id])
         raw_stages << res.project(:id => "id").pipeline.filter{|p| p["$match"].present? }[0]
         aggregates = raw_stages + to_aggregation(params, field_scope)
         virtual_view.collection.aggregate(aggregates).first

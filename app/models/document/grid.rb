@@ -48,7 +48,7 @@ module Document
     #belongs_to :nested_field, class_name: "Document::Grids::Field", foreign_key: "nested_field_id", optional: true
     #belongs_to :container, class_name: "Document::Grid", foreign_key: "container_id", optional: true
     has_many :nested_grids, class_name: "Document::Grid", foreign_key: "container_id"
-    has_many :grid_fields, class_name: "Document::Grids::GridField", foreign_key: "grid_id", dependent: :destroy
+    has_many :grid_fields, class_name: "Document::Grids::GridField", foreign_key: "grid_id", dependent: :destroy, inverse_of: :grid
     has_many :fields, -> { rank(:position) }, through: :grid_fields, class_name: "Document::Grids::Field"
     has_many :grid_owners, class_name: "Document::GridOwner", foreign_key: "grid_id", dependent: :destroy
     has_many :sections, through: :form, source: :sections
@@ -70,22 +70,44 @@ module Document
       end
     end
 
+    validate do
+      unless type_was.nil?
+        if type_was != type
+          errors.add(:type, :invalid)
+        end
+      end
+    end
+
+    validate do
+      unless options.valid?
+        errors.add(:options, :invalid)
+        options.errors.each {|e| errors.import e, **e.options.merge(attribute: "options.#{e.attribute}")}
+      end
+      unless aggregation.valid?
+        errors.add(:aggregation, :invalid)
+        aggregation.errors.each {|e| errors.import e, **e.options.merge(attribute: "aggregation.#{e.attribute}")}
+      end
+    end
+
     attr_accessor :nested_field
 
-    # before_save do
-    #   if nested_field
-    #     self.container = nested_field.grid
-    #   end
-    # end
-
-    # before_destroy do
-    #   if default
-    #     errors.add(:default, :invalid)
-    #     throw :abort
-    #   end
-    # end
+    before_destroy do
+      if default
+        errors.add(:default, :invalid)
+        throw :abort
+      end
+    end
 
     after_create :append_default_fields, if: :default
+    after_save do
+      if default && (default_previously_was == false || default_previously_was == nil)
+        self.class.where.not(id: self.id).where(default: true, form_id: form.id).update_all(default: false)
+      end
+    end
+
+    def set_as_default
+      update(default: true)
+    end
 
     def virtual_view
       if form
@@ -99,6 +121,10 @@ module Document
 
     def is_list?
       false
+    end
+
+    def has_sections?
+      is_panel? && form.try(:type) == "Document::Form"
     end
 
     def append_field field
@@ -207,6 +233,14 @@ module Document
       embeds_many :html_options, class_name: "Document::Grid::Options::HtmlOptions"
       accepts_nested_attributes_for :html_options, allow_destroy: true
 
+      validate do
+        default_scopes.each_with_index do |dc, i|
+          unless dc.valid?
+            dc.errors.each {|e| errors.import e, **e.options.merge(attribute: "default_scopes.#{i}.#{e.attribute}")}
+          end
+        end
+      end
+
       class HtmlOptions < Document::FieldOptions
         attribute :name, :string
         attribute :value, :string
@@ -219,22 +253,20 @@ module Document
 
     scope :only_container, -> { where(nested_field_id: nil) }
     scope :owned_or_default, -> (grid_owner, form) {
-      Document::Grid.where(form_id: form.id).left_joins(:grid_owners).scoping do
-        merge(Document::Grid.where(document_grid_owners: { owner_type: grid_owner.class.base_class.name, owner_id: grid_owner.id }))
-        .or(merge(Document::Grid.where(default: true)))
+      where(form_id: form.id).left_joins(:grid_owners).scoping do
+        merge(where(document_grid_owners: { owner_type: grid_owner.class.base_class.name, owner_id: grid_owner.id }))
+        .or(merge(where(default: true)))
       end
     }
     scope :only_default, -> { only_container.where(default: true) }
 
     class << self
 
-
       def get_default_grid_for(grid_owner, form)
-        only_container.where(form_id: form.id).left_joins(:grid_owners).scoping do
-          merge(where(document_grid_owners: { owner_type: grid_owner.class.base_class.name, owner_id: grid_owner.id }))
-          .or(merge(where(default: true)))
-        end.order("document_grids.default asc").first
-        #form_grids.find_by(form: form, type: "Document::Grids::Panel") || form.default_grid_panel
+        owned_or_default(grid_owner, form)
+        .includes(*[:form, :sections, :fields => [ :field => [:nested_form], :nested_grid_panel => [:form, :sections, :fields], :nested_grid_list => [:form, :fields]]])
+        .order("document_grids.default asc")
+        .first
       end
 
     end

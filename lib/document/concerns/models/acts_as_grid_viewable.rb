@@ -15,6 +15,20 @@ module Document
 
         end
 
+        def get_default_grid_panel
+          grids
+          .includes(*[:form, :sections, :fields => [ :field => [:nested_form], :nested_grid_panel => [:form, :sections, :fields], :nested_grid_list => [:form, :fields]]])
+          .where(default: true, form_id: self.id, type: "Document::Grids::Panel")
+          .first
+        end
+
+        def get_default_grid_list
+          grids
+          .includes(*[:form, :sections, :fields => [ :field => [:nested_form], :nested_grid_panel => [:form, :sections, :fields], :nested_grid_list => [:form, :fields]]])
+          .where(default: true, form_id: self.id, type: "Document::Grids::List")
+          .first
+        end
+
         def create_default_grids
           if default_grid_panel.blank? && default_grid_list.blank?
             create_or_get_default_grids

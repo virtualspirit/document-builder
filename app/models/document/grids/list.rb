@@ -7,10 +7,25 @@ module Document
       has_one :default_query_builder, -> { where(default: true) }, class_name: "Document::QueryBuilder", as: :context
 
       accepts_nested_attributes_for :panel, reject_if: :all_blank, allow_destroy: true
+
+      validate do
+        if self.nested_field
+          record.add(:nested_field, :invalid) unless nested_field.nested? && nested_field.multiple?
+        end
+      end
+
       before_save do
         if self.default
           options.build_pagination if options.pagination.blank?
           options.default_sorts.build(field: "updated_at", direction: "desc") if options.default_sorts.blank?
+        end
+      end
+
+      after_create do
+        if self.nested_field
+          if nested_field.nested_grid_panel
+            nested_field.nested_grid_panel.update(list_id: self.id)
+          end
         end
       end
 
@@ -52,12 +67,13 @@ module Document
             field.build_default_aggregation if field.default_aggregation
             if field.nested?
               unless field.multiple?
-                nested_grid = field.nested_grid_panel
-                if nested_grid
-                  nested_grid.nested_field = field
-                  nested_grid.build_default_aggregation if nested_grid.default_aggregation
-                  stages = stages + nested_grid.nested_aggregation_stages({}, field_scope)
-                end
+                # nested_grid = field.nested_grid_panel
+                # if nested_grid
+                #   nested_grid.nested_field = field
+                #   nested_grid.build_default_aggregation if nested_grid.default_aggregation
+                #   stages = stages + nested_grid.nested_aggregation_stages({}, field_scope)
+                # end
+                stages = stages + field.build_default_nested_grid_panel_aggregation
               end
             end
             stages = stages + field.aggregation.stages
@@ -160,6 +176,19 @@ module Document
         attribute :allowed_search_types, :string, array: true, default: ['lazy_search']
 
         SEARCH_TYPES = ['lazy_search', 'heavy_search', 'configured_advanced_search', 'advanced_search']
+
+        validate do
+          if pagination
+            unless pagination.valid?
+              pagination.errors.each {|e| errors.import e, **e.options.merge(attribute: "pagination.#{e.attribute}")}
+            end
+          end
+          default_sorts.each_with_index do |ds, i|
+            unless ds.valid?
+              ds.errors.each {|e| errors.import e, **e.options.merge(attribute: "default_sorts.#{i}.#{e.attribute}")}
+            end
+          end
+        end
 
       end
 

@@ -25,7 +25,7 @@ module Document
 
       belongs_to :field, class_name: 'Document::Field', foreign_key: "field_id", optional: true
       belongs_to :section, class_name: "Document::Section", optional: true, foreign_key: "section_id"
-      has_many :grid_fields, class_name: "Document::Grids::GridField", foreign_key: "field_id", dependent: :destroy
+      has_many :grid_fields, class_name: "Document::Grids::GridField", foreign_key: "field_id", dependent: :destroy, inverse_of: :field
       has_many :grids, through: :grid_fields
       has_many :grid_panels, lambda { where(type: "Document::Grids::Panel") }, through: :grid_fields, source: :grid
       has_many :grid_lists, lambda { where(type: "Document::Grids::List") }, through: :grid_fields, source: :grid
@@ -46,6 +46,14 @@ module Document
 
       validates :default_aggregation, acceptance: true, if: :default
 
+      validate do
+        unless type_was.nil?
+          if type_was != type
+            errors.add(:type, :invalid)
+          end
+        end
+      end
+
       def aggregation_stages
         aggregation.try(:stages) || []
       end
@@ -62,12 +70,23 @@ module Document
         false
       end
 
-      def column_names
+      def column_names(grid_container = nil)
+        if grid_container
+          build_default_aggregation(grid_container)
+        end
         aggregation.stages.select{|stage| stage.name == "$project" }.map{|stage| stage.arguments.map(&:function) }.flatten
       end
 
-      def build_default_aggregation
+      def build_default_aggregation(grid_container=nil)
         aggregation
+      end
+
+      def field_type
+        nil
+      end
+
+      def field_identifier
+        nil
       end
 
       class << self

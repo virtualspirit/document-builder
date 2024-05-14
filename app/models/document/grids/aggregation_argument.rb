@@ -35,6 +35,10 @@ module Document
       embeds_many :parameters, class_name: self.name, extend: ParemetersExtension
       accepts_nested_attributes_for :parameters, allow_destroy: true
 
+      validates :function, presence: true
+      validates :parameter, presence: true, if: proc { |arg| arg.raw_parameter.blank? }
+      validates :raw_parameter, presence: true, if: proc { |arg| arg.parameter.blank? }
+
       def to_argument
         if pipeline
           { "#{function}" => pipeline.to_aggregation }
