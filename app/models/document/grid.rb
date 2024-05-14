@@ -45,18 +45,24 @@ module Document
   class Grid < ApplicationRecord
 
     belongs_to :form, class_name: "Document::BareForm", foreign_key: "form_id", optional: true
-    belongs_to :nested_field, class_name: "Document::Grids::Field", foreign_key: "nested_field_id", optional: true
-    belongs_to :container, class_name: "Document::Grid", foreign_key: "container_id", optional: true
+    #belongs_to :nested_field, class_name: "Document::Grids::Field", foreign_key: "nested_field_id", optional: true
+    #belongs_to :container, class_name: "Document::Grid", foreign_key: "container_id", optional: true
     has_many :nested_grids, class_name: "Document::Grid", foreign_key: "container_id"
-    has_many :fields, -> { rank(:position) }, class_name: "Document::Grids::Field", dependent: :destroy, foreign_key: "grid_id", inverse_of: :grid, index_errors: true
+    has_many :grid_fields, class_name: "Document::Grids::GridField", foreign_key: "grid_id", dependent: :destroy, inverse_of: :grid
+    has_many :fields, -> { rank(:position) }, through: :grid_fields, class_name: "Document::Grids::Field"
     has_many :grid_owners, class_name: "Document::GridOwner", foreign_key: "grid_id", dependent: :destroy
-    has_many :sections, through: :form, source: :sections
+    #has_many :owners, through: :grid_owners, source: :owner
+    has_many :sections, through: :form, source: :sections, source_type: :
+    has_many :grid_nested_fields, class_name: "Document::Grids::GridNestedField", foreign_key: "nested_grid_id"
+    has_many :nested_fields, through: :grid_nested_fields, class_name: "Document::Grids::Field"
+    has_many :query_builders, class_name: "Document::QueryBuilder", as: :configurable
 
-    accepts_nested_attributes_for :fields, allow_destroy: true
+    accepts_nested_attributes_for :fields, allow_destroy: true, reject_if: :all_blank
 
     validates :name, presence: true
-    validates :form, presence: true, unless: :nested_field
-    validates :nested_field, presence: true, unless: :form
+    validates :form, presence: true#, unless: :nested_field
+    #validates :nested_field, presence: true, unless: :form
+    validates :default_aggregation, acceptance: true, if: :default
 
     validate do
       if form
@@ -66,22 +72,53 @@ module Document
       end
     end
 
-    before_save do
-      if nested_field
-        self.container = nested_field.grid
+    validate do
+      unless type_was.nil?
+        if type_was != type
+          errors.add(:type, :invalid)
+        end
       end
     end
-    
-    before_destroy do 
-      if default
-        errors.add(:default, :invalid) 
+
+    validate do
+      unless options.valid?
+        errors.add(:options, :invalid)
+        options.errors.each {|e| errors.import e, **e.options.merge(attribute: "options.#{e.attribute}")}
+      end
+      unless aggregation.valid?
+        errors.add(:aggregation, :invalid)
+        aggregation.errors.each {|e| errors.import e, **e.options.merge(attribute: "aggregation.#{e.attribute}")}
+      end
+    end
+
+    attr_accessor :nested_field, :prevent_default_destroy
+
+    def prevent_default_destroy!
+      self.prevent_default_destroy= true
+    end
+
+    before_destroy do
+      if default && prevent_default_destroy
+        errors.add(:default, :invalid)
         throw :abort
       end
     end
 
-    after_initialize :build_default_aggregation, if: Proc.new{|f| f.default_aggregation && f.persisted? }#if: :default_aggregation
+    after_create :append_default_fields, if: :default
+    after_save do
+      if form_id.present?
+        if default && (default_previously_was == false || default_previously_was == nil)
+          previous_default = self.class.where.not(id: self.id).where(default: true, form_id: form_id, type: self.type).each do |pd|#.update_all(default: false)
+            pd.grid_nested_fields.update_all(nested_grid_id: self.id)
+            pd.update_column(:default, false)
+          end
+        end
+      end
+    end
 
-    before_create :append_default_fields, if: :default
+    def set_as_default
+      update(default: true)
+    end
 
     def virtual_view
       if form
@@ -97,36 +134,46 @@ module Document
       false
     end
 
-    def add_field field, namespace: [], persist: true
-      if nested_field
-        namespace << nested_field.name
-      end
-      gf = ::Document::Grids::Field.build(field, namespace)
-      gf.grid = self
-      gf.save if persist
-      gf
+    def has_sections?
+      is_panel? && form.try(:type) == "Document::Form"
+    end
+
+    def append_field field
+      self.fields << field
     end
 
     def append_default_fields
-      append_fields(form.fields)
+      gfs = []
+      form.fields.includes(:default_grid_field).each do |f|
+        gf = f.default_grid_field || f.create_or_get_default_gried_field
+        gfs << gf
+      end
+      ##append timestamps
+      gfs = gfs + Document::Grids::Field.timestamp_fields
+      append_field gfs
     end
 
-    def append_fields _fields = []
-      self.fields << _fields.map{|f| add_field(f, persist: false) }
-    end
-
-    def build_default_aggregation
-      aggregation
+    def build_default_aggregation(grid_container=nil)
+      if default_aggregation
+        aggregation.stages = []
+        aggregation.nested_stages = []
+      end
     end
 
     def aggregation_stages(params={}, field_scope = proc{|field| field})
       stages = fields_stages(field_scope)
+      if scopes_stage = default_scopes_aggregation_stage
+        stages << scopes_stage
+      end
       stages
     end
 
     def to_aggregation(params={}, field_scope = proc{|field| field})
-      agg = aggregation.class.new
-      agg.stages.append(aggregation_stages)
+      if default_aggregation
+        build_default_aggregation
+      end
+      agg = aggregation
+      agg.stages.append(aggregation_stages(params, field_scope))
       agg.to_aggregation
     end
 
@@ -134,11 +181,10 @@ module Document
       stages = []
       fields.each do |field|
         if field_scope.call(field)
+          field.build_default_aggregation if field.default_aggregation
           stages = stages + field.aggregation.stages
         end
       end
-      stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "created_at", parameter: 1}])
-      stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "updated_at", parameter: 1}])
       stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "version", parameter: 1}])
       if form.step?
         stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_step", parameter: 1}])
@@ -152,7 +198,8 @@ module Document
     def nested_aggregation_stages(params={}, field_scope = proc{|field| field})
       stages = []
       if nested_field
-        stages = aggregation.stages.map{|stg|
+        build_default_aggregation if default_aggregation
+        stages = aggregation.nested_stages.map{|stg|
           if stg.name == "$lookup"
             matches = {}
             if nested_field.depedency_field? && nested_field.field.type == "Document::Fields::DepedencyManyField"
@@ -172,21 +219,17 @@ module Document
     end
 
     def default_scopes_aggregation_stage
-      stage = Document::Grids::AggregationStage.new(name: "$match")
       scopes = options.default_scopes
-      if scopes.length > 0
-        scopes.each do |scope|
-          criteria = scope.to_criteria
-          criteria.each do |k,v|
-            if v.is_a?(Hash)
-              stage.arguments << Document::Grids::AggregationArgument.new(function: k, parameters: v.map{|s,c| {function: s, parameter: c} })
-            else
-              stage.arguments << Document::Grids::AggregationArgument.new(function: k, parameter: v)
-            end
+      if scopes.length
+        stage = Document::Grids::AggregationStage.new(name: "$match")
+        res = virtual_view.run_advanced_search(scopes)
+        if res.is_a?(::Mongoid::Criteria)
+          res.selector.each do |k,v|
+            stage.arguments.build(function: k, raw_parameter: v)
           end
         end
+        stage
       end
-      stage
     end
 
     def data(params={}, field_scope = proc{|field| field})
@@ -201,6 +244,14 @@ module Document
       embeds_many :html_options, class_name: "Document::Grid::Options::HtmlOptions"
       accepts_nested_attributes_for :html_options, allow_destroy: true
 
+      validate do
+        default_scopes.each_with_index do |dc, i|
+          unless dc.valid?
+            dc.errors.each {|e| errors.import e, **e.options.merge(attribute: "default_scopes.#{i}.#{e.attribute}")}
+          end
+        end
+      end
+
       class HtmlOptions < Document::FieldOptions
         attribute :name, :string
         attribute :value, :string
@@ -211,23 +262,31 @@ module Document
     serialize :options, Options
     serialize :aggregation, Document::Grids::Aggregation
 
-    scope :only_container, -> { where(nested_field_id: nil) } 
+    scope :only_container, -> { where(nested_field_id: nil) }
     scope :owned_or_default, -> (grid_owner, form) {
-      Document::Grid.where(form_id: form.id).left_joins(:grid_owners).scoping do
-        merge(Document::Grid.where(document_grid_owners: { owner_type: grid_owner.class.base_class.name, owner_id: grid_owner.id }))
-        .or(merge(Document::Grid.where(default: true)))
-      end
+      # where(form_id: form.id).left_joins(:grid_owners).scoping do
+      #   merge(where(document_grid_owners: { owner_type: grid_owner.class.base_class.name, owner_id: grid_owner.id }))
+      #   .or(merge(where(default: true)))
+      # end
+      owned_by(grid_owner).or(only_default).only_form(form)
     }
-    
+    scope :owned_by, -> (grid_owner) {
+      # where(form_id: form.id).left_joins(:grid_owners).scoping do
+      #   where(document_grid_owners: { owner_type: grid_owner.class.base_class.name, owner_id: grid_owner.id })
+      # end
+      left_joins(:grid_owners)
+      .where(document_grid_owners: { owner_type: grid_owner.class.base_class.name, owner_id: grid_owner.id })
+    }
+    scope :only_default, -> { where(default: true) }
+    scope :only_form, -> (form) { where(form_id: form.id) }
+
     class << self
 
-      
       def get_default_grid_for(grid_owner, form)
-        only_container.where(form_id: form.id).left_joins(:grid_owners).scoping do
-          merge(where(document_grid_owners: { owner_type: grid_owner.class.base_class.name, owner_id: grid_owner.id }))
-          .or(merge(where(default: true)))
-        end.order("document_grids.default asc").first
-        #form_grids.find_by(form: form, type: "Document::Grids::Panel") || form.default_grid_panel
+        owned_or_default(grid_owner, form)
+        .includes(*[:form, :sections, :fields => [ :field => [:nested_form], :nested_grid_panel => [:form, :sections, :fields], :nested_grid_list => [:form, :fields]]])
+        .order("document_grids.default asc")
+        .first
       end
 
     end

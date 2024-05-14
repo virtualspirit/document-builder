@@ -8,111 +8,81 @@ module Document
           has_many :grids, class_name: "Document::Grid", foreign_key: "form_id", dependent: :destroy
           has_many :grid_lists, class_name: "Document::Grids::List", foreign_key: "form_id"
           has_many :grid_panels, class_name: "Document::Grids::Panel", foreign_key: "form_id"
+          has_one :default_grid_panel, -> { where(default: true) }, class_name: "Document::Grids::Panel", foreign_key: "form_id"
+          has_one :default_grid_list, -> { where(default: true) }, class_name: "Document::Grids::List", foreign_key: "form_id"
 
-          after_create :create_default_grids, if: proc{|gv| gv.type != "Document::NestedForm" }
-          after_create :attach_to_default_grids, if: proc{|gv| gv.type == "Document::NestedForm" }
+          after_create :create_default_grids
 
         end
 
-        def default_grids
-          grids.where(default: true, container_id: nil)
+        def get_default_grid_panel
+          grids
+          .includes(*[:form, :sections, :fields => [ :field => [:nested_form], :nested_grid_panel => [:form, :sections, :fields], :nested_grid_list => [:form, :fields]]])
+          .where(default: true, form_id: self.id, type: "Document::Grids::Panel")
+          .first
         end
 
-        def default_grid_panel
-          default_grids.where(type: "Document::Grids::Panel").first || create_default_grid_panel
-        end
-
-        def default_grid_list
-          default_grids.where(type: "Document::Grids::List").first || create_default_grid_list
+        def get_default_grid_list
+          grids
+          .includes(*[:form, :sections, :fields => [ :field => [:nested_form], :nested_grid_panel => [:form, :sections, :fields], :nested_grid_list => [:form, :fields]]])
+          .where(default: true, form_id: self.id, type: "Document::Grids::List")
+          .first
         end
 
         def create_default_grids
-          # if type == "Document::NestedForm"
-          #   created_default_grid_panel
-          #   if attachable.type == "Document::Fields::MultipleNestedFormField"
-          #     create_default_grid_list
-          #   end
-          # end
-          create_default_grid_list
-          create_default_grid_panel
+          if default_grid_panel.blank? && default_grid_list.blank?
+            create_or_get_default_grids
+          else
+            [default_grid_panel, default_grid_list]
+          end
         end
 
-        def create_default_grid_list
-          @list ||= grid_lists.where(default: true).first
-          unless @list
-            @list = grid_lists.create(default: true, name: grid_title)#, nested_field: type == "Document::NestedForm" ? attachable : nil)
+        def create_or_get_default_grids
+          if type == "Document::Form"
+            create_or_get_default_grid_list
+            create_or_get_default_grid_panel
           end
+          if type == "Document::NestedForm"
+            if attachable.present?
+              if attachable.type == 'Document::Fields::MultipleNestedFormField'
+                create_or_get_default_grid_list(attachable.create_or_get_default_gried_field)
+              end
+              create_or_get_default_grid_panel(attachable.create_or_get_default_gried_field)
+            end
+          end
+          [create_or_get_default_grid_panel, create_or_get_default_grid_list]
+        end
+
+        def create_or_get_default_grid_list(nested_field=nil)
+          @list ||= default_grid_list
+          unless @list
+            @list = create_default_grid_list(default: true, name: grid_title)
+            @list.grid_owners.create(owner: form.owner)
+          end
+          @list.nested_fields << nested_field if nested_field
           @list
         end
 
-        def create_default_grid_panel
-          panel = grid_panels.where(default: true).first
+        def create_or_get_default_grid_panel(nested_field=nil)
+          panel = default_grid_panel
           unless panel
-            grid_panels.create(default: true, name: grid_title, list: create_default_grid_list)#, nested_field: type == "Document::NestedForm" ? attachable : nil)
+            panel = create_default_grid_panel(default: true, name: grid_title, list: default_grid_list)
+            panel.grid_owners.create(owner: form.owner)
           end
-        end
-
-        def attach_to_default_grids
-          if type == "Document::NestedForm"
-            if attachable
-              Grid.where(nested_field_id: attachable.grid_fields.pluck(:id)).update_all(form_id: self.id)
-            end
-          end
+          panel.nested_fields << nested_field if nested_field
+          panel
         end
 
         def grid_title
           if type == "Document::NestedForm"
-            attachable.label
+            attachable.try(:label)
           else
             title
           end
         end
 
       end
-      # module ActsAsGridViewable
-      #   extend ActiveSupport::Concern
 
-      #   included  do
-      #     has_many :grids, class_name: "Document::Grid", as: :form, dependent: :destroy
-      #     has_many :grid_lists, class_name: "Document::Grids::List", as: :form
-      #     has_many :grid_panels, class_name: "Document::Grids::Panel", as: :form
-
-      #     after_create :create_default_grids
-
-      #   end
-
-      #   def default_grids
-      #     grids.where(default: true, nested_field: nil)
-      #   end
-
-      #   def create_default_grids
-      #     create_default_grid_list
-      #     create_default_grid_panel
-      #   end
-
-      #   def create_default_grid_list
-      #     list = grid_lists.where(default: true).first
-      #     unless list
-      #       grid_lists.create(default: true, name: grid_title, nested_field: type == "Document::NestedForm" ? attachable : nil)
-      #     end
-      #   end
-
-      #   def create_default_grid_panel
-      #     panel = grid_panels.where(default: true).first
-      #     unless panel
-      #       grid_panels.create(default: true, name: grid_title, nested_field: type == "Document::NestedForm" ? attachable : nil)
-      #     end
-      #   end
-
-      #   def grid_title
-      #     title
-      #   end
-
-      #   def to_virtual_view
-      #     raise ArgumentError, "#{self} must return a #{::Document::VirtualModel}'s subclass"
-      #   end
-
-      # end
     end
   end
 end

@@ -97,12 +97,25 @@ class <%= migration_class_name %> < ActiveRecord::Migration<%= migration_version
       t.integer :position
       t.string :type
       t.boolean :default_aggregation
+      t.boolean :default, default: false
       t.text :aggregation
       t.timestamps
     end
 
     create_table :document_grid_owners do |t|
       t.references :owner, polymorphic: true
+      t.references :grid
+      t.timestamps
+    end
+
+    create_table :document_grids_fields do |t|
+      t.references :field
+      t.references :grid
+      t.timestamps
+    end
+
+    create_table :document_grids_nested_fields do |t|
+      t.references :field
       t.references :grid
       t.timestamps
     end

@@ -5,20 +5,29 @@ module Document
 
         class Builder < Document::FieldOptions
 
-          attribute :form_id, :string
+          #attribute :form_id, :string
           embeds_many :clauses, class_name: "Document::Concerns::VirtualModels::AdvancedSearch::Clause"
           accepts_nested_attributes_for :clauses, reject_if: :all_blank, allow_destroy: true
 
-          def form_id
-            case Document::Form.column_for_attribute(:id).type
-            when :uuid
-              form_id.to_s
-            when :integer
-              form_id.to_s.to_i
-            else
-              super
+          validate do
+            clauses.each_with_index do |clause, i|
+              unless clause.valid?
+                errors.add(:clauses, :invalid)
+                clause.errors.each {|e| errors.import e, **e.options.merge(attribute: "clauses.#{i}.#{e.attribute}")}
+              end
             end
           end
+
+          # def form_id
+          #   case Document::Form.column_for_attribute(:id).type
+          #   when :uuid
+          #     form_id.to_s
+          #   when :integer
+          #     form_id.to_s.to_i
+          #   else
+          #     super
+          #   end
+          # end
 
           class << self
 

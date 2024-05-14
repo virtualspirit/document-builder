@@ -3,9 +3,26 @@ module Document
 
     class Aggregation < Document::FieldOptions
 
-      attribute :default, :boolean, default: true
-      embeds_many :stages, class_name: "Document::Grids::AggregationStage"
+      embeds_many :stages, class_name: "Document::Grids::AggregationStage", index_errors: true
       accepts_nested_attributes_for :stages, reject_if: :all_blank, allow_destroy: true
+      embeds_many :nested_stages, class_name: "Document::Grids::AggregationStage", index_errors: true
+      accepts_nested_attributes_for :nested_stages, reject_if: :all_blank, allow_destroy: true
+
+      validate do
+        stages.each_with_index do |stage, i|
+          unless stage.valid?
+            errors.add(:stages, :invalid)
+            stage.errors.each {|e| errors.import e, **e.options.merge(attribute: "stages.#{i}.#{e.attribute}")}
+          end
+        end
+
+        nested_stages.each_with_index do |stage, i|
+          unless stage.valid?
+            errors.add(:nested_stages, :invalid)
+            stage.errors.each {|e| errors.import e, **e.options.merge(attribute: "nested_stages.#{i}.#{e.attribute}")}
+          end
+        end
+      end
 
       def to_aggregation
         # project = {}

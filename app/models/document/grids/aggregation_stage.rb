@@ -13,6 +13,15 @@ module Document
       embeds_many :arguments, class_name: 'Document::Grids::AggregationArgument'
       accepts_nested_attributes_for :arguments, allow_destroy: true
 
+      validate do
+        arguments.each_with_index do |arg, i|
+          unless arg.valid?
+            errors.add(:arguments, :invalid)
+            arg.errors.each {|e| errors.import e, **e.options.merge(attribute: "arguments.#{i}.#{e.attribute}")}
+          end
+        end
+      end
+
       def to_stage
         {
           "#{name}": to_arguments

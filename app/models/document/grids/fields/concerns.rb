@@ -7,75 +7,68 @@ module Document
 
           extend ActiveSupport::Concern
           included do
-            belongs_to :field, class_name: 'Document::Field', foreign_key: "field_id"
-            belongs_to :section, class_name: "Document::Section", optional: true, foreign_key: "section_id"
-            has_many :grids, class_name: "Document::Grid", foreign_key: "nested_field_id", dependent: :destroy
-            has_one :grid_panel, class_name: "Document::Grids::Panel", foreign_key: "nested_field_id", dependent: :destroy
-            has_one :grid_list, class_name: "Document::Grids::List", foreign_key: "nested_field_id", dependent: :destroy
 
-            # before_save :set_section
-            after_initialize :build_default_aggregation, if: Proc.new{|f| f.default_aggregation && f.persisted? }
+            attr_accessor :prevent_default_destroy
 
-          end
+            validates :field, presence: true
 
-          # def set_section
-          #   if grid.is_panel? && field.section_id && section.nil?
-          #     self.section = grid.sections.find_by(section_id: field.section_id)
-          #     if section.nil?
-          #       sect = grid.append_section(field.section)
-          #       sect.save
-          #       self.section = sect
-          #     end
-          #   end
-          # end
-
-
-          def build_default_aggregation
-            if name && aggregation
-              aggregation.stages = []
-              case field.type.demodulize.underscore
-              when "geolocation_field"
-                aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", parameter: 1}])
-                aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}#{field.options.location_field_suffix_name}", parameter: 1}])
-              when "attachment_field"
-                aggregation.stages.build(name: "$addFields", merge: false, order: 9997,
-                  arguments_attributes: [
-                    function: "#{name}",
-                    parameter: "$_#{name}_url"
-                  ]
-                )
-                aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", parameter: 1}])
-                aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}_data", parameter: 1}])
-              when "multiple_attachment_field"
-                aggregation.stages.build(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
-                  { function: "from", parameter: Document::Fields::Embeds::MultipleAttachment.collection_name.to_s },
-                  { function: "localField", parameter: "_id"},
-                  { function: "foreignField", parameter: "attachable_id"},
-                  { function: "as", parameter: name },
-                  { function: "pipeline", raw_parameter: 
-                    [ 
-                      {"$addFields" => { "attachment": "$_attachment_url" }},
-                      {"$project" => { "_id": 1, "attachment": 1, "attachment_data": 1 }} 
-                    ]
-                  }
-                ])
-                aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", parameter: 1}])
-              else
-                aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", parameter: 1}])
+            after_save do
+              if field_id.present?
+                if default && (default_previously_was == false || default_previously_was == nil)
+                  self.class.where.not(id: self.id).where(default: true, field_id: field_id, type: self.type).update_all(default: false)
+                end
               end
             end
+
+            before_destroy do
+              if default && prevent_default_destroy
+                errors.add(:default, :invalid)
+                throw :abort
+              end
+            end
+
           end
 
-          def nested?
-            false
+          def prevent_default_destroy!
+            self.prevent_default_destroy= true
           end
 
-          def multiple?
-            false
-          end
-
-          def column_names
-            aggregation.stages.select{|stage| stage.name == "$project" }.map{|stage| stage.arguments.map(&:function) }.flatten 
+          def build_default_aggregation(grid_container=nil)
+            if default_aggregation
+              if name
+                aggregation.stages = []
+                case field.type.demodulize.underscore
+                when "geolocation_field"
+                  aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", parameter: 1}])
+                  aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}#{field.options.location_field_suffix_name}", parameter: 1}])
+                when "attachment_field"
+                  aggregation.stages.build(name: "$addFields", merge: false, order: 9997,
+                    arguments_attributes: [
+                      function: "#{name}",
+                      parameter: "$_#{name}_url"
+                    ]
+                  )
+                  aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", parameter: 1}])
+                  aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}_data", parameter: 1}])
+                when "multiple_attachment_field"
+                  aggregation.stages.build(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
+                    { function: "from", parameter: Document::Fields::Embeds::MultipleAttachment.collection_name.to_s },
+                    { function: "localField", parameter: "_id"},
+                    { function: "foreignField", parameter: "attachable_id"},
+                    { function: "as", parameter: name },
+                    { function: "pipeline", raw_parameter:
+                      [
+                        {"$addFields" => { "attachment": "$_attachment_url" }},
+                        {"$project" => { "_id": 1, "attachment": 1, "attachment_data": 1 }}
+                      ]
+                    }
+                  ])
+                  aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", parameter: 1}])
+                else
+                  aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", parameter: 1}])
+                end
+              end
+            end
           end
 
           def field_type
@@ -85,7 +78,6 @@ module Document
           def field_identifier
             field.try(:identifier)
           end
-
 
         end
 
@@ -134,50 +126,25 @@ module Document
 
           included do
 
+            accepts_nested_attributes_for :nested_grid_list, reject_if: :all_blank
+            accepts_nested_attributes_for :nested_grid_panel, reject_if: :all_blank
+
             validate :valid_field, if: :field
 
-            after_create :create_default_grids
+            after_save do
+              if field_id.present?
+                if default && (default_previously_was == false || default_previously_was == nil)
+                  previous_default = self.class.where.not(id: self.id).where(default: true, field_id: field_id, type: self.type).each do |pd|
+                    pd.nested_grids.update_all nested_field_id: self.id
+                    pd.update_column :default, false
+                  end
+                end
+              end
+            end
 
             class_attribute :valid_field_types
             self.valid_field_types = []
 
-            def default_grids
-              grids.where(default: true, nested_field: self)
-            end
-
-            def create_default_grids
-              if grid.default
-                if field.depedency_field?
-                  if field.type == "Document::Fields::DepedencyManyField"
-                    unless grid_list
-                      build_grid_list(default: true, name: field.label, form: form)
-                      #grid_list.append_default_fields
-                      grid_list.save
-                    end
-                  end
-                  unless grid_panel
-                    build_grid_panel(default: true, name: field.label, form: form, list: grid_list)
-                   #grid_panel.append_default_fields
-                    grid_panel.save
-                  end
-                elsif field.attached_nested_form?
-                  # if field.nested_form
-                    if field.type == "Document::Fields::MultipleNestedFormField"
-                      unless grid_list
-                        build_grid_list(default: true, name: field.label, form: form, nested_field: self)
-                        #grid_list.append_default_fields
-                        grid_list.save
-                      end
-                    end
-                    unless grid_panel
-                      build_grid_panel(default: true, name: field.label, form: form, nested_field: self, list: grid_list)
-                      #grid_panel.append_default_fields
-                      grid_panel.save
-                    end
-                  # end
-                end
-              end
-            end
 
           end
 
@@ -209,6 +176,79 @@ module Document
 
           def multiple?
             false
+          end
+
+          def build_default_nested_grid_panel_aggregation(params={}, field_scope = proc{|field| field})
+            if nested_grid_panel && nested_grid_panel.default_aggregation
+              matches = {}
+              if depedency_field? && field.type == "Document::Fields::DepedencyManyField"
+                matches.deep_merge!({"$expr".to_sym => { "$in".to_sym => [ "$_id", "$$#{name}_ids" ] }})
+              end
+              agg = aggregation.class.new
+              unless matches.blank?
+                agg.stages.build({name: "$match", arguments_attributes: matches.reduce([]){|arr, h| arr << { function: h[0], raw_parameter: h[1] } }})
+              end
+              agg.stages.append(nested_grid_panel.aggregation_stages(params, field_scope))
+              nested_grid_panel.aggregation.nested_stages = []
+              lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
+                { function: "from", parameter: nested_grid_panel.form.collection_name },
+                { function: "localField", parameter: depedency_field? ? "#{name}_id" : "_id"},
+                { function: "foreignField", parameter: depedency_field? ? "_id" : "#{name}_id"},
+                { function: "as", parameter: name },
+                { function: "pipeline", raw_parameter: agg.to_aggregation }
+              ])
+              nested_grid_panel.aggregation.nested_stages << lookup
+              unwind = AggregationStage.new(
+                name: "$unwind",
+                merge: false,
+                parameters_as_array: false,
+                order: 9998,
+                arguments_attributes: [
+                  { function: "path", parameter: "$#{name}" },
+                  { function: "preserveNullAndEmptyArrays", parameter: true }
+                ]
+              )
+              nested_grid_panel.aggregation.nested_stages << unwind
+            end
+            nested_grid_panel ? nested_grid_panel.aggregation.nested_stages : []
+          end
+
+          def build_default_nested_grid_list_aggregation(params={}, field_scope = proc{|field| field})
+            if nested_grid_list && nested_grid_list.default_aggregation
+              nested_grid_list.aggregation.nested_stages = []
+              matches = {}
+              if depedency_field? && field.type == "Document::Fields::DepedencyManyField"
+                matches.deep_merge!({"$expr".to_sym => { "$in".to_sym => [ "$_id", "$$#{name}_ids" ] }})
+              end
+              agg = aggregation.class.new
+              unless matches.blank?
+                agg.stages.build({name: "$match", arguments_attributes: matches.reduce([]){|arr, h| arr << { function: h[0], raw_parameter: h[1] } }})
+              end
+              agg.stages.append(nested_grid_list.aggregation_stages(params, field_scope))
+              if depedency_field? && field.type == "Document::Fields::DepedencyManyField"
+                lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
+                    { function: "from", parameter: nested_grid_list.form.collection_name },
+                    { function: "let", parameters_as_array: false, parameters_attributes: [
+                        { function: "#{name}_ids", parameter: "$#{name}_ids" }
+                      ]
+                    },
+                    { function: "as", parameter: name },
+                    { function: "pipeline", raw_parameter: agg.to_aggregation }
+                  ])
+              else
+                lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
+                      { function: "from", parameter: nested_grid_list.form.collection_name },
+                      { function: "localField", parameter: depedency_field? ? "#{name}_id" : "_id"},
+                      { function: "foreignField", parameter: depedency_field? ? "_id" : "#{name}_id"},
+                      { function: "as", parameter: name },
+                      { function: "pipeline", raw_parameter: agg.to_aggregation }
+                ])
+              end
+              nested_grid_list.aggregation.nested_stages << lookup
+              project = AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}_count", parameter: 1}])
+              nested_grid_list.aggregation.nested_stages << project
+            end
+            nested_grid_list ? nested_grid_list.aggregation.nested_stages : []
           end
 
         end
