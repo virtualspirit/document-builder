@@ -180,7 +180,6 @@ module Document
           end
           raw_stages << criteria.project(:id => "id").pipeline.filter{|p| p["$match"].present? }[0]
           aggregates = raw_stages + to_aggregation(params, field_scope)
-          debugger
           virtual_view.collection.aggregate(aggregates)
         else
           super(params, field_scope)
