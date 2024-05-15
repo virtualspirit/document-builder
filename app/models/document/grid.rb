@@ -52,7 +52,7 @@ module Document
     has_many :fields, -> { rank(:position) }, through: :grid_fields, class_name: "Document::Grids::Field"
     has_many :grid_owners, class_name: "Document::GridOwner", foreign_key: "grid_id", dependent: :destroy
     #has_many :owners, through: :grid_owners, source: :owner
-    has_many :sections, through: :form, source: :sections, source_type: :
+    has_many :sections, through: :form, source: :sections
     has_many :grid_nested_fields, class_name: "Document::Grids::GridNestedField", foreign_key: "nested_grid_id"
     has_many :nested_fields, through: :grid_nested_fields, class_name: "Document::Grids::Field"
     has_many :query_builders, class_name: "Document::QueryBuilder", as: :configurable
