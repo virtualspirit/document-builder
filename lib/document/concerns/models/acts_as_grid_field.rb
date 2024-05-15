@@ -33,10 +33,9 @@ module Document
             gf = Document::Grids::Field.build(self)
             gf.default = true
             gf.default_aggregation = true
-            gf.field = self
-            gf.save
+            self.default_grid_field= gf
             if attached_nested_form?
-              if nested_form
+              if nested_form && nested_form.persisted?
                 if type == "Document::Fields::MultipleNestedFormField"
                   nested_form.create_or_get_default_grid_list(gf)
                 end
