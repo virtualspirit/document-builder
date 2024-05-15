@@ -14,12 +14,12 @@ module Document
         end
       end
 
-      before_save do
-        if self.default
-          options.build_pagination if options.pagination.blank?
-          options.default_sorts.build(field: "updated_at", direction: "desc") if options.default_sorts.blank?
-        end
-      end
+      # before_save do
+      #   if self.default
+      #     options.build_pagination if options.pagination.blank?
+      #     options.default_sorts.build(field: "updated_at", direction: "desc") if options.default_sorts.blank?
+      #   end
+      # end
 
       after_create do
         if self.nested_field
@@ -183,6 +183,7 @@ module Document
               pagination.errors.each {|e| errors.import e, **e.options.merge(attribute: "pagination.#{e.attribute}")}
             end
           end
+
           default_sorts.each_with_index do |ds, i|
             unless ds.valid?
               ds.errors.each {|e| errors.import e, **e.options.merge(attribute: "default_sorts.#{i}.#{e.attribute}")}
@@ -190,6 +191,10 @@ module Document
           end
         end
 
+        after_initialize do
+          self.build_pagination if self.pagination.blank?
+          self.default_sorts.build(field: "updated_at", direction: "desc") if self.default_sorts.blank?
+        end
       end
 
       class Pagination < Document::FieldOptions
