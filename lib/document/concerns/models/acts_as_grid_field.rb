@@ -56,7 +56,7 @@ module Document
         end
 
         def update_grid_field
-          gf = default_grid_field || _create_default_gried_field
+          gf = create_or_get_default_gried_field
           if name_previously_changed? || label_previously_changed? || position_previously_changed?
             gf.update(name: name, label: label, position: position)
           end

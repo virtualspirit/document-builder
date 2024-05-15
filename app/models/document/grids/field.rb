@@ -54,6 +54,13 @@ module Document
         end
       end
 
+      validate do
+        unless aggregation.valid?
+          errors.add(:aggregation, :invalid)
+          aggregation.errors.each {|e| errors.import e, **e.options.merge(attribute: "aggregation.#{e.attribute}")}
+        end
+      end
+
       def set_as_default
         update(default: true)
       end

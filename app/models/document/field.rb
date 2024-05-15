@@ -24,19 +24,6 @@ module Document
       self.data_type = stored_type
     end
 
-    # validate do
-    #   unless aggregation.valid?
-    #     errors.add(:aggregation, :invalid)
-    #     aggregation.errors.each {|e| errors.import e, **e.options.merge(attribute: "aggregation.#{e.attribute}")}
-    #   end
-    # end
-
-    #after_save do
-      # if default && name_previously_was == false
-      #   self.class.where.not(id: self.id).where(default: true, form_id: form.id).update_all(default: false)
-      # end
-    #end
-
     def set_as_default
       update(default: true)
     end
