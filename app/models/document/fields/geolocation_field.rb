@@ -6,7 +6,7 @@ module Document
       serialize :options, Options::GeolocationField
 
       def stored_type
-        :string
+        :geospatial_point
       end
 
       def interpret_as_field_for(model, overrides: {})

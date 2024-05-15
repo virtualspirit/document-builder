@@ -50,11 +50,24 @@ module Document
                 name = namespace ? "#{namespace}.#{field.name}" : field.name
                 if field.attached_nested_form?
                   collection.push(*clauses_template(field.nested_form.fields, name))
+                elsif field.depedency_field?
+                  dep_form = field.options.form
+                  if dep_form
+                    if field.type == 'Document::Fields::DepedencyOneField'
+                      collection.push(Clause.new(comparison_operator: :eq, type: field.stored_type, field: "#{name}_id", label: field.label, namespace: nested))
+                    else
+                      collection.push(Clause.new(comparison_operator: :eq, type: field.stored_type, field: "#{name}_ids", label: field.label, namespace: nested))
+                    end
+                    collection.push(*clauses_template(dep_form.fields, name))
+                  end
                 else
                   if field.range_field?
                     from = Clause.new(comparison_operator: :eq, type: field.stored_type, field: "#{name}.begin", label: field.label, namespace: nested)
                     to = Clause.new(comparison_operator: :eq, type: field.stored_type, field: "#{name}.end", label: field.label, namespace: nested)
                     collection + [from, to]
+                  elsif field.type == "Document::Fields::GeolocationField"
+                    collection.push(Clause.new(comparison_operator: :eq, type: field.stored_type, field: name, label: field.label, namespace: nested))
+                    collection.push(Clause.new(comparison_operator: :eq, type: :string, field: "#{name}#{field.options.location_field_suffix_name}", label: field.label, namespace: nested))
                   else
                     hash = {comparison_operator: :eq, type: field.stored_type, field: name, label: field.label, namespace: nested}
                     if field.has_choices_option?

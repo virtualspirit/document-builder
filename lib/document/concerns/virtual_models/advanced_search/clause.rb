@@ -39,7 +39,8 @@ module Document
             :string => String,
             :symbol => Symbol,
             :time => Time,
-            :time_with_zone => ActiveSupport::TimeWithZone
+            :time_with_zone => ActiveSupport::TimeWithZone,
+            :geospatial_point => Mongoid::Geospatial::Point
           }
 
           COMPARISON_OPERATORS = {
@@ -53,6 +54,9 @@ module Document
             in: { symbol: "$in", name: "Inclusion" },
             nin: { symbol: "$nin", name: "Exclusion"},
             ne: { symbol: "$ne", name: "Not Equal"},
+            near: { symbol: "$near", name: "Near", only: [:geospatial_point] },
+            all: { symbol: "$all", name: "All", only: [:array] },
+            exists: { symbol: "$exists", name: "Exists" },
           }
 
           LOGICAL_OPERATORS = {
