@@ -57,7 +57,7 @@ module Document
           @list ||= default_grid_list
           unless @list
             @list = create_default_grid_list(default: true, name: grid_title)
-            @list.grid_owners.create(owner: form.owner)
+            @list.grid_owners.create(owner: self.owner)
           end
           @list.nested_fields << nested_field if nested_field
           @list
@@ -67,7 +67,7 @@ module Document
           panel = default_grid_panel
           unless panel
             panel = create_default_grid_panel(default: true, name: grid_title, list: default_grid_list)
-            panel.grid_owners.create(owner: form.owner)
+            panel.grid_owners.create(owner: self.owner)
           end
           panel.nested_fields << nested_field if nested_field
           panel
