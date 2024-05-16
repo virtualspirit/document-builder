@@ -109,6 +109,7 @@ module Document
                 label: field.label,
                 namespace: namespace,
                 position: field.position,
+                section_order: field.section_order_rank,
                 field: field,
                 field_id: field.id,
                 section_id: field.section_id

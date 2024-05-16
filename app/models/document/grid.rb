@@ -49,10 +49,10 @@ module Document
     #belongs_to :container, class_name: "Document::Grid", foreign_key: "container_id", optional: true
     has_many :nested_grids, class_name: "Document::Grid", foreign_key: "container_id"
     has_many :grid_fields, class_name: "Document::Grids::GridField", foreign_key: "grid_id", dependent: :destroy, inverse_of: :grid
-    has_many :fields, -> { rank(:position) }, through: :grid_fields, class_name: "Document::Grids::Field"
+    has_many :fields, -> { order(:position) }, through: :grid_fields, class_name: "Document::Grids::Field"
     has_many :grid_owners, class_name: "Document::GridOwner", foreign_key: "grid_id", dependent: :destroy
     #has_many :owners, through: :grid_owners, source: :owner
-    has_many :sections, through: :form, source: :sections
+    has_many :sections, -> { order(:position) }, through: :form, source: :sections
     has_many :grid_nested_fields, class_name: "Document::Grids::GridNestedField", foreign_key: "nested_grid_id"
     has_many :nested_fields, through: :grid_nested_fields, class_name: "Document::Grids::Field"
     has_many :query_builders, class_name: "Document::QueryBuilder", as: :configurable

@@ -5,7 +5,7 @@ module Document
         extend ActiveSupport::Concern
 
         included  do
-          has_many :grid_fields, class_name: "Document::Grids::Field", foreign_key: "section_id"
+          has_many :grid_fields, -> { order(:section_order) }, class_name: "Document::Grids::Field", foreign_key: "section_id"
           # has_many :grid_sections, class_name: "Document::Grids::Section", foreign_key: "section_id", dependent: :destroy
 
           # after_create :create_grid_section

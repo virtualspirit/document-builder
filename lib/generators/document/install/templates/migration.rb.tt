@@ -12,7 +12,7 @@ class <%= migration_class_name %> < ActiveRecord::Migration<%= migration_version
       t.belongs_to :documentable, polymorphic: true, index: true
       t.references :attachable, polymorphic: true, index: true
       t.references :owner, polymorphic: true, index: true
-
+      t.integer :fields_count
       t.timestamps
     end
 
@@ -24,6 +24,8 @@ class <%= migration_class_name %> < ActiveRecord::Migration<%= migration_version
       t.text :options
       t.text :validations
       t.integer :position
+      t.integer :form_order
+      t.integer :section_order
       t.string :type
       t.belongs_to :form
       t.belongs_to :section, index: true
@@ -42,7 +44,7 @@ class <%= migration_class_name %> < ActiveRecord::Migration<%= migration_version
       t.boolean :headless, null: false, default: false
       t.belongs_to :form
       t.integer :position
-
+      t.integer :fields_count
       t.timestamps
     end
 
@@ -98,6 +100,8 @@ class <%= migration_class_name %> < ActiveRecord::Migration<%= migration_version
       t.string :type
       t.boolean :default_aggregation
       t.boolean :default, default: false
+      t.integer :grid_order
+      t.integer :section_order
       t.text :aggregation
       t.timestamps
     end
