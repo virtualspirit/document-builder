@@ -11,7 +11,7 @@ module Document
 
       validate do
         if self.nested_field
-          record.add(:nested_field, :invalid) unless nested_field.nested? && !nested_field.multiple?
+          errors.add(:nested_field, :invalid) unless nested_field.nested? && !nested_field.multiple?
         end
       end
 
