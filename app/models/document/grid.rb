@@ -48,11 +48,11 @@ module Document
     #belongs_to :nested_field, class_name: "Document::Grids::Field", foreign_key: "nested_field_id", optional: true
     #belongs_to :container, class_name: "Document::Grid", foreign_key: "container_id", optional: true
     has_many :nested_grids, class_name: "Document::Grid", foreign_key: "container_id"
-    has_many :grid_fields, class_name: "Document::Grids::GridField", foreign_key: "grid_id", dependent: :destroy, inverse_of: :grid
-    has_many :fields, -> { order(:position) }, through: :grid_fields, class_name: "Document::Grids::Field"
+    has_many :grid_fields, -> { rank(:field_position_on_grid) }, class_name: "Document::Grids::GridField", foreign_key: "grid_id", dependent: :destroy, inverse_of: :grid
+    has_many :fields, through: :grid_fields, class_name: "Document::Grids::Field"
     has_many :grid_owners, class_name: "Document::GridOwner", foreign_key: "grid_id", dependent: :destroy
     #has_many :owners, through: :grid_owners, source: :owner
-    has_many :sections, -> { order(:position) }, through: :form, source: :sections
+    has_many :sections, -> { rank(:position) }, through: :form, source: :sections
     has_many :grid_nested_fields, class_name: "Document::Grids::GridNestedField", foreign_key: "nested_grid_id"
     has_many :nested_fields, through: :grid_nested_fields, class_name: "Document::Grids::Field"
     has_many :query_builders, class_name: "Document::QueryBuilder", as: :configurable

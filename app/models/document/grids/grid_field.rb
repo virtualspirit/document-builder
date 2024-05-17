@@ -9,6 +9,26 @@ module Document
 
       validates :grid_id, uniqueness: { scope: :field_id }
 
+      after_validation :set_position, on: :create
+
+      include RankedModel
+      ranks :field_position_on_grid, with_same: :grid_id
+
+      attr_accessor :position
+
+      def position=(val)
+        @position = val
+        self.field_position_on_grid_position=(val)
+      end
+
+      def set_position
+        if field && field.set_position_on_grid
+          self.position= field.set_position_on_grid
+        else
+          self.position= :last
+        end
+      end
+
     end
   end
 end

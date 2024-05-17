@@ -39,40 +39,30 @@ module Document
       scope :only_belongs_to_section, -> { where.not(section_id: nil) }
 
       include RankedModel
-      ranks :position, with_same: [:grid_id], class_name: self.name
-      ranks :section_order, with_same: [:section_id], class_name: self.name, scope: :only_belongs_to_section
+      ranks :position_on_section, with_same: [:section_id], class_name: self.name, scope: :only_belongs_to_section
 
-      attr_accessor :reindex_order
+      attr_accessor :set_position_on_section
 
-      def reindex_order!
-        self.reindex_order= true
+      def set_position_on_section=(value)
+        @set_position_on_section = value
+        position_on_section_position= value
       end
 
-      before_validation do
-        self.section_order ||= 1
-        self.position ||= 1
+      attr_accessor :set_position_on_grid
+      attr_accessor :current_grid
+
+      def set_current_grid grid
+        self.current_grid= grid
       end
 
-      after_validation if: :reindex_order do
-        if position_was != position && !position.nil?
-          if section_id
-            self.section_order_position= position
-          else
-            self.position_position= position
-          end
-        end
-      end
-
-      after_save if: :reindex_order do
-        if section_id && (section_order_before_last_save != section_order)
-          overral_pos = section.form.sections.reduce(0) do |sum, s|
-            if s.id != section_id
-              sum + s.fields_count.to_i
-            else
-              break sum + section_order_rank
+      after_save do
+        if set_position_on_grid && current_grid
+          grid_field = grid_fields.where(grid_id: current_grid.id).first
+          if grid_field
+            if grid_field.order_rank != position_on_grid
+              grid_field.update(position: position_on_grid)
             end
           end
-          update(position_position: overral_pos)
         end
       end
 
@@ -82,8 +72,6 @@ module Document
       delegate :to_aggregation, to: :aggregation
 
       #validates :default_aggregation, acceptance: true, if: :default
-      validates :position, numericality: { only_integer: true, greater_than_or_equal_to: 0, allow_blank: true }
-      validates :section_order, numericality: { only_integer: true, greater_than_or_equal_to: 0, allow_blank: true }
 
       validate do
         unless type_was.nil?

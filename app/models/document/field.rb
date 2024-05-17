@@ -33,39 +33,32 @@ module Document
 
     include RankedModel
     ranks :position, with_same: [:form_id], class_name: self.name
-    ranks :section_order, with_same: [:section_id], class_name: self.name, scope: :only_belongs_to_section
+    ranks :position_on_section, with_same: [:section_id], class_name: self.name, scope: :only_belongs_to_section
+    ranks :position_on_form, with_same: [:form_id], class_name: self.name
 
-    def reindex_order!
-      self.reindex_order= true
+    attr_accessor :set_position_on_form
+    attr_accessor :set_position_on_section
+
+    def set_position_on_form=(value)
+      @set_position_on_form=value
+      self.position_on_form_position= value
     end
 
-    before_validation do
-      self.section_order ||= 1
-      self.position ||= 1
+    def set_position_on_section=(value)
+      @set_position_on_section= value
+      self.position_on_section_position= value
     end
 
-    attr_accessor :reindex_order
-
-    after_validation if: :reindex_order do
-      if position_was != position && !position.nil?
-        if section_id
-          self.section_order_position= position
-        else
-          self.position_position= position
-        end
-      end
-    end
-
-    after_save if: :reindex_order do
-      if section_id && (section_order_before_last_save != section_order)
-        overral_pos = form.sections.reduce(0) do |sum, s|
+    after_save do
+      if section_id && (position_on_section_before_last_save != position_on_section)
+        overral_pos = form.sections.rank(:position).reduce(0) do |sum, s|
           if s.id != section_id
             sum + s.fields_count.to_i
           else
-            break sum + section_order_rank
+            break sum + position_on_section_rank
           end
         end
-        update(position_position: overral_pos)
+        update(set_position_on_form: overral_pos)
       end
     end
 
@@ -80,9 +73,9 @@ module Document
                 in: ->(_) { Field.descendants.map(&:to_s) }
               },
               allow_blank: false
-    validates :position, numericality: { only_integer: true, greater_than_or_equal_to: 0, allow_blank: true }
-    validates :section_order, numericality: { only_integer: true, greater_than_or_equal_to: 0, allow_blank: true }
     validates :section_id, absence: true, if: proc{|f| f.form && f.form.type == 'Document::NestedForm' }
+    validates :set_position_on_section, absence: true, unless: :section_id
+    validates :set_position_on_form, absence: true, if: :section_id
     validate do
       if persisted?
         errors.add(:name, :invalid) if name_in_database.to_s != name.to_s

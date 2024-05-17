@@ -53,18 +53,18 @@ module Document
 
         def active_step_section
           if step_active?
-            [sections.order(:position)[step_state]]
+            [sections.rank(:position)[step_state]]
           end
         end
 
-        def to_virtual_view(model_name: virtual_view_model_name, fields_scope: proc{|fields| fields.order(:position)}, overrides: {})
+        def to_virtual_view(model_name: virtual_view_model_name, fields_scope: proc{|fields| fields}, overrides: {})
           model = _virtual_model model_name
           set_constant model_name, model
           append_to_virtual_view(model, fields_scope: fields_scope, overrides: overrides)
           model
         end
 
-        def append_to_virtual_view model, fields_scope: proc { |fields| fields.order(:position) }, overrides: {}
+        def append_to_virtual_view model, fields_scope: proc { |fields| fields }, overrides: {}
           check_model_validity! model
           global_overrides = overrides.fetch(:_global, {})
           fields_scope.call(fields).each do |f|
@@ -77,16 +77,12 @@ module Document
         end
 
         def to_virtual_model(model_name: virtual_model_name,
-                            fields_scope: proc { |fields| fields.order(:position) },
+                            fields_scope: proc { |fields| fields },
                             overrides: {})
           if step_active?
             fields_scope = proc {|fields|
               section = sections.select{|sect| sect.position_rank == step_state }.first
-              if section
-                section.fields.order(:section_order)
-              else
-                []
-              end
+              section.try(:fields) || []
             }
           end
           model = _virtual_model model_name
@@ -127,7 +123,7 @@ module Document
         end
 
         def append_to_virtual_model(model,
-                                    fields_scope: proc { |fields| fields.order(:position) },
+                                    fields_scope: proc { |fields| fields },
                                     overrides: {})
           check_model_validity! model
 

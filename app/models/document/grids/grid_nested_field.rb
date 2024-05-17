@@ -8,6 +8,7 @@ module Document
       belongs_to :nested_grid, class_name: "Document::Grid", foreign_key: "nested_grid_id"
 
       validates :nested_grid_id, uniqueness: { scope: :nested_field_id }
+
       before_save do
         self.grid_type= nested_grid.try(:type)
       end

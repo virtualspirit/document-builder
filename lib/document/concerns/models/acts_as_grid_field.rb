@@ -56,8 +56,13 @@ module Document
 
         def update_grid_field
           gf = create_or_get_default_gried_field
-          if name_previously_changed? || label_previously_changed? || position_previously_changed?
-            gf.update(name: name, label: label, position: position)
+          if label_previously_changed? || position_on_section_previously_changed?
+            gf.update(label: label, position_on_section: position_on_section)
+          end
+          if position_on_form_previously_changed?
+            gf.grid_fields.each do |g|
+              g.update position: position_on_form_rank
+            end
           end
           if depedency_field?
             if @previous_document_form_id.present?
