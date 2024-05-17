@@ -59,7 +59,7 @@ module Document
         if set_position_on_grid && current_grid
           grid_field = grid_fields.where(grid_id: current_grid.id).first
           if grid_field
-            if grid_field.order_rank != position_on_grid
+            if grid_field.field_position_on_grid != position_on_grid
               grid_field.update(position: position_on_grid)
             end
           end
@@ -85,6 +85,12 @@ module Document
         unless aggregation.valid?
           errors.add(:aggregation, :invalid)
           aggregation.errors.each {|e| errors.import e, **e.options.merge(attribute: "aggregation.#{e.attribute}")}
+        end
+      end
+
+      after_validation do
+        if position_on_section.nil? && section_id.present?
+          set_position_on_section= :last
         end
       end
 

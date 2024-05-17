@@ -49,6 +49,15 @@ module Document
       self.position_on_section_position= value
     end
 
+    after_validation do
+      if position_on_section.nil? && section_id.present?
+        set_position_on_section= :last
+      end
+      if position_on_form.nil? && section_id.blank?
+        set_position_on_form= :last
+      end
+    end
+
     after_save do
       if section_id && (position_on_section_before_last_save != position_on_section)
         overral_pos = form.sections.rank(:position).reduce(0) do |sum, s|
