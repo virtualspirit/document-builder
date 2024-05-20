@@ -83,8 +83,8 @@ module Document
               },
               allow_blank: false
     validates :section_id, absence: true, if: proc{|f| f.form && f.form.type == 'Document::NestedForm' }
-    validates :set_position_on_section, absence: true, unless: :section_id
-    validates :set_position_on_form, absence: true, if: :section_id
+    validates :set_position_on_section, absence: true, unless: proc { section_id || section }
+    validates :set_position_on_form, absence: true, if: proc { section_id || section }
     validate do
       if persisted?
         errors.add(:name, :invalid) if name_in_database.to_s != name.to_s
