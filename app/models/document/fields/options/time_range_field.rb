@@ -138,7 +138,6 @@ module Document
 
         if begin_from_now?
           begin_minutes_offset = begin_from_now_minutes_offset.minutes.to_i
-
           klass.validates :begin,
                           timeliness: {
                             on_or_after: -> { (Time.zone.now.change(sec: 0, usec: 0) + begin_minutes_offset).strftime(time_format) },
@@ -264,7 +263,7 @@ module Document
       end
 
       def time_format
-        if format == '24'
+        if attributes['format'] == '24'
           "%k:%M"
         else
           "%l:%M%P"

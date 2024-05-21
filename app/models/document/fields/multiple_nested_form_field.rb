@@ -38,7 +38,7 @@ module Document
         return model if accessibility == :hidden
 
         overrides[:name] = name
-        nested_model = nested_form.to_virtual_model(overrides: { _global: { accessibility: accessibility } })
+        nested_model = cached_nested_form.to_virtual_model(overrides: { _global: { accessibility: accessibility } })
         if nested_model
           nested_model.field "#{name}_id", type: BSON::ObjectId
           model.field "#{name}_count".to_sym, type: :integer, default: 0

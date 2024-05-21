@@ -140,7 +140,7 @@ module Document
       end
 
       def time_format
-        if format == '24'
+        if attributes['format'] == '24'
           "%k:%M"
         else
           "%l:%M%P"
