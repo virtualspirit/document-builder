@@ -2,6 +2,18 @@ module Document
   class Engine < ::Rails::Engine
     isolate_namespace Document
 
+    # config.before_initialize do |app|
+
+    #   memcache_servers = (ENV['MEMCACHED_SERVERS'] || 'localhost:11211').split(",")
+
+    #   app.config.identity_cache_store = :mem_cache_store, *memcache_servers, {
+    #     expires_in: 6.hours.to_i,
+    #     failover: false,
+    #     namespace: 'document',
+    #     compress: true,
+    #   }
+    # end
+
     config.after_initialize do
       begin; require 'cancancan'; rescue LoadError; end
       if defined?(CanCan) and defined?(Grape::API)

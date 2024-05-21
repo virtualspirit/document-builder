@@ -35,7 +35,11 @@ module Document
       end
 
       def form
-        @form ||= Document.form_model_class_constant.includes(:fields).find_by_id(document_form_id_value)
+        @form ||= Document::BareForm.fetch(document_form_id_value) rescue nil
+        if @form && @form.type != "Document::Form"
+          @form = nil
+        end
+        @form
       end
 
       def document_form_id_value

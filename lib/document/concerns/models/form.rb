@@ -53,7 +53,7 @@ module Document
 
         def active_step_section
           if step_active?
-            [sections.rank(:position)[step_state]]
+            [cached_sections.sort_by(&:position)[step_state]]
           end
         end
 
@@ -67,7 +67,7 @@ module Document
         def append_to_virtual_view model, fields_scope: proc { |fields| fields }, overrides: {}
           check_model_validity! model
           global_overrides = overrides.fetch(:_global, {})
-          fields_scope.call(fields).each do |f|
+          fields_scope.call(cached_fields.sort_by(&:position_on_form)).each do |f|
             f.interpret_as_field_for model, overrides: global_overrides.merge(overrides.fetch(f.name, {}))
           end
           if self.is_a?(::Document::BareForm)
@@ -81,8 +81,12 @@ module Document
                             overrides: {})
           if step_active?
             fields_scope = proc {|fields|
-              section = sections.select{|sect| sect.position_rank == step_state }.first
-              section.try(:fields) || []
+              section = cached_sections.sort_by(&:position)[step_state]#.select.with_index{|sect, index| sect.position_rank == step_state }.first
+              if section
+                section.try(:cached_fields) || []
+              else
+                []
+              end
             }
           end
           model = _virtual_model model_name
@@ -128,7 +132,7 @@ module Document
           check_model_validity! model
 
           global_overrides = overrides.fetch(:_global, {})
-          fields_scope.call(fields).each do |f|
+          fields_scope.call(cached_fields.sort_by(&:position_on_form)).each do |f|
             f.interpret_to model, overrides: global_overrides.merge(overrides.fetch(f.name, {}))
           end
           if self.is_a?(::Document::Form)

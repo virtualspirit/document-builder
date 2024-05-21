@@ -5,6 +5,7 @@ module Document
 
     include Document::Concerns::Models::ActsAsDefaultValue
     include Document::Concerns::Models::EnumAttributeLocalizable
+    include Document::Concerns::Models::Cached
 
   end
 end

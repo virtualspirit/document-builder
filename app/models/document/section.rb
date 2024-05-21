@@ -6,10 +6,43 @@ module Document
     self.table_name = "document_sections"
 
     belongs_to :form, touch: true, inverse_of: :sections, class_name: 'Document::BareForm', counter_cache: true
-
     has_many :fields, -> { rank(:position_on_section) }, dependent: :destroy, inverse_of: :section, index_errors: true
     accepts_nested_attributes_for :fields, allow_destroy: true
     alias_method :inputs=, :fields_attributes=
+
+    # include ::IdentityCache
+    # cache_belongs_to :form
+    # cache_has_many :fields, embed: true
+
+    cache_this :cached_fields do
+      value do |section|
+        section.fields.all.to_a
+      end
+      before_invalidate do |section|
+        section.cached_fields.each(&:invalidate_cache_of_cached_section)
+      end
+    end
+    cache_this :cached_form do
+      value do |section|
+        section.form
+      end
+      before_invalidate do |section|
+        section.cached_form.try(:invalidate_cache_of_cached_sections)
+      end
+    end
+
+    cache_this :cached_position_rank do
+      value do |section|
+        section.position_rank
+      end
+      invalidate_if do |section|
+        section.position_before_last_save != section.position
+      end
+      before_invalidate do |section|
+        cached_form.cached_sections.each(&:invalidate_cache_of_cached_position_rank)
+        cached_form.cached_fields.each(&:invalidate_cache_of_cached_position_on_form_rank)
+      end
+    end
 
     include RankedModel
     ranks :position, with_same: [:form_id]
@@ -43,6 +76,27 @@ module Document
       end
     end
 
+    after_save :rearange_fields_position_on_form, if: proc{ position != position_before_last_save }
+
+    def rearange_fields_position_on_form
+      # overral_pos = 0
+      # form.fetch_sections.sort_by(&:position).each_with_index do |section, si|
+      #   section.fetch_fields.sort_by(&:position_on_section).each_with_index do |field, fi|
+      #     field.update_column(position_on_form: overral_pos)
+      #     field.expire_cache
+      #   end
+      #   section.expire_cache
+      # end
+
+      old_position = position_before_last_save
+      new_position = position
+      position_difference = new_position - old_position
+      fields.update_all("position_on_record = position_on_record + #{position_difference}")
+      form.fields
+      .where.not(section_id: id).where("position_on_form >= ? AND position_on_form <= ?", new_position, old_position)
+      .update_all("position_on_form = position_on_form + #{position_difference}")
+    end
+
     after_destroy do
       if form.present? and form.step
         form.step_options.total = form.step_options.total - 1
@@ -51,17 +105,19 @@ module Document
     end
 
     def virtual_fields instance, _fields = nil
-      _fields ||= fields
+      _fields ||= cached_fields.sort_by(:position_on_section)
       _fields.map do |field|
         vp = present_virtual_field(field, target: instance)
-        if field.nested_form && vp.value
+        nested_form = field.cached_nested_form
+        if nested_form && vp.value
+          nested_fields = nested_form.cached_fields.sort_by(&:position_on_form)
           if vp.multiple_nested_form?
-            field.nested_form.virtual_fields = []
+            nested_form.virtual_fields = []
             vp.value.each do |nested_instance|
-              field.nested_form.virtual_fields << virtual_fields(nested_instance, field.nested_form.fields)
+              nested_form.virtual_fields << virtual_fields(nested_instance, nested_fields)
             end
           else
-            field.nested_form.virtual_fields = virtual_fields(vp.value_for_preview, field.nested_form.fields)
+            nested_form.virtual_fields = virtual_fields(vp.value_for_preview, nested_fields)
           end
         end
         vp
