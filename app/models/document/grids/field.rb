@@ -38,6 +38,17 @@ module Document
 
       scope :only_belongs_to_section, -> { where.not(section_id: nil) }
 
+      include Document::Concerns::Models::Cachers::GridField
+
+      cache_this :cached_position_on_grid do
+        key do |field|
+          "cached_position_on_grid-#{field.id}-#{field.current_grid.try(:id)}"
+        end
+        value do |field|
+          field.grid_fields.where(grid_id: field.current_grid.try(:id)).first.try(:field_position_on_grid)
+        end
+      end
+
       include RankedModel
       ranks :position_on_section, with_same: [:section_id], class_name: self.name, scope: :only_belongs_to_section
 
@@ -59,9 +70,9 @@ module Document
         if set_position_on_grid && current_grid
           grid_field = grid_fields.where(grid_id: current_grid.id).first
           if grid_field
-            if grid_field.field_position_on_grid != position_on_grid
-              grid_field.update(position: position_on_grid)
-            end
+            #if grid_field.field_position_on_grid != cached_position_on_grid
+              grid_field.update(position: set_position_on_grid)
+            #end
           end
         end
       end

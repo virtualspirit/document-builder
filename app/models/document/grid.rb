@@ -57,6 +57,8 @@ module Document
     has_many :nested_fields, through: :grid_nested_fields, class_name: "Document::Grids::Field"
     has_many :query_builders, class_name: "Document::QueryBuilder", as: :configurable
 
+    include Document::Concerns::Models::Cachers::Grid
+
     accepts_nested_attributes_for :fields, allow_destroy: true, reject_if: :all_blank
 
     validates :name, presence: true

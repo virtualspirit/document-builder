@@ -60,8 +60,9 @@ module Document
             gf.update(label: label, position_on_section: position_on_section)
           end
           if position_on_form_previously_changed?
+            pos = position_on_form_rank
             gf.grid_fields.each do |g|
-              g.update position: position_on_form_rank
+              g.update position: pos
             end
           end
           if depedency_field?

@@ -4,8 +4,8 @@ module Document
 
       self.table_name = 'document_grids_fields'
 
-      belongs_to :field, class_name: "Document::Grids::Field", foreign_key: "field_id", inverse_of: :grid_fields
-      belongs_to :grid, class_name: "Document::Grid", foreign_key: "grid_id", inverse_of: :grid_fields
+      belongs_to :field, class_name: "Document::Grids::Field", foreign_key: "field_id", inverse_of: :grid_fields, touch: true
+      belongs_to :grid, class_name: "Document::Grid", foreign_key: "grid_id", inverse_of: :grid_fields, touch: true
 
       validates :grid_id, uniqueness: { scope: :field_id }
 
@@ -15,6 +15,17 @@ module Document
       ranks :field_position_on_grid, with_same: :grid_id
 
       attr_accessor :position
+
+      after_save do
+        if saved_change_to_field_position_on_grid?
+          invalidate_cached_field_position_on_grid
+          self.class.includes(:field).where(grid_id: grid_id).each(&:invalidate_cached_field_position_on_grid)
+        end
+      end
+
+      def invalidate_cached_field_position_on_grid
+        field.invalidate_cache_of_cached_position_on_grid
+      end
 
       def position=(val)
         @position = val
@@ -28,6 +39,7 @@ module Document
           self.position= :last
         end
       end
+
 
     end
   end

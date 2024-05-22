@@ -11,65 +11,16 @@ module Document
 
     belongs_to :form, class_name: 'Document::BareForm', touch: true, optional: true, inverse_of: :fields, counter_cache: true
     belongs_to :section, class_name: Document.section_model_class, touch: true, optional: true, inverse_of: :fields, counter_cache: true
-    has_one :nested_form, class_name: 'Document::BareForm', as: :attachable, dependent: :destroy, inverse_of: :attachable
+    #has_one :nested_form, class_name: 'Document::BareForm', as: :attachable, dependent: :destroy, inverse_of: :attachable
+    has_one :nested_form, class_name: 'Document::BareForm', dependent: :destroy, inverse_of: :attachable, foreign_key: "attachable_id"
     accepts_nested_attributes_for :nested_form, allow_destroy: true
     belongs_to :field_group, class_name: "Document::FieldGroup", touch: true, optional: true, inverse_of: :fields
 
+    include Document::Concerns::Models::Cachers::Field
     # include ::IdentityCache
     # cache_belongs_to :form
     # cache_belongs_to :section
     # cache_has_one :nested_form, embed: :id
-
-    cache_this :cached_form do
-      value do |field|
-        field.form
-      end
-      before_invalidate do |field|
-        field.cached_form.try(:invalidate_cache_of_cached_fields)
-      end
-    end
-
-    cache_this :cached_nested_form do
-      value do |field|
-        field.nested_form
-      end
-      before_invalidate do |field|
-        field.cached_nested_form.try(:invalidate_cache_of_cached_attachable)
-      end
-    end
-
-    cache_this :cached_section do
-      value do |field|
-        field.section
-      end
-      before_invalidate do |field|
-        field.cached_section.try(:invalidate_cache_of_cached_fields)
-      end
-    end
-
-    cache_this :cached_position_on_section_rank do
-      value do |field|
-        section.position_on_section_rank
-      end
-      invalidate_if do |field|
-        field.position_on_section_before_last_save != field.position_on_section
-      end
-      before_invalidate do |field|
-        field.cached_section.cached_fields.each(&:invalidate_cache_of_cached_position_on_section_rank)
-      end
-    end
-
-    cache_this :cached_position_on_form_rank do
-      value do |field|
-        field.position_on_form_rank
-      end
-      invalidate_if do |field|
-        field.position_on_form_before_last_save != field.position_on_form
-      end
-      before_invalidate do |field|
-        field.cached_form.cached_fields.each(&:invalidate_cache_of_cached_position_on_form_rank)
-      end
-    end
 
     scope :only_belongs_to_section, -> { where.not(section_id: nil) }
     scope :only_not_belongs_to_section, -> { where(section_id: nil) }
@@ -111,7 +62,7 @@ module Document
     end
 
     after_commit do
-      if section_id && (position_on_section_before_last_save != position_on_section)
+      if section_id && saved_change_to_position_on_section?
         # overral_pos = form.sections.rank(:position).reduce(0) do |sum, s|
         #   if s.id != section_id
         #     sum + s.fields_count.to_i
@@ -119,7 +70,7 @@ module Document
         #     break sum + position_on_section_rank
         #   end
         # end
-        update(set_position_on_form: cached_section.cached_position_rank * cached_section.fields_count  + self.cached_position_on_section_rank)
+        update(set_position_on_form: section.position_rank * section.fields_count  + self.position_on_section_rank)
       end
     end
 

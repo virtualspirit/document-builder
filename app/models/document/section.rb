@@ -10,39 +10,11 @@ module Document
     accepts_nested_attributes_for :fields, allow_destroy: true
     alias_method :inputs=, :fields_attributes=
 
+    include Document::Concerns::Models::Cachers::Section
+
     # include ::IdentityCache
     # cache_belongs_to :form
     # cache_has_many :fields, embed: true
-
-    cache_this :cached_fields do
-      value do |section|
-        section.fields.all.map(&:reload)
-      end
-      before_invalidate do |section|
-        section.cached_fields.each(&:invalidate_cache_of_cached_section)
-      end
-    end
-    cache_this :cached_form do
-      value do |section|
-        section.form.try(:reload)
-      end
-      before_invalidate do |section|
-        section.cached_form.try(:invalidate_cache_of_cached_sections)
-      end
-    end
-
-    cache_this :cached_position_rank do
-      value do |section|
-        section.position_rank
-      end
-      invalidate_if do |section|
-        section.position_before_last_save != section.position
-      end
-      before_invalidate do |section|
-        cached_form.cached_sections.each(&:invalidate_cache_of_cached_position_rank)
-        cached_form.cached_fields.each(&:invalidate_cache_of_cached_position_on_form_rank)
-      end
-    end
 
     include RankedModel
     ranks :position, with_same: [:form_id]
@@ -76,7 +48,7 @@ module Document
       end
     end
 
-    after_save :rearange_fields_position_on_form, if: proc{ position != position_before_last_save }
+    after_save :rearange_fields_position_on_form, if: proc{ saved_change_to_position? }
 
     def rearange_fields_position_on_form
       # overral_pos = 0
@@ -91,7 +63,7 @@ module Document
       old_position = position_before_last_save
       new_position = position
       position_difference = new_position - old_position
-      fields.update_all("position_on_record = position_on_record + #{position_difference}")
+      fields.update_all("position_on_form = position_on_form + #{position_difference}")
       form.fields
       .where.not(section_id: id).where("position_on_form >= ? AND position_on_form <= ?", new_position, old_position)
       .update_all("position_on_form = position_on_form + #{position_difference}")
@@ -105,12 +77,12 @@ module Document
     end
 
     def virtual_fields instance, _fields = nil
-      _fields ||= cached_fields.sort_by(:position_on_section)
+      _fields ||= fields.sort_by(:position_on_section)
       _fields.map do |field|
         vp = present_virtual_field(field, target: instance)
-        nested_form = field.cached_nested_form
+        nested_form = field.nested_form
         if nested_form && vp.value
-          nested_fields = nested_form.cached_fields.sort_by(&:position_on_form)
+          nested_fields = nested_form.fields.sort_by(&:position_on_form)
           if vp.multiple_nested_form?
             nested_form.virtual_fields = []
             vp.value.each do |nested_instance|

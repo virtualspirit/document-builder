@@ -3,6 +3,8 @@ module Document
 
     belongs_to :nested_form_field, -> { where(document_forms: { attachable_type: 'Document::Field' }) }, foreign_key: 'attachable_id', class_name: "Document::Field", optional: true
 
+    include Document::Concerns::Models::Cachers::NestedForm
+
     validates :attachable, presence: true
 
     attr_accessor :virtual_fields
@@ -10,15 +12,6 @@ module Document
     before_save do
       if attachable
         self.name = attachable.name
-      end
-    end
-
-    cache_this :cached_attachable do
-      value do |form|
-        form.attachable.try(:reload)
-      end
-      before_invalidate do |form|
-        form.cached_attachable.try :invalidate_cache_of_cached_nested_form
       end
     end
 
@@ -31,12 +24,12 @@ module Document
     # end
 
     def get_virtual_fields instance, _fields = nil
-      _fields ||= cached_fields.sort_by(&:position_on_form)
+      _fields ||= fields.sort_by(&:position_on_form)
       _fields.map do |field|
         vp = present_virtual_field(field, target: instance)
-        nested_form = field.cached_nested_form
+        nested_form = field.nested_form
         if nested_form && vp.value_for_preview
-          nested_fields = nested_form.cached_fields.sort_by(&:position_on_form)
+          nested_fields = nested_form.fields.sort_by(&:position_on_form)
           if vp.multiple_nested_form?
             nested_form.virtual_fields = []
             vp.value_for_preview.each do |nested_instance|

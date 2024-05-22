@@ -91,6 +91,7 @@ module Document
             if invalidate_callback = config.invalidate_when
               invalidate_callback = [invalidate_callback].compact.uniq unless invalidate_callback.is_a?(Array)
               invalidate_callback.each do |callback|
+                next
                 send callback.to_sym do
                   unless instance_variable_get("@_#{_name}_invalidated")
                     _invalidate_cache_(_name)
