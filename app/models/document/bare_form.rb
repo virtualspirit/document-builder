@@ -19,7 +19,7 @@ module Document
 
     cache_this :cached_fields do
       value do |form|
-        form.fields.all.to_a
+        form.fields.all.map(&:reload)
       end
       invalidate_when [:after_commit]
       before_invalidate do |form|
@@ -29,7 +29,7 @@ module Document
 
     cache_this :cached_sections do
       value do |form|
-        form.sections.all.to_a
+        form.sections.all.map(&:reload)
       end
       invalidate_when [:after_commit]
       before_invalidate do |form|

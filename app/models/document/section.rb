@@ -16,7 +16,7 @@ module Document
 
     cache_this :cached_fields do
       value do |section|
-        section.fields.all.to_a
+        section.fields.all.map(&:reload)
       end
       before_invalidate do |section|
         section.cached_fields.each(&:invalidate_cache_of_cached_section)
@@ -24,7 +24,7 @@ module Document
     end
     cache_this :cached_form do
       value do |section|
-        section.form
+        section.form.try(:reload)
       end
       before_invalidate do |section|
         section.cached_form.try(:invalidate_cache_of_cached_sections)

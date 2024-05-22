@@ -15,7 +15,7 @@ module Document
 
     cache_this :cached_attachable do
       value do |form|
-        form.attachable
+        form.attachable.try(:reload)
       end
       before_invalidate do |form|
         form.cached_attachable.try :invalidate_cache_of_cached_nested_form

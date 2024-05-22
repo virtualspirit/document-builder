@@ -138,7 +138,6 @@ module Document
             raise "Block is missing" unless block_given?
             conf = _cached_config(_name)
             if conf
-              conf = conf.dup
               conf.set_instance self
               yield(conf.dup)
             end
@@ -160,9 +159,9 @@ module Document
           def _invalidate_cache_(_name, force = false)
             with_cached_config(_name) do |config|
               if force || config.get_invalidate_if
-                config.get_before_invalidate
+                config.get_before_invalidate unless force
                 ::Rails.cache.delete(config.cache_key)
-                config.get_after_invalidate
+                config.get_after_invalidate unless force
               end
             end
           end
