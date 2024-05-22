@@ -32,10 +32,11 @@ module Document
           class << self
 
             def build form
-              fields = []
-              form.sections.includes(:fields).each do |section|
-                fields = fields + section.fields
-              end
+              #fields = []
+              # form.cacher.sections.includes(:fields).each do |section|
+              #   fields = fields + section.cacher.fields
+              # end
+              fields = form.cacher.fields.sort_by(&:position_on_form)
               instance = self.new(form_id: form.id)
               clauses = clauses_template(fields)
               clauses.each do |clause|
@@ -49,7 +50,7 @@ module Document
                 nested = namespace.to_s.split(".").map(&:humanize).map(&:titleize).join("/")
                 name = namespace ? "#{namespace}.#{field.name}" : field.name
                 if field.attached_nested_form?
-                  collection.push(*clauses_template(field.nested_form.fields, name))
+                  collection.push(*clauses_template(field.cacher.nested_form.cacher.fields, name))
                 elsif field.depedency_field?
                   dep_form = field.options.form
                   if dep_form
@@ -58,7 +59,7 @@ module Document
                     else
                       collection.push(Clause.new(comparison_operator: :eq, type: field.stored_type, field: "#{name}_ids", label: field.label, namespace: nested))
                     end
-                    collection.push(*clauses_template(dep_form.fields, name))
+                    collection.push(*clauses_template(dep_form.cacher.fields, name))
                   end
                 else
                   if field.range_field?

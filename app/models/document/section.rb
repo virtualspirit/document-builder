@@ -77,12 +77,12 @@ module Document
     end
 
     def virtual_fields instance, _fields = nil
-      _fields ||= fields.sort_by(:position_on_section)
+      _fields ||= cacher.fields.sort_by(:position_on_section)
       _fields.map do |field|
         vp = present_virtual_field(field, target: instance)
-        nested_form = field.nested_form
+        nested_form = field.cacher.nested_form
         if nested_form && vp.value
-          nested_fields = nested_form.fields.sort_by(&:position_on_form)
+          nested_fields = nested_form.cacher.fields.sort_by(&:position_on_form)
           if vp.multiple_nested_form?
             nested_form.virtual_fields = []
             vp.value.each do |nested_instance|

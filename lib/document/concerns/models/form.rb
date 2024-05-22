@@ -67,7 +67,7 @@ module Document
         def append_to_virtual_view model, fields_scope: proc { |fields| fields }, overrides: {}
           check_model_validity! model
           global_overrides = overrides.fetch(:_global, {})
-          fields_scope.call(fields.sort_by(&:position_on_form)).each do |f|
+          fields_scope.call(cacher.fields.sort_by(&:position_on_form)).each do |f|
             f.interpret_as_field_for model, overrides: global_overrides.merge(overrides.fetch(f.name, {}))
           end
           if self.is_a?(::Document::BareForm)
@@ -81,9 +81,9 @@ module Document
                             overrides: {})
           if step_active?
             fields_scope = proc {|fields|
-              section = sections.sort_by(&:position)[step_state]#.select.with_index{|sect, index| sect.position_rank == step_state }.first
+              section = cacher.sections.sort_by(&:position)[step_state]#.select.with_index{|sect, index| sect.position_rank == step_state }.first
               if section
-                section.try(:fields) || []
+                section.cacher.fields
               else
                 []
               end
@@ -132,7 +132,8 @@ module Document
           check_model_validity! model
 
           global_overrides = overrides.fetch(:_global, {})
-          fields_scope.call(fields.sort_by(&:position_on_form)).each do |f|
+          fields_scope.call(cacher.fields.sort_by(&:position_on_form)).each do |f|
+#            debugger if f.attached_nested_form?
             f.interpret_to model, overrides: global_overrides.merge(overrides.fetch(f.name, {}))
           end
           if self.is_a?(::Document::Form)

@@ -41,6 +41,7 @@ module Document
             cache_self
             cache_at :form, ->{ form }, expire_by: :form
             cache_at :section, ->{ section }, expire_by: :section
+            cache_at :nested_form, -> { nested_form }, expire_by: :nested_form
 
             cache_at :grid_fields, -> { grid_fields }, expire_by: :grid_fields
             cache_at :default_grid_field, -> { default_grid_field }, expire_by: :default_grid_field

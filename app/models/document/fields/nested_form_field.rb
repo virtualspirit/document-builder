@@ -35,7 +35,7 @@ module Document
         return model if accessibility == :hidden
 
         overrides[:name] = name
-        nested_model = nested_form.to_virtual_model(overrides: { _global: { accessibility: accessibility } })
+        nested_model = cacher.nested_form.to_virtual_model(overrides: { _global: { accessibility: accessibility } })
         if nested_model
           nested_model.field "#{name}_id", type: BSON::ObjectId
           model.has_one name, class_name: nested_model.name, foreign_key: "#{name}_id"
