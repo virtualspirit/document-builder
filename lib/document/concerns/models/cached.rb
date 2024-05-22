@@ -92,7 +92,10 @@ module Document
               invalidate_callback = [invalidate_callback].compact.uniq unless invalidate_callback.is_a?(Array)
               invalidate_callback.each do |callback|
                 send callback.to_sym do
-                  _invalidate_cache_(_name)
+                  unless instance_variable_get("@_#{_name}_invalidated")
+                    _invalidate_cache_(_name)
+                    instance_variable_set("@_#{_name}_invalidated", true)
+                  end
                 end
               end
             end
