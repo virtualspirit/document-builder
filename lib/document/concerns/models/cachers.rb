@@ -74,7 +74,7 @@ module Document
             cache_at :field, -> { field }, expire_by: :field
             cache_at :section, -> { section }, expire_by: :section
             cache_at :nested_grid_list, -> { nested_grid_list }, expire_by: :grid_list_nested_field
-            cache_at :nested_grid_panel, -> { nested_panel_list }, expire_by: :grid_panel_nested_field
+            cache_at :nested_grid_panel, -> { nested_grid_panel }, expire_by: :grid_panel_nested_field
 
             after_save do
               grid_fields.touch_all

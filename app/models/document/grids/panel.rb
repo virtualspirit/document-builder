@@ -32,7 +32,7 @@ module Document
         if nested_field
           aggregation.nested_stages = []
           lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
-                { function: "from", parameter: form.collection_name },
+                { function: "from", parameter: cacher.form.collection_name },
                 { function: "localField", parameter: nested_field.depedency_field? ? "#{nested_field.name}_id" : "_id"},
                 { function: "foreignField", parameter: nested_field.depedency_field? ? "_id" : "#{nested_field.name}_id"},
                 { function: "as", parameter: nested_field.name },
@@ -54,7 +54,7 @@ module Document
 
       def fields_stages field_scope= proc{|field| field}
         stages = []
-        fields.each do |field|
+        cacher.fields.each do |field|
           if field_scope.call(field)
             if field.nested?
               # nested_grid = if field.multiple?

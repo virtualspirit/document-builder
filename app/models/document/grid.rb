@@ -123,8 +123,8 @@ module Document
     end
 
     def virtual_view
-      if form
-        @virtual_view ||= form.to_virtual_view
+      if cacher.form
+        @virtual_view ||= cacher.form.to_virtual_view
       end
     end
 
@@ -146,7 +146,7 @@ module Document
 
     def append_default_fields
       gfs = []
-      form.fields.includes(:default_grid_field).each do |f|
+      cacher.form.cacher.fields.includes(:default_grid_field).each do |f|
         gf = f.default_grid_field || f.create_or_get_default_gried_field
         gfs << gf
       end
@@ -181,7 +181,7 @@ module Document
 
     def fields_stages field_scope= proc{|field| field}
       stages = []
-      fields.each do |field|
+      cacher.fields.each do |field|
         if field_scope.call(field)
           field.build_default_aggregation if field.default_aggregation
           stages = stages + field.aggregation.stages
@@ -204,7 +204,7 @@ module Document
         stages = aggregation.nested_stages.map{|stg|
           if stg.name == "$lookup"
             matches = {}
-            if nested_field.depedency_field? && nested_field.field.type == "Document::Fields::DepedencyManyField"
+            if nested_field.depedency_field? && nested_field.field_type == "Document::Fields::DepedencyManyField"
               matches.deep_merge!({"$expr".to_sym => { "$in".to_sym => [ "$_id", "$$#{nested_field.name}_ids" ] }})
             end
             agg = aggregation.class.new
