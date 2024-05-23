@@ -72,11 +72,11 @@ module Document
           end
 
           def field_type
-            cacher.field.try(:type)
+            cacher.field.try(:type) if field_id
           end
 
           def field_identifier
-            cacher.field.try(:identifier)
+            cacher.field.try(:identifier) if field_id
           end
 
         end

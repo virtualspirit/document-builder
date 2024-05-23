@@ -137,7 +137,7 @@ module Document
     end
 
     def has_sections?
-      is_panel? && form.try(:type) == "Document::Form"
+      is_panel? && cacher.form.try(:type) == "Document::Form"
     end
 
     def append_field field
@@ -188,7 +188,7 @@ module Document
         end
       end
       stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "version", parameter: 1}])
-      if form.step?
+      if cacher.form.step?
         stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_step", parameter: 1}])
         stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_current_step", parameter: 1}])
         stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_total_step", parameter: 1}])

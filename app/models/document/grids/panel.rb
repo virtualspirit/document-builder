@@ -18,7 +18,7 @@ module Document
           if nested_field.multiple?
             if nested_field.nested_grid_list
               self.list_id= nested_field.nested_grid_list.id
-            end
+            endq
           end
         end
       end

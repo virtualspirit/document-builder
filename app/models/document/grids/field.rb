@@ -126,6 +126,7 @@ module Document
       end
 
       def column_names(grid_container = nil)
+        grid_container ||= current_grid
         if grid_container
           build_default_aggregation(grid_container)
         end
