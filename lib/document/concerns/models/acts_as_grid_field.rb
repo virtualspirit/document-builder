@@ -14,6 +14,21 @@ module Document
 
         end
 
+        def get_namespace
+          namespace = []
+          field = self
+          while true
+            _form = field.cacher.form
+            if _form.type == "Document::NestedForm" && _form.cacher.attachable
+              namespace << _form.cacher.attachable.name.to_s
+              field = _form.cacher.attachable
+            else
+              break
+            end
+          end
+          namespace
+        end
+
         def set_previous_document_form_id
           if depedency_field?
             @previous_document_form_id= options.document_form_id
@@ -30,7 +45,7 @@ module Document
         def create_or_get_default_gried_field
           gf = default_grid_field
           unless gf
-            gf = Document::Grids::Field.build(self)
+            gf = Document::Grids::Field.build(self, get_namespace)
             gf.default = true
             gf.default_aggregation = true
             self.default_grid_field= gf

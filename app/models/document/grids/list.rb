@@ -60,10 +60,10 @@ module Document
         end
       end
 
-      def fields_stages field_scope= proc{|field| field}
+      def fields_stages(field_scope= proc{|field, nested_field=nil| field}, nested_field= nil)
         stages = []
         cacher.fields.each do |field|
-          if field_scope.call(field)
+          if field_scope.call(field, nested_field)
             field.build_default_aggregation if field.default_aggregation
             if field.nested?
               unless field.multiple?
@@ -73,7 +73,7 @@ module Document
                 #   nested_grid.build_default_aggregation if nested_grid.default_aggregation
                 #   stages = stages + nested_grid.nested_aggregation_stages({}, field_scope)
                 # end
-                stages = stages + field.build_default_nested_grid_panel_aggregation
+                stages = stages + field.build_default_nested_grid_panel_aggregation({}, field_scope)
               end
             end
             stages = stages + field.aggregation.stages
@@ -133,7 +133,7 @@ module Document
         ])
       end
 
-      def aggregation_stages(params={}, field_scope = proc{|field| field})
+      def aggregation_stages(params={}, field_scope = proc{|field, nested_field=nil| field})
         stages = super(params, field_scope)
         pagination = params[:pagination] || {}
         search = params[:search] || {}
@@ -143,7 +143,7 @@ module Document
         stages
       end
 
-      def data(params={}, field_scope = proc{|field| field})
+      def data(params={}, field_scope = proc{|field, nested_field=nil| field})
         raw_stages = []
         if nested_field
           criteria = nil

@@ -145,6 +145,10 @@ module Document
         nil
       end
 
+      def namespaced_name
+        ((namespace || []) + [name]).map{|s| s.to_sym}
+      end
+
       class << self
 
         def timestamp_fields

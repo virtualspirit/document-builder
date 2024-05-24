@@ -162,15 +162,15 @@ module Document
       end
     end
 
-    def aggregation_stages(params={}, field_scope = proc{|field| field})
-      stages = fields_stages(field_scope)
+    def aggregation_stages(params={}, field_scope = proc{|field, nested_field=nil| field})
+      stages = fields_stages(field_scope, params[:nested_field])
       if scopes_stage = default_scopes_aggregation_stage
         stages << scopes_stage
       end
       stages
     end
 
-    def to_aggregation(params={}, field_scope = proc{|field| field})
+    def to_aggregation(params={}, field_scope = proc{|field, nested_field=nil| field})
       if default_aggregation
         build_default_aggregation
       end
@@ -179,10 +179,10 @@ module Document
       agg.to_aggregation
     end
 
-    def fields_stages field_scope= proc{|field| field}
+    def fields_stages(field_scope= proc{|field, nested_field=nil| field}, nested_field=nil)
       stages = []
       cacher.fields.each do |field|
-        if field_scope.call(field)
+        if field_scope.call(field, nested_field)
           field.build_default_aggregation if field.default_aggregation
           stages = stages + field.aggregation.stages
         end
@@ -234,7 +234,7 @@ module Document
       end
     end
 
-    def data(params={}, field_scope = proc{|field| field})
+    def data(params={}, field_scope = proc{|field, nested_field=nil| field})
       virtual_view.collection.aggregate(to_aggregation(params, field_scope)).first
     end
 

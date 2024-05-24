@@ -18,7 +18,7 @@ module Document
           if nested_field.multiple?
             if nested_field.nested_grid_list
               self.list_id= nested_field.nested_grid_list.id
-            endq
+            end
           end
         end
       end
@@ -52,10 +52,10 @@ module Document
         end
       end
 
-      def fields_stages field_scope= proc{|field| field}
+      def fields_stages(field_scope= proc{|field, nested_field=nil| field}, nested_field=nil)
         stages = []
         cacher.fields.each do |field|
-          if field_scope.call(field)
+          if field_scope.call(field, nested_field)
             if field.nested?
               # nested_grid = if field.multiple?
               #   field.nested_grid_list
@@ -68,9 +68,9 @@ module Document
               #   stages = stages + nested_grid.nested_aggregation_stages({}, field_scope)
               # end
               if field.multiple?
-                stages = stages + field.build_default_nested_grid_list_aggregation
+                stages = stages + field.build_default_nested_grid_list_aggregation({}, field_scope)
               else
-                stages = stages + field.build_default_nested_grid_panel_aggregation
+                stages = stages + field.build_default_nested_grid_panel_aggregation({}, field_scope)
               end
             end
             if field.default_aggregation
@@ -84,7 +84,7 @@ module Document
         stages
       end
 
-      def data(params={}, field_scope = proc{|field| field})
+      def data(params={}, field_scope = proc{|field, nested_field=nil| field})
         raw_stages = []
         res = virtual_view.where(id: params[:id] || params[:instance_id])
         raw_stages << res.project(:id => "id").pipeline.filter{|p| p["$match"].present? }[0]
