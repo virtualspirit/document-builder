@@ -17,7 +17,7 @@ module Document
         def build_default_aggregation(grid_container = nil)
           if default_aggregation
             if name
-              if cacher.field.attached_nested_form?
+              if cached_field.attached_nested_form?
                 super if grid_container && grid_container.is_panel?
                 aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}_count", parameter: 1}])
               else

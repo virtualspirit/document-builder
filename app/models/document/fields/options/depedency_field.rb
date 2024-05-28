@@ -40,7 +40,7 @@ module Document
 
       def form
         # @form ||= Document.form_model_class_constant.find_by_id(document_form_id_value)
-        @form ||= Document.form_model_class_constant.cacher.find_by(id: document_form_id_value)
+        @form ||= Document.form_model_class_constant.find_by(id: document_form_id_value)
       end
 
       def document_form_id_value

@@ -123,8 +123,8 @@ module Document
     end
 
     def virtual_view
-      if cacher.form
-        @virtual_view ||= cacher.form.to_virtual_view
+      if cached_form
+        @virtual_view ||= cached_form.to_virtual_view
       end
     end
 
@@ -137,7 +137,7 @@ module Document
     end
 
     def has_sections?
-      is_panel? && cacher.form.try(:type) == "Document::Form"
+      is_panel? && cached_form.try(:type) == "Document::Form"
     end
 
     def append_field field
@@ -146,7 +146,8 @@ module Document
 
     def append_default_fields
       gfs = []
-      cacher.form.cacher.fields.includes(:default_grid_field).each do |f|
+      #cacher.form.fields.includes(:default_grid_field).each do |f|
+      cached_form.fields.each do |f|
         gf = f.default_grid_field || f.create_or_get_default_gried_field
         gfs << gf
       end
@@ -181,13 +182,13 @@ module Document
 
     def fields_stages(field_scope= proc{|field, grid| field})
       stages = []
-      _fields= field_scope.call(cacher.fields, self)
+      _fields= field_scope.call(cached_fields, self)
       _fields.each do |field|
         field.build_default_aggregation if field.default_aggregation
         stages = stages + field.aggregation.stages
       end
       stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "version", parameter: 1}])
-      if cacher.form.step?
+      if cached_form.step?
         stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_step", parameter: 1}])
         stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_current_step", parameter: 1}])
         stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_total_step", parameter: 1}])

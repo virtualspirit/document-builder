@@ -12,7 +12,7 @@ module Document
     belongs_to :form, class_name: 'Document::BareForm', touch: true, optional: true, inverse_of: :fields, counter_cache: true
     belongs_to :section, class_name: Document.section_model_class, touch: true, optional: true, inverse_of: :fields, counter_cache: true
     #has_one :nested_form, class_name: 'Document::BareForm', as: :attachable, dependent: :destroy, inverse_of: :attachable
-    has_one :nested_form, class_name: 'Document::BareForm', dependent: :destroy, inverse_of: :attachable, foreign_key: "attachable_id"
+    has_one :nested_form, class_name: 'Document::NestedForm', dependent: :destroy, inverse_of: :attachable, foreign_key: "attachable_id"
     accepts_nested_attributes_for :nested_form, allow_destroy: true
     belongs_to :field_group, class_name: "Document::FieldGroup", touch: true, optional: true, inverse_of: :fields
 

@@ -14,7 +14,7 @@ module Document
 
         accessibility = overrides.fetch(:accessibility, self.accessibility)
         return model if accessibility == :hidden
-        model.has_one_attached name        
+        model.has_one_attached name
         model
       end
 
@@ -29,7 +29,7 @@ module Document
 
       def interpret_validations_to model, accessibility, overrides
         file_validation = self.validations.file
-        model.uploadable_validations(fieldname: name.to_sym, validations: {presence: validations.presence, max_file_size: validations.file.max_file_size_in_bytes, whitelist: validations.file.whitelist})
+        model.uploadable_validations(fieldname: name.to_sym, validations: {presence: validations.required, max_file_size: validations.file.max_file_size_in_bytes, whitelist: validations.file.whitelist})
         super(model, accessibility, overrides)
       end
 

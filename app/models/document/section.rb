@@ -99,7 +99,7 @@ module Document
     end
 
     def _virtual_fields instance, _fields=nil
-      _fields ||= cacher.fields.sort_by(&:position_on_section)
+      _fields ||= cached_fields.sort_by(&:position_on_section)
       _fields.map do |field|
         if field.attached_nested_form? && instance.send("#{field.name}").blank?
           if instance.send("#{field.name}").nil?

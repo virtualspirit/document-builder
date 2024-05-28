@@ -40,7 +40,7 @@ module Document
                 case field_type.demodulize.underscore
                 when "geolocation_field"
                   aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", parameter: 1}])
-                  aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}#{cacher.field.options.location_field_suffix_name}", parameter: 1}])
+                  aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}#{cached_field.options.location_field_suffix_name}", parameter: 1}])
                 when "attachment_field"
                   aggregation.stages.build(name: "$addFields", merge: false, order: 9997,
                     arguments_attributes: [
@@ -72,11 +72,11 @@ module Document
           end
 
           def field_type
-            cacher.field.try(:type) if field_id
+            cached_field.try(:type) if field_id
           end
 
           def field_identifier
-            cacher.field.try(:identifier) if field_id
+            cached_field.try(:identifier) if field_id
           end
 
         end
@@ -156,19 +156,19 @@ module Document
           end
 
           def form
-            if cacher.field.attached_nested_form?
-              cacher.field.cacher.nested_form
+            if cached_field.attached_nested_form?
+              cached_field.cached_nested_form
             else
-              cacher.field.options.form
+              cached_field.options.form
             end
           end
 
           def depedency_field?
-            cacher.field.try(:depedency_field?)
+            cached_field.try(:depedency_field?)
           end
 
           def has_attached_nested_form?
-            cacher.field.try(:has_attached_nested_form?)
+            cached_field.try(:has_attached_nested_form?)
           end
 
           def nested?
@@ -180,7 +180,7 @@ module Document
           end
 
           def build_default_nested_grid_panel_aggregation(params={}, field_scope = proc{|field| field})
-            cached_nested_grid_panel = cacher.nested_grid_panel
+            cached_nested_grid_panel = cached_nested_grid_panel
             cached_nested_grid_panel.nested_field= self
             if cached_nested_grid_panel && cached_nested_grid_panel.default_aggregation
               matches = {}
@@ -194,7 +194,7 @@ module Document
               agg.stages.append(cached_nested_grid_panel.aggregation_stages(params, field_scope))
               cached_nested_grid_panel.aggregation.nested_stages = []
               lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
-                { function: "from", parameter: cached_nested_grid_panel.cacher.form.collection_name },
+                { function: "from", parameter: cached_nested_grid_panel.cached_form.collection_name },
                 { function: "localField", parameter: depedency_field? ? "#{name}_id" : "_id"},
                 { function: "foreignField", parameter: depedency_field? ? "_id" : "#{name}_id"},
                 { function: "as", parameter: name },
@@ -217,7 +217,7 @@ module Document
           end
 
           def build_default_nested_grid_list_aggregation(params={}, field_scope = proc{|field| field})
-            cached_nested_grid_list = cacher.nested_grid_list
+            cached_nested_grid_list = cached_nested_grid_list
             cached_nested_grid_list.nested_field= self
             if cached_nested_grid_list && cached_nested_grid_list.default_aggregation
               cached_nested_grid_list.aggregation.nested_stages = []
@@ -232,7 +232,7 @@ module Document
               agg.stages.append(cached_nested_grid_list.aggregation_stages(params, field_scope))
               if depedency_field? && field_type == "Document::Fields::DepedencyManyField"
                 lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
-                    { function: "from", parameter: cached_nested_grid_list.cacher.form.collection_name },
+                    { function: "from", parameter: cached_nested_grid_list.cached_form.collection_name },
                     { function: "let", parameters_as_array: false, parameters_attributes: [
                         { function: "#{name}_ids", parameter: "$#{name}_ids" }
                       ]
@@ -242,7 +242,7 @@ module Document
                   ])
               else
                 lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
-                      { function: "from", parameter: cached_nested_grid_list.cacher.form.collection_name },
+                      { function: "from", parameter: cached_nested_grid_list.cached_form.collection_name },
                       { function: "localField", parameter: depedency_field? ? "#{name}_id" : "_id"},
                       { function: "foreignField", parameter: depedency_field? ? "_id" : "#{name}_id"},
                       { function: "as", parameter: name },

@@ -39,7 +39,7 @@ module Document
           aggregation.nested_stages = []
           if nested_field.depedency_field? && nested_field.field_type == "Document::Fields::DepedencyManyField"
             lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
-                { function: "from", parameter: cacher.form.collection_name },
+                { function: "from", parameter: cached_form.collection_name },
                 { function: "let", parameters_as_array: false, parameters_attributes: [
                     { function: "#{nested_field.name}_ids", parameter: "$#{nested_field.name}_ids" }
                   ]
@@ -48,7 +48,7 @@ module Document
               ])
           else
             lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
-                  { function: "from", parameter: cacher.form.collection_name },
+                  { function: "from", parameter: cached_form.collection_name },
                   { function: "localField", parameter: nested_field.depedency_field? ? "#{nested_field.name}_id" : "_id"},
                   { function: "foreignField", parameter: nested_field.depedency_field? ? "_id" : "#{nested_field.name}_id"},
                   { function: "as", parameter: nested_field.name },
@@ -62,7 +62,7 @@ module Document
 
       def fields_stages(field_scope= proc{|field, grid| field})
         stages = []
-        _fields= field_scope.call(cacher.fields, self)
+        _fields= field_scope.call(cached_fields, self)
         _fields.each do |field|
           field.build_default_aggregation if field.default_aggregation
           if field.nested?
