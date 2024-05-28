@@ -61,6 +61,12 @@ module Document
       end
     end
 
+    before_create do
+      if position_on_form.blank? || position_on_form_position.blank?
+        self.position_on_form= form.fields[-1].try(:position_on_form).to_i + 1
+      end
+    end
+
     after_commit do
       if section_id && saved_change_to_position_on_section?
         # overral_pos = form.sections.rank(:position).reduce(0) do |sum, s|
@@ -70,7 +76,7 @@ module Document
         #     break sum + position_on_section_rank
         #   end
         # end
-        update(set_position_on_form: section.position_rank * section.fields_count  + self.position_on_section_rank)
+        #update(set_position_on_form: section.position_rank * section.fields_count  + self.position_on_section_rank)
       end
     end
 
@@ -85,7 +91,9 @@ module Document
                 in: ->(_) { Field.descendants.map(&:to_s) }
               },
               allow_blank: false
-    validates :section_id, absence: true, if: proc{|f| f.form && f.form.type == 'Document::NestedForm' }
+    validates :section_id, absence: true, if: proc{|f|
+      f.form && f.form.type == 'Document::NestedForm'
+    }
     validates :set_position_on_section, absence: true, unless: proc { section_id || section }
     validates :set_position_on_form, absence: true, if: proc { section_id || section }
     validate do
