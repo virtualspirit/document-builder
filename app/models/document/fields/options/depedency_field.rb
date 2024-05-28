@@ -26,12 +26,16 @@ module Document
       #   end
       # end
 
+      def reset_form
+        @form = nil
+      end
+
       def append_choices_as_json
         self._append_choices_as_json = true
       end
 
       def virtual_model
-        @virtual_model ||= form.try(:to_virtual_view)
+        form.try(:to_virtual_view)
       end
 
       def form

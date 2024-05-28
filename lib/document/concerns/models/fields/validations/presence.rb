@@ -7,7 +7,7 @@ module Document
           extend ActiveSupport::Concern
 
           included do
-            attribute :presence, :boolean, default: false
+            attribute :required, :boolean, default: false
           end
 
           def interpret_to(model, field_name, _accessibility, _options = {})

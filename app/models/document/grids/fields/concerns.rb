@@ -179,8 +179,9 @@ module Document
             false
           end
 
-          def build_default_nested_grid_panel_aggregation(params={}, field_scope = proc{|field, nested_field=nil| field})
+          def build_default_nested_grid_panel_aggregation(params={}, field_scope = proc{|field| field})
             cached_nested_grid_panel = cacher.nested_grid_panel
+            cached_nested_grid_panel.nested_field= self
             if cached_nested_grid_panel && cached_nested_grid_panel.default_aggregation
               matches = {}
               if depedency_field? && field_type == "Document::Fields::DepedencyManyField"
@@ -190,7 +191,7 @@ module Document
               unless matches.blank?
                 agg.stages.build({name: "$match", arguments_attributes: matches.reduce([]){|arr, h| arr << { function: h[0], raw_parameter: h[1] } }})
               end
-              agg.stages.append(cached_nested_grid_panel.aggregation_stages(params.merge({nested_field: self}), field_scope))
+              agg.stages.append(cached_nested_grid_panel.aggregation_stages(params, field_scope))
               cached_nested_grid_panel.aggregation.nested_stages = []
               lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
                 { function: "from", parameter: cached_nested_grid_panel.cacher.form.collection_name },
@@ -215,8 +216,9 @@ module Document
             cached_nested_grid_panel ? cached_nested_grid_panel.aggregation.nested_stages : []
           end
 
-          def build_default_nested_grid_list_aggregation(params={}, field_scope = proc{|field, nested_field=nil| field})
+          def build_default_nested_grid_list_aggregation(params={}, field_scope = proc{|field| field})
             cached_nested_grid_list = cacher.nested_grid_list
+            cached_nested_grid_list.nested_field= self
             if cached_nested_grid_list && cached_nested_grid_list.default_aggregation
               cached_nested_grid_list.aggregation.nested_stages = []
               matches = {}
@@ -227,7 +229,7 @@ module Document
               unless matches.blank?
                 agg.stages.build({name: "$match", arguments_attributes: matches.reduce([]){|arr, h| arr << { function: h[0], raw_parameter: h[1] } }})
               end
-              agg.stages.append(cached_nested_grid_list.aggregation_stages(params.merge({nested_field: self}), field_scope))
+              agg.stages.append(cached_nested_grid_list.aggregation_stages(params, field_scope))
               if depedency_field? && field_type == "Document::Fields::DepedencyManyField"
                 lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
                     { function: "from", parameter: cached_nested_grid_list.cacher.form.collection_name },

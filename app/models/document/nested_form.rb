@@ -24,21 +24,38 @@ module Document
     # end
 
     def get_virtual_fields instance, _fields = nil
-      _fields ||= cacher.fields.sort_by(&:position_on_form)
+      _fields ||= fields.sort_by(&:position_on_form)
       _fields.map do |field|
         vp = present_virtual_field(field, target: instance)
-        nested_form = field.cacher.nested_form
+        nested_form = field.nested_form
         if nested_form && vp.value_for_preview
-          nested_fields = nested_form.cacher.fields.sort_by(&:position_on_form)
-          if vp.multiple_nested_form?
-            nested_form.virtual_fields = []
-            vp.value_for_preview.each do |nested_instance|
-              field.nested_form.virtual_fields << get_virtual_fields(nested_instance, nested_fields)
+          nested_fields = nested_form.fields.sort_by(&:position_on_form)
+          unless nested_fields.blank?
+            if vp.multiple_nested_form?
+              nested_form.virtual_fields = []
+              vp.value_for_preview.each do |nested_instance|
+                field.nested_form.virtual_fields << get_virtual_fields(nested_instance, nested_fields)
+              end
+            else
+              field.nested_form.virtual_fields = get_virtual_fields(vp.value_for_preview, nested_fields)
             end
-          else
-            field.nested_form.virtual_fields = get_virtual_fields(vp.value_for_preview, nested_fields)
           end
         end
+        vp
+      end.reject(&:access_hidden?)
+    end
+
+    def _virtual_fields instance, _fields = nil
+      _fields ||= cacher.fields.sort_by(&:position_on_form)
+      _fields.map do |field|
+        if field.attached_nested_form? && instance.send("#{field.name}").blank?
+          if instance.send("#{field.name}").nil?
+            instance.send("build_#{field.name}")
+          else
+            instance.send("#{field.name}").build
+          end
+        end
+        vp = present_virtual_field(field, target: instance)
         vp
       end.reject(&:access_hidden?)
     end

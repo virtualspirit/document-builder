@@ -162,15 +162,15 @@ module Document
       end
     end
 
-    def aggregation_stages(params={}, field_scope = proc{|field, nested_field=nil| field})
-      stages = fields_stages(field_scope, params[:nested_field])
+    def aggregation_stages(params={}, field_scope = proc{|field, grid| field})
+      stages = fields_stages(field_scope)
       if scopes_stage = default_scopes_aggregation_stage
         stages << scopes_stage
       end
       stages
     end
 
-    def to_aggregation(params={}, field_scope = proc{|field, nested_field=nil| field})
+    def to_aggregation(params={}, field_scope = proc{|field, grid| field})
       if default_aggregation
         build_default_aggregation
       end
@@ -179,13 +179,12 @@ module Document
       agg.to_aggregation
     end
 
-    def fields_stages(field_scope= proc{|field, nested_field=nil| field}, nested_field=nil)
+    def fields_stages(field_scope= proc{|field, grid| field})
       stages = []
-      cacher.fields.each do |field|
-        if field_scope.call(field, nested_field)
-          field.build_default_aggregation if field.default_aggregation
-          stages = stages + field.aggregation.stages
-        end
+      _fields= field_scope.call(cacher.fields, self)
+      _fields.each do |field|
+        field.build_default_aggregation if field.default_aggregation
+        stages = stages + field.aggregation.stages
       end
       stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "version", parameter: 1}])
       if cacher.form.step?
@@ -197,7 +196,7 @@ module Document
       stages
     end
 
-    def nested_aggregation_stages(params={}, field_scope = proc{|field| field})
+    def nested_aggregation_stages(params={}, field_scope = proc{|field, grid| field})
       stages = []
       if nested_field
         build_default_aggregation if default_aggregation
@@ -234,7 +233,7 @@ module Document
       end
     end
 
-    def data(params={}, field_scope = proc{|field, nested_field=nil| field})
+    def data(params={}, field_scope = proc{|field, grid| field})
       virtual_view.collection.aggregate(to_aggregation(params, field_scope)).first
     end
 
@@ -284,11 +283,12 @@ module Document
 
     class << self
 
-      def get_default_grid_for(grid_owner, form)
-        owned_or_default(grid_owner, form)
-        .includes(*[:form, :sections, :fields => [ :field => [:nested_form], :nested_grid_panel => [:form, :sections, :fields], :nested_grid_list => [:form, :fields]]])
-        .order("document_grids.default asc")
-        .first
+      def get_default_grid_for(grid_owner, form, **opts)
+        res = owned_or_default(grid_owner, form)
+        if opts[:includes]
+          res = res.includes(*[:form, :sections, :fields => [ :field => [:nested_form], :nested_grid_panel => [:form, :sections, :fields], :nested_grid_list => [:form, :fields]]])
+        end
+        res = res.order("document_grids.default asc").first
       end
 
     end

@@ -52,39 +52,38 @@ module Document
         end
       end
 
-      def fields_stages(field_scope= proc{|field, nested_field=nil| field}, nested_field=nil)
+      def fields_stages(field_scope= proc{|field, grid| field})
         stages = []
-        cacher.fields.each do |field|
-          if field_scope.call(field, nested_field)
-            if field.nested?
-              # nested_grid = if field.multiple?
-              #   field.nested_grid_list
-              # else
-              #   field.nested_grid_panel
-              # end
-              # if nested_grid
-              #   nested_grid.nested_field= field
-              #   nested_grid.build_default_aggregation if nested_grid.default_aggregation
-              #   stages = stages + nested_grid.nested_aggregation_stages({}, field_scope)
-              # end
-              if field.multiple?
-                stages = stages + field.build_default_nested_grid_list_aggregation({}, field_scope)
-              else
-                stages = stages + field.build_default_nested_grid_panel_aggregation({}, field_scope)
-              end
+        _fields= field_scope.call(cacher.fields, self)
+        _fields.each do |field|
+          if field.nested?
+            # nested_grid = if field.multiple?
+            #   field.nested_grid_list
+            # else
+            #   field.nested_grid_panel
+            # end
+            # if nested_grid
+            #   nested_grid.nested_field= field
+            #   nested_grid.build_default_aggregation if nested_grid.default_aggregation
+            #   stages = stages + nested_grid.nested_aggregation_stages({}, field_scope)
+            # end
+            if field.multiple?
+              stages = stages + field.build_default_nested_grid_list_aggregation({}, field_scope)
+            else
+              stages = stages + field.build_default_nested_grid_panel_aggregation({}, field_scope)
             end
-            if field.default_aggregation
-              field.multiple?? field.build_default_aggregation(self) : field.build_default_aggregation
-            end
-            stages = stages + field.aggregation.stages
           end
+          if field.default_aggregation
+            field.multiple?? field.build_default_aggregation(self) : field.build_default_aggregation
+          end
+          stages = stages + field.aggregation.stages
         end
         # stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "created_at", parameter: 1}])
         # stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "updated_at", parameter: 1}])
         stages
       end
 
-      def data(params={}, field_scope = proc{|field, nested_field=nil| field})
+      def data(params={}, field_scope = proc{|field, grid| field})
         raw_stages = []
         res = virtual_view.where(id: params[:id] || params[:instance_id])
         raw_stages << res.project(:id => "id").pipeline.filter{|p| p["$match"].present? }[0]
