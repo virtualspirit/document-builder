@@ -60,7 +60,7 @@ module Document
       #   section.expire_cache
       # end
 
-      old_position = position_before_last_save
+      old_position = position_before_last_save.to_i
       new_position = position
       position_difference = new_position - old_position
       fields.update_all("position_on_form = position_on_form + #{position_difference}")
