@@ -26,8 +26,11 @@ module Document
       #   end
       # end
 
-      def reset_form
+      def reset_instance_variables
         @form = nil
+        @virtual_model= nil
+        @clause_templates= nil
+        @collection = nil
       end
 
       def append_choices_as_json
@@ -35,7 +38,10 @@ module Document
       end
 
       def virtual_model
-        form.try(:to_virtual_view)
+        if form
+          @virtual_model ||= form.to_virtual_view( overrides: { build_options: { nested_form: true } } )
+        end
+        @virtual_model
       end
 
       def form

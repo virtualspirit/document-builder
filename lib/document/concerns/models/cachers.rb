@@ -170,6 +170,10 @@ module Document
 
             after_commit :on => [:update, :destroy] do
               self.class.base_class.cacher.clean_by id: id
+              cached_form.cacher.clean_fields if cached_form
+              if section_id.present?
+                cached_section.try(:cacher).try(:clean_fields)
+              end
               cached_nested_form.cacher.clean_attachable if attached_nested_form? && cached_nested_form
               cached_grid_fields.each{|gf| gf.cacher.clean_field }
             end

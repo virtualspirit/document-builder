@@ -58,7 +58,8 @@ module Document
         end
 
         def to_virtual_view(model_name: virtual_view_model_name, fields_scope: proc{|fields| fields}, overrides: {})
-          model = _virtual_view model_name
+          build_options = overrides.delete(:build_options) || {}
+          model = _virtual_view(model_name, **build_options)
           set_constant model_name, model
           append_to_virtual_view(model, fields_scope: fields_scope, overrides: overrides)
           model
@@ -79,7 +80,10 @@ module Document
         def to_virtual_model(model_name: virtual_model_name,
                             fields_scope: proc { |fields| fields },
                             overrides: {})
-          if step_active?
+          build_options = overrides.delete(:build_options) || {}
+          build_options[:step] = self.step
+
+          if step_active? && !build_options[:nested_form]
             fields_scope = proc {|fields|
               section = cached_sections.sort_by(&:position)[step_state]#.select.with_index{|sect, index| sect.position_rank == step_state }.first
               if section
@@ -89,40 +93,45 @@ module Document
               end
             }
           end
-          model = _virtual_model model_name
+
+          model = _virtual_model model_name, **build_options
           set_constant model_name, model
           model = append_to_virtual_model(model, fields_scope: fields_scope, overrides: overrides)
-          # model.class_eval <<-CODE
-          #   def serializable_hash(options= nil)
-          #     relations = [:has_one, :belongs_to, :has_many, :has_and_belongs_to_many].reduce([]) { |arr, rel| arr + self.class.reflect_on_all_associations(rel).map(&:name) }
-          #     unless relations.blank?
-          #       options ||= {}
-          #       if options[:include].is_a?(Array)
-          #         options[:include] = [options[:include]].compact unless options[:include].is_a?(Array)
-          #         options[:include] = options[:include] + relations
-          #       else
-          #         options[:include] = relations
+          # if type == "Document::Form"
+          #   model.class_eval <<-CODE
+          #     def serializable_hash(options= nil)
+          #       relations = [:has_one, :has_many, :has_and_belongs_to_many].reduce([]) { |arr, rel| arr + self.class.reflect_on_all_associations(rel).map(&:name) }
+          #       unless relations.blank?
+          #         options ||= {}
+          #         if options[:include].is_a?(Array)
+          #           options[:include] = [options[:include]].compact unless options[:include].is_a?(Array)
+          #           options[:include] = options[:include] + relations
+          #         else
+          #           options[:include] = relations
+          #         end
           #       end
-          #     end
-          #     hash = super(options)
-          #     self.class.reflect_on_all_associations(:embeds_one).map(&:name).each do |rname|
-          #       unless hash.keys.include?(rname.to_s)
-          #         hash[rname.to_s] = nil
+          #       hash = super(options)
+          #       self.class.reflect_on_all_associations(:embeds_one).map(&:name).each do |rname|
+          #         unless hash.keys.include?(rname.to_s)
+          #           hash[rname.to_s] = nil
+          #         end
           #       end
-          #     end
-          #     self.class.reflect_on_all_associations(:embeds_many).map(&:name).each do |rname|
-          #       unless hash.keys.include?(rname.to_s)
-          #         hash[rname.to_s] = []
+          #       self.class.reflect_on_all_associations(:embeds_many).map(&:name).each do |rname|
+          #         unless hash.keys.include?(rname.to_s)
+          #           hash[rname.to_s] = []
+          #         end
           #       end
-          #     end
-          #     if self.class.respond_to?(:_uploadable_config)
-          #       (self.class._uploadable_config[self.class.name] || {}).each do |f,v|
-          #         hash[f] = self.send("_"+f.to_s+"_url") rescue {}
+          #       if self.class.respond_to?(:_uploadable_config)
+          #         (self.class._uploadable_config[self.class.name] || {}).each do |f,v|
+          #           hash[f] = self.send("_"+f.to_s+"_url") rescue {}
+          #         end
           #       end
+          #       hash
           #     end
-          #     hash
-          #   end
-          # CODE
+          #   CODE
+          # else
+
+          # end
           model.class_eval <<-CODE
             def serializable_hash(options= nil)
               hash = super(options)
@@ -195,14 +204,14 @@ module Document
             "#{name.classify}#{id.to_s.underscore}".classify
           end
 
-          def _virtual_model model_name
-            model = Document.virtual_model_class.build name: model_name, collection: collection_name, step: step_active?
+          def _virtual_model model_name, **opts
+            model = Document.virtual_model_class.build(name: model_name, collection: collection_name, **opts)
             model.form_id = self.id
             model
           end
 
-          def _virtual_view model_name
-            model = Document.virtual_model_class.build name: model_name, collection: collection_name, step: true
+          def _virtual_view model_name, **opts
+            model = Document.virtual_model_class.build(name: model_name, collection: collection_name, **opts)
             model.form_id = self.id
             model
           end

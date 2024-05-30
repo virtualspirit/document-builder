@@ -12,7 +12,7 @@ module AssociationCache
     else
       _relations = [:has_one, :belongs_to, :has_many, :has_and_belongs_to_many].reduce([]) { |arr, rel| arr + self.class.reflect_on_all_associations(rel).map(&:name) }
       _relations.each do |assoc|
-        association(assoc.to_sym).reset
+        association(assoc.to_sym).reset rescue nil
       end
       if @association_cache
         instance_variable_set('@association_cache', {})

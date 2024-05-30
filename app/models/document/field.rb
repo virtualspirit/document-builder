@@ -121,9 +121,9 @@ module Document
       if defined?(super)
         super
       end
-      options.instance_variable_set('@form', nil)
-      options.instance_variable_set('@collection', nil)
-      options.instance_variable_set('@clause_templates', nil)
+      if depedency_field?
+        options.reset_instance_variables
+      end
     end
 
     protected

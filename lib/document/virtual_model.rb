@@ -46,7 +46,7 @@ module Document
         @nested_models ||= {}
       end
 
-      def build(name: nil, collection: nil, step: false)
+      def build(name: nil, collection: nil, **opts)
         # if collection
         #   self.store_in collection: collection
         # end
@@ -56,7 +56,7 @@ module Document
         # klass
         klass = Class.new(self)
         klass.name = name
-        klass = setup_model(klass, step)
+        klass = setup_model(klass,**opts)
         if collection
           klass.store_in collection: collection
         end
@@ -65,14 +65,14 @@ module Document
 
       protected
 
-      def setup_model klass, step=false
+      def setup_model klass, step=false, **opts
         klass.include Mongoid::Document
         klass.include Mongoid::Timestamps
         klass.include Document::Concerns::Models::ActiveStorageBridge::Attached::Macros
         klass.include Document::Concerns::VirtualModels::GeneralSearch
         klass.include Document::Concerns::VirtualModels::AdvancedSearch
 
-        if step
+        if opts[:step]
           klass.include Document::Concerns::VirtualModels::Steps
         end
         klass.class_attribute :form_id
