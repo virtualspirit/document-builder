@@ -58,7 +58,7 @@ module Document
         end
 
         def to_virtual_view(model_name: virtual_view_model_name, fields_scope: proc{|fields| fields}, overrides: {})
-          model = _virtual_model model_name
+          model = _virtual_view model_name
           set_constant model_name, model
           append_to_virtual_view(model, fields_scope: fields_scope, overrides: overrides)
           model
@@ -197,6 +197,12 @@ module Document
 
           def _virtual_model model_name
             model = Document.virtual_model_class.build name: model_name, collection: collection_name, step: step_active?
+            model.form_id = self.id
+            model
+          end
+
+          def _virtual_view model_name
+            model = Document.virtual_model_class.build name: model_name, collection: collection_name, step: true
             model.form_id = self.id
             model
           end
