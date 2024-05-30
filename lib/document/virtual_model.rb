@@ -72,9 +72,9 @@ module Document
         klass.include Document::Concerns::VirtualModels::GeneralSearch
         klass.include Document::Concerns::VirtualModels::AdvancedSearch
 
-        # if step
+        if step
           klass.include Document::Concerns::VirtualModels::Steps
-        # end
+        end
         klass.class_attribute :form_id
         klass
       end
