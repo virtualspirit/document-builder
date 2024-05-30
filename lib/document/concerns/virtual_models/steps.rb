@@ -52,7 +52,7 @@ module Document
         end
 
         def set_keywords_overriden
-          search_fields.each do |index, fields|
+          (search_fields || []).each do |index, fields|
             if(_current_step <= _total_step - 1)
               self._steps_keywords[_current_step] = get_keywords(fields)
             else

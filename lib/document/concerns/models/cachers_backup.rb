@@ -51,7 +51,56 @@ module Document
               cached_form.cached_grids.each(&:invalidate_cache_of_cached_form)
             end
 
-            cache_at :fields_cache, ->{ fields }, expire_by: :fields
+          end
+        end
+
+        module Form
+          extend ActiveSupport::Concern
+          included do
+            cache_this :cached_fields do
+              value do |form|
+                form.fields.all.map(&:reload)
+              end
+              invalidate_when [:after_commit]
+              before_invalidate do |form|
+                form.cached_fields.each(&:invalidate_cache_of_cached_form)
+              end
+            end
+
+            cache_this :cached_sections do
+              value do |form|
+                form.sections.all.map(&:reload)
+              end
+              invalidate_when [:after_commit]
+              before_invalidate do |form|
+                form.cached_sections.each(&:invalidate_cache_of_cached_form)
+              end
+            end
+
+            cache_this :cached_grids do
+              value do |form|
+                form.grids.all.map(&:reload)
+              end
+              before_invalidate do |form|
+                form.cached_grids.each(&:invalidate_cache_of_cached_form)
+              end
+            end
+
+            cache_this :cached_default_grid_panel do
+              value do |form|
+                form.default_grid_panel.reload if form.default_grid_panel
+              end
+            end
+
+            cache_this :cached_default_grid_list do
+              value do |form|
+                form.default_grid_list.reload if form.default_grid_list
+              end
+            end
+
+            after_commit do
+              cached_form.cached_grids.each(&:invalidate_cache_of_cached_form)
+            end
 
           end
         end

@@ -134,6 +134,10 @@ module Document
 
         module InstanceMethods
 
+          def prepared_to_be_cached
+            @association_cache = {}
+          end
+
           def _cached_config _name
             self.class.cached _name
           end

@@ -26,7 +26,7 @@ module Document
       belongs_to :field, class_name: 'Document::Field', foreign_key: "field_id", optional: true
       belongs_to :section, class_name: "Document::Section", optional: true, foreign_key: "section_id"
       has_many :grid_fields, class_name: "Document::Grids::GridField", foreign_key: "field_id", dependent: :destroy, inverse_of: :field
-      has_many :grids, through: :grid_fields
+      has_many :grids, through: :grid_fields, class_name: "Document::Grid"
       has_many :grid_panels, lambda { where(type: "Document::Grids::Panel") }, through: :grid_fields, source: :grid
       has_many :grid_lists, lambda { where(type: "Document::Grids::List") }, through: :grid_fields, source: :grid
       has_many :grid_nested_fields, class_name: "Document::Grids::GridNestedField", foreign_key: "nested_field_id", dependent: :destroy

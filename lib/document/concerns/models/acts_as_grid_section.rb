@@ -6,6 +6,7 @@ module Document
 
         included  do
           has_many :grid_fields, -> { rank(:position_on_section) }, class_name: "Document::Grids::Field", foreign_key: "section_id"
+          belongs_to :grid, class_name: "Document::Grids::Panel", foreign_key: "form_id", primary_key: "form_id", inverse_of: :sections
           # has_many :grid_sections, class_name: "Document::Grids::Section", foreign_key: "section_id", dependent: :destroy
 
           # after_create :create_grid_section

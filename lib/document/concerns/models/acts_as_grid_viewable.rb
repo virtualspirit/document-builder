@@ -16,15 +16,15 @@ module Document
         end
 
         def get_default_grid_panel
-          grids
+          grid_panels
           .includes(*[:form, :sections, :fields => [ :field => [:nested_form], :nested_grid_panel => [:form, :sections, :fields], :nested_grid_list => [:form, :fields]]])
           .where(default: true, form_id: self.id, type: "Document::Grids::Panel")
           .first
         end
 
         def get_default_grid_list
-          grids
-          .includes(*[:form, :sections, :fields => [ :field => [:nested_form], :nested_grid_panel => [:form, :sections, :fields], :nested_grid_list => [:form, :fields]]])
+          grid_lists
+          .includes(*[:form, :fields => [ :field => [:nested_form], :nested_grid_panel => [:form, :sections, :fields], :nested_grid_list => [:form, :fields]]])
           .where(default: true, form_id: self.id, type: "Document::Grids::List")
           .first
         end
@@ -54,13 +54,13 @@ module Document
         end
 
         def create_or_get_default_grid_list(nested_field=nil)
-          @list ||= default_grid_list
-          unless @list
-            @list = create_default_grid_list(default: true, name: grid_title)
-            @list.grid_owners.create(owner: self.owner) if type != "Document::NestedForm"
+          list ||= default_grid_list
+          unless list
+            list = create_default_grid_list(default: true, name: grid_title)
+            list.grid_owners.create(owner: self.owner) if type != "Document::NestedForm"
           end
-          @list.nested_fields << nested_field if nested_field
-          @list
+          list.nested_fields << nested_field if nested_field
+          list
         end
 
         def create_or_get_default_grid_panel(nested_field=nil)

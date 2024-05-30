@@ -92,18 +92,39 @@ module Document
           model = _virtual_model model_name
           set_constant model_name, model
           model = append_to_virtual_model(model, fields_scope: fields_scope, overrides: overrides)
+          # model.class_eval <<-CODE
+          #   def serializable_hash(options= nil)
+          #     relations = [:has_one, :belongs_to, :has_many, :has_and_belongs_to_many].reduce([]) { |arr, rel| arr + self.class.reflect_on_all_associations(rel).map(&:name) }
+          #     unless relations.blank?
+          #       options ||= {}
+          #       if options[:include].is_a?(Array)
+          #         options[:include] = [options[:include]].compact unless options[:include].is_a?(Array)
+          #         options[:include] = options[:include] + relations
+          #       else
+          #         options[:include] = relations
+          #       end
+          #     end
+          #     hash = super(options)
+          #     self.class.reflect_on_all_associations(:embeds_one).map(&:name).each do |rname|
+          #       unless hash.keys.include?(rname.to_s)
+          #         hash[rname.to_s] = nil
+          #       end
+          #     end
+          #     self.class.reflect_on_all_associations(:embeds_many).map(&:name).each do |rname|
+          #       unless hash.keys.include?(rname.to_s)
+          #         hash[rname.to_s] = []
+          #       end
+          #     end
+          #     if self.class.respond_to?(:_uploadable_config)
+          #       (self.class._uploadable_config[self.class.name] || {}).each do |f,v|
+          #         hash[f] = self.send("_"+f.to_s+"_url") rescue {}
+          #       end
+          #     end
+          #     hash
+          #   end
+          # CODE
           model.class_eval <<-CODE
             def serializable_hash(options= nil)
-              relations = [:has_one, :belongs_to, :has_many, :has_and_belongs_to_many].reduce([]) { |arr, rel| arr + self.class.reflect_on_all_associations(rel).map(&:name) }
-              unless relations.blank?
-                options ||= {}
-                if options[:include].is_a?(Array)
-                  options[:include] = [options[:include]].compact unless options[:include].is_a?(Array)
-                  options[:include] = options[:include] + relations
-                else
-                  options[:include] = relations
-                end
-              end
               hash = super(options)
               self.class.reflect_on_all_associations(:embeds_one).map(&:name).each do |rname|
                 unless hash.keys.include?(rname.to_s)
@@ -133,7 +154,6 @@ module Document
 
           global_overrides = overrides.fetch(:_global, {})
           fields_scope.call(cached_fields.sort_by(&:position_on_form)).each do |f|
-#            debugger if f.attached_nested_form?
             f.interpret_to model, overrides: global_overrides.merge(overrides.fetch(f.name, {}))
           end
           if self.is_a?(::Document::Form)

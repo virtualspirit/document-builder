@@ -3,7 +3,10 @@ module Document
 
     belongs_to :owner, polymorphic: true, optional: true
     belongs_to :documentable, polymorphic: true, optional: true
+    has_many :sections, -> { rank(:position) }, class_name: Fbuilder.config.document.section_model_class, dependent: :destroy, inverse_of: :form, index_errors: true, counter_cache: :sections_count
     accepts_nested_attributes_for :sections, allow_destroy: true
+
+    include Document::Concerns::Models::Cachers::Form
 
     serialize :step_options, FormStepOptions
 

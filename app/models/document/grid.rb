@@ -52,7 +52,7 @@ module Document
     has_many :fields, through: :grid_fields, class_name: "Document::Grids::Field"
     has_many :grid_owners, class_name: "Document::GridOwner", foreign_key: "grid_id", dependent: :destroy
     #has_many :owners, through: :grid_owners, source: :owner
-    has_many :sections, -> { rank(:position) }, through: :form, source: :sections
+
     has_many :grid_nested_fields, class_name: "Document::Grids::GridNestedField", foreign_key: "nested_grid_id"
     has_many :nested_fields, through: :grid_nested_fields, class_name: "Document::Grids::Field"
     has_many :query_builders, class_name: "Document::QueryBuilder", as: :configurable
@@ -147,7 +147,7 @@ module Document
     def append_default_fields
       gfs = []
       #cacher.form.fields.includes(:default_grid_field).each do |f|
-      cached_form.fields.each do |f|
+      form.fields.each do |f|
         gf = f.default_grid_field || f.create_or_get_default_gried_field
         gfs << gf
       end
@@ -287,7 +287,7 @@ module Document
       def get_default_grid_for(grid_owner, form, **opts)
         res = owned_or_default(grid_owner, form)
         if opts[:includes]
-          res = res.includes(*[:form, :sections, :fields => [ :field => [:nested_form], :nested_grid_panel => [:form, :sections, :fields], :nested_grid_list => [:form, :fields]]])
+          res = res.includes(*[:form, :fields => [ :field => [:nested_form], :nested_grid_panel => [:form, :sections, :fields], :nested_grid_list => [:form, :fields]]])
         end
         res = res.order("document_grids.default asc").first
       end

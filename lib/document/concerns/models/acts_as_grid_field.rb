@@ -18,10 +18,10 @@ module Document
           namespace = []
           field = self
           while true
-            _form = field.cached_form
-            if _form.type == "Document::NestedForm" && _form.cached_attachable
-              namespace << _form.cached_attachable.name.to_s
-              field = _form.cached_attachable
+            _form = field.form
+            if _form.type == "Document::NestedForm" && _form.attachable
+              namespace << _form.attachable.name.to_s
+              field = _form.attachable
             else
               break
             end

@@ -5,8 +5,8 @@ module Document
 
     self.table_name = "document_sections"
 
-    belongs_to :form, touch: true, inverse_of: :sections, class_name: 'Document::BareForm', counter_cache: true
-    has_many :fields, -> { rank(:position_on_section) }, dependent: :destroy, inverse_of: :section, index_errors: true
+    belongs_to :form, touch: true, inverse_of: :sections, class_name: 'Document::Form', counter_cache: true
+    has_many :fields, -> { rank(:position_on_section) }, dependent: :destroy, inverse_of: :section, index_errors: true, class_name: "Document::Field"
     accepts_nested_attributes_for :fields, allow_destroy: true
     alias_method :inputs=, :fields_attributes=
 
