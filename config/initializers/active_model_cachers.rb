@@ -49,7 +49,7 @@ ActiveModelCachers::ActiveRecord::AttrModel.class_eval do
   def query_association(binding, id)
     #avoid load from association cache again
     if binding.is_a?(::ActiveRecord::Base)
-      binding.association(@column).reset
+      #binding.association(@column).reset
       return binding.association(@column).load_target
     end
     id = @reflect.active_record.where(id: id).limit(1).pluck(foreign_key).first if foreign_key != 'id'

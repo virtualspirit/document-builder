@@ -17,6 +17,7 @@ module Document
             [ 'fields','grids', 'grid_lists', 'grid_panels', 'default_grid_list', 'default_grid_panel'].each do |c|
               class_eval <<-CODE, __FILE__, __LINE__ + 1
                 def cached_#{c}
+                  return send('#{c}')
                   begin
                     val = cacher.send('#{c}')
                     if val.blank?
@@ -31,9 +32,9 @@ module Document
               CODE
             end
 
-            after_commit on: [:update, :destroy] do
-              self.class.base_class.cacher.clean_by id: id
-            end
+            # after_commit on: [:update, :destroy] do
+            #   self.class.base_class.cacher.clean_by id: id
+            # end
 
           end
 
@@ -52,6 +53,7 @@ module Document
               class_eval <<-CODE, __FILE__, __LINE__ + 1
                 def cached_#{c}
                   begin
+                    return send('#{c}')
                     val = cacher.send('#{c}')
                     if val.blank?
                       cacher.clean('#{c}'.to_sym)
@@ -81,6 +83,7 @@ module Document
               class_eval <<-CODE, __FILE__, __LINE__ + 1
                 def cached_#{c}
                   begin
+                    return send('#{c}')
                     val = cacher.send('#{c}')
                     if val.blank?
                       cacher.clean('#{c}'.to_sym)
@@ -94,11 +97,11 @@ module Document
               CODE
             end
 
-            after_commit on: :create do
-              if cached_attachable
-                cached_attachable.cacher.clean(:nested_form)
-              end
-            end
+            # after_commit on: :create do
+            #   if cached_attachable
+            #     cached_attachable.cacher.clean(:nested_form)
+            #   end
+            # end
           end
         end
 
@@ -113,6 +116,7 @@ module Document
               class_eval <<-CODE, __FILE__, __LINE__ + 1
                 def cached_#{c}
                   begin
+                    return send('#{c}')
                     val = cacher.send('#{c}')
                     if val.blank?
                       cacher.clean('#{c}'.to_sym)
@@ -126,9 +130,9 @@ module Document
               CODE
             end
 
-            after_commit on: [:update, :destroy] do
-              self.class.base_class.cacher.clean_by id: id
-            end
+            # after_commit on: [:update, :destroy] do
+            #   self.class.base_class.cacher.clean_by id: id
+            # end
           end
 
         end
@@ -148,6 +152,7 @@ module Document
               class_eval <<-CODE, __FILE__, __LINE__ + 1
                 def cached_#{c}
                   begin
+                    return send('#{c}')
                     val = cacher.send('#{c}')
                     if val.blank?
                       cacher.clean('#{c}'.to_sym)
@@ -161,22 +166,22 @@ module Document
               CODE
             end
 
-            after_commit on: :create do
-              cached_form.cacher.clean_fields if cached_form
-              if section_id.present?
-                cached_section.try(:cacher).try(:clean_fields)
-              end
-            end
+            # after_commit on: :create do
+            #   cached_form.cacher.clean_fields if cached_form
+            #   if section_id.present?
+            #     cached_section.try(:cacher).try(:clean_fields)
+            #   end
+            # end
 
-            after_commit :on => [:update, :destroy] do
-              self.class.base_class.cacher.clean_by id: id
-              cached_form.cacher.clean_fields if cached_form
-              if section_id.present?
-                cached_section.try(:cacher).try(:clean_fields)
-              end
-              cached_nested_form.cacher.clean_attachable if attached_nested_form? && cached_nested_form
-              cached_grid_fields.each{|gf| gf.cacher.clean_field }
-            end
+            # after_commit :on => [:update, :destroy] do
+            #   self.class.base_class.cacher.clean_by id: id
+            #   cached_form.cacher.clean_fields if cached_form
+            #   if section_id.present?
+            #     cached_section.try(:cacher).try(:clean_fields)
+            #   end
+            #   cached_nested_form.cacher.clean_attachable if attached_nested_form? && cached_nested_form
+            #   cached_grid_fields.each{|gf| gf.cacher.clean_field }
+            # end
 
           end
 
@@ -195,6 +200,7 @@ module Document
               class_eval <<-CODE, __FILE__, __LINE__ + 1
                 def cached_#{c}
                   begin
+                    return send('#{c}')
                     val = cacher.send('#{c}')
                     if val.blank?
                       cacher.clean('#{c}'.to_sym)
@@ -213,22 +219,22 @@ module Document
             #   grid_nested_fields.touch_all
             # end
 
-            after_commit on: :create do
-              cached_fields.each{|gf| gf.cacher.clean_grids }
-            end
+            # after_commit on: :create do
+            #   cached_fields.each{|gf| gf.cacher.clean_grids }
+            # end
 
-            after_commit on: [:update, :destroy] do
-              self.class.base_class.cacher.clean_by id: id
-              if cached_form
-                cached_form.cacher.clean_default_grid_panel if is_panel?
-                cached_form.cacher.clean_default_grid_list if is_list?
-              end
-              cached_fields.each{|gf| gf.cacher.clean_grids }
-              cached_nested_fields.each{|nf|
-                nf.cacher.clean_nested_grid_list
-                nf.cacher.clean_nested_grid_panel
-              }
-            end
+            # after_commit on: [:update, :destroy] do
+            #   self.class.base_class.cacher.clean_by id: id
+            #   if cached_form
+            #     cached_form.cacher.clean_default_grid_panel if is_panel?
+            #     cached_form.cacher.clean_default_grid_list if is_list?
+            #   end
+            #   cached_fields.each{|gf| gf.cacher.clean_grids }
+            #   cached_nested_fields.each{|nf|
+            #     nf.cacher.clean_nested_grid_list
+            #     nf.cacher.clean_nested_grid_panel
+            #   }
+            # end
 
           end
 
@@ -248,6 +254,7 @@ module Document
               class_eval <<-CODE, __FILE__, __LINE__ + 1
                 def cached_#{c}
                   begin
+                    return send('#{c}')
                     val = cacher.send('#{c}')
                     if val.blank?
                       cacher.clean('#{c}'.to_sym)
@@ -261,12 +268,12 @@ module Document
               CODE
             end
 
-            after_commit on: [:update, :destroy] do
-              self.class.base_class.cacher.clean_by id: id
-              cached_grids.each{|g| g.cacher.clean_fields }
-              cached_nested_grid_list.cacher.clean_nested_fields if cached_nested_grid_list
-              cached_nested_grid_panel.cacher.clean_nested_fields if cached_nested_grid_panel
-            end
+            # after_commit on: [:update, :destroy] do
+            #   self.class.base_class.cacher.clean_by id: id
+            #   cached_grids.each{|g| g.cacher.clean_fields }
+            #   cached_nested_grid_list.cacher.clean_nested_fields if cached_nested_grid_list
+            #   cached_nested_grid_panel.cacher.clean_nested_fields if cached_nested_grid_panel
+            # end
 
           end
 
