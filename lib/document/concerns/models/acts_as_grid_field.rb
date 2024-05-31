@@ -6,8 +6,7 @@ module Document
 
         included  do
           has_many :grid_fields, class_name: "Document::Grids::Field", foreign_key: "field_id", dependent: :destroy
-          has_one :default_grid_field, -> { where(default: true) }, class_name: "Document::Grids::Field", foreign_key: "field_id", dependent: :destroy
-
+          has_one :default_grid_field, -> { where(default: true) }, class_name: "Document::Grids::Field", foreign_key: "field_id"
           after_initialize :set_previous_document_form_id, if: :persisted?
           after_create :append_default_grid_field_to_grids
           after_update :update_grid_field
@@ -38,7 +37,7 @@ module Document
         def append_default_grid_field_to_grids
           gf = create_or_get_default_gried_field
           form.grids.only_default.each do |grid|
-            grid.append_field gf
+            grid.grid_fields.create(field: gf, field_position_on_grid: position_on_form)
           end
         end
 
@@ -75,7 +74,7 @@ module Document
             gf.update(label: label, position_on_section: position_on_section)
           end
           if position_on_form_previously_changed?
-            pos = position_on_form_rank
+            pos = position_on_form
             gf.grid_fields.each do |g|
               g.update position: pos
             end

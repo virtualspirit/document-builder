@@ -108,8 +108,8 @@ module Document
                 name: field.name,
                 label: field.label,
                 namespace: namespace,
-                set_position_on_grid: field.position_on_form_rank,
-                position_on_section: field.position_on_section,
+                set_position_on_grid: field.position_on_form,
+                set_position_on_section: field.position_on_section,
                 field: field,
                 field_id: field.id,
                 section_id: field.section_id

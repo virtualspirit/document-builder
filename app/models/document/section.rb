@@ -5,25 +5,20 @@ module Document
 
     self.table_name = "document_sections"
 
-    belongs_to :form, touch: true, inverse_of: :sections, class_name: 'Document::Form', counter_cache: true
-    has_many :fields, -> { rank(:position_on_section) }, dependent: :destroy, inverse_of: :section, index_errors: true, class_name: "Document::Field"
+    belongs_to :form, touch: true, inverse_of: :sections, class_name: 'Document::Form', counter_cache: true, foreign_key: "form_id"
+    has_many :fields, -> { order(:position_on_section) }, dependent: :destroy, inverse_of: :section, index_errors: true, class_name: "Document::Field", foreign_key: "form_id"
     accepts_nested_attributes_for :fields, allow_destroy: true
     alias_method :inputs=, :fields_attributes=
 
     include Document::Concerns::Models::Cachers::Section
 
-    # include ::IdentityCache
-    # cache_belongs_to :form
-    # cache_has_many :fields, embed: true
-
-    include RankedModel
-    ranks :position, with_same: [:form_id]
+    positioned on: :form
 
     attr_accessor :set_position
 
     def set_position=(val)
       @set_position= val
-      self.position_position= val
+      self.position= val
     end
 
     before_validation do
@@ -32,46 +27,19 @@ module Document
       end
     end
 
-    after_validation do
-      if position_was != position && !position.nil?
-        self.position_position= position
-      end
-    end
-
     validates :title, presence: true, uniqueness: { scope: [:form_id], allow_nil: true }, unless: :headless
     #validates :position, numericality: { only_integer: true, allow_blank: true }
 
     after_create do
       if form.present? and form.step
-        form.step_options.total = form.step_options.total + 1
+        form.step_options.total = form.sections.count
         form.save
       end
     end
 
-    after_save :rearange_fields_position_on_form, if: proc{ saved_change_to_position? }
-
-    def rearange_fields_position_on_form
-      # overral_pos = 0
-      # form.fetch_sections.sort_by(&:position).each_with_index do |section, si|
-      #   section.fetch_fields.sort_by(&:position_on_section).each_with_index do |field, fi|
-      #     field.update_column(position_on_form: overral_pos)
-      #     field.expire_cache
-      #   end
-      #   section.expire_cache
-      # end
-
-      old_position = position_before_last_save.to_i
-      new_position = position
-      position_difference = new_position - old_position
-      fields.update_all("position_on_form = position_on_form + #{position_difference}")
-      form.fields
-      .where.not(section_id: id).where("position_on_form >= ? AND position_on_form <= ?", new_position, old_position)
-      .update_all("position_on_form = position_on_form + #{position_difference}")
-    end
-
     after_destroy do
       if form.present? and form.step
-        form.step_options.total = form.step_options.total - 1
+        form.step_options.total = form.sections.count
         form.save
       end
     end

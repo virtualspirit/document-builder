@@ -21,9 +21,6 @@ module Document
       # has_many :fields, -> { rank(:position) }, class_name: "Document::Grids::Field", dependent: :destroy, index_errors: true
       # accepts_nested_attributes_for :fields, allow_destroy: true
 
-      # include RankedModel
-      # ranks :position, with_same: [:grid_id]
-
       # validates :title, presence: true, uniqueness: { scope: [:grid_id], allow_nil: true }, unless: :headless
       # before_save do
       #   self.headless ||= false

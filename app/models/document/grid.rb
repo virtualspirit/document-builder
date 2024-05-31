@@ -48,7 +48,7 @@ module Document
     #belongs_to :nested_field, class_name: "Document::Grids::Field", foreign_key: "nested_field_id", optional: true
     #belongs_to :container, class_name: "Document::Grid", foreign_key: "container_id", optional: true
     has_many :nested_grids, class_name: "Document::Grid", foreign_key: "container_id"
-    has_many :grid_fields, -> { rank(:field_position_on_grid) }, class_name: "Document::Grids::GridField", foreign_key: "grid_id", dependent: :destroy, inverse_of: :grid
+    has_many :grid_fields, -> { order(:field_position_on_grid) }, class_name: "Document::Grids::GridField", foreign_key: "grid_id", dependent: :destroy, inverse_of: :grid
     has_many :fields, through: :grid_fields, class_name: "Document::Grids::Field"
     has_many :grid_owners, class_name: "Document::GridOwner", foreign_key: "grid_id", dependent: :destroy
     #has_many :owners, through: :grid_owners, source: :owner

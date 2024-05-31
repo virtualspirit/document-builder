@@ -40,6 +40,8 @@ module Document
 
       include Document::Concerns::Models::Cachers::GridField
 
+      positioned on: :section, column: :position_on_section
+
       cache_this :cached_position_on_grid do
         key do |field|
           "cached_position_on_grid-#{field.id}-#{field.current_grid.try(:id)}"
@@ -49,14 +51,11 @@ module Document
         end
       end
 
-      include RankedModel
-      ranks :position_on_section, with_same: [:section_id], class_name: self.name, scope: :only_belongs_to_section
-
       attr_accessor :set_position_on_section
 
       def set_position_on_section=(value)
         @set_position_on_section = value
-        position_on_section_position= value
+        self.position_on_section= value
       end
 
       attr_accessor :set_position_on_grid

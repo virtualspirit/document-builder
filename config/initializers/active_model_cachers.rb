@@ -70,38 +70,38 @@ ActiveModelCachers::CacheService.class_eval do
     fire_on = Array(on) if on
 
     #use base class
-    class_name = class_name.constantize.base_class.name
+    base_class_name = class_name.constantize.base_class.name
 
     ActiveRecord::Extension.global_callbacks.instance_exec do
-      on_nullify(class_name) do |nullified_column, get_ids|
+      on_nullify(base_class_name) do |nullified_column, get_ids|
         get_ids.call.each{|s| clean.call(s) } if nullified_column == column
       end
 
-      after_touch1(class_name) do
-        clean.call(@@column_value_cache.add(self.class, class_name, id, foreign_key, self).call)
+      after_touch1(base_class_name) do
+        clean.call(@@column_value_cache.add(self.class, base_class_name, id, foreign_key, self).call)
       end
 
-      after_touch2(class_name) do
+      after_touch2(base_class_name) do
         @@column_value_cache.clean_cache
       end
 
-      after_commit1(class_name) do
+      after_commit1(base_class_name) do
         next if fire_on and not transaction_include_any_action?(fire_on)
         changed = column ? previous_changes.key?(column) : previous_changes.present?
          if changed || destroyed?
-           clean.call(@@column_value_cache.add(self.class, class_name, id, foreign_key, self).call)
+           clean.call(@@column_value_cache.add(self.class, base_class_name, id, foreign_key, self).call)
          end
       end
 
-      after_commit2(class_name) do
+      after_commit2(base_class_name) do
         @@column_value_cache.clean_cache
       end
 
-      before_delete1(class_name) do |id, model|
-        clean_ids << @@column_value_cache.add(self, class_name, id, foreign_key, model)
+      before_delete1(base_class_name) do |id, model|
+        clean_ids << @@column_value_cache.add(self, base_class_name, id, foreign_key, model)
       end
 
-      before_delete2(class_name) do |_, model|
+      before_delete2(base_class_name) do |_, model|
         clean_ids.each{|s| clean.call(s.call) }
         clean_ids = []
       end

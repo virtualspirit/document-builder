@@ -9,18 +9,14 @@ module Document
 
     self.table_name = "document_fields"
 
-    belongs_to :form, class_name: 'Document::BareForm', touch: true, optional: true, inverse_of: :fields, counter_cache: true
-    belongs_to :section, class_name: Document.section_model_class, touch: true, optional: true, inverse_of: :fields, counter_cache: true
+    belongs_to :form, class_name: 'Document::BareForm', touch: true, optional: true, inverse_of: :fields, counter_cache: true, foreign_key: 'form_id'
+    belongs_to :section, class_name: Document.section_model_class, touch: true, optional: true, inverse_of: :fields, counter_cache: true, foreign_key: "section_id"
     #has_one :nested_form, class_name: 'Document::BareForm', as: :attachable, dependent: :destroy, inverse_of: :attachable
     has_one :nested_form, class_name: 'Document::NestedForm', dependent: :destroy, inverse_of: :attachable, foreign_key: "attachable_id"
     accepts_nested_attributes_for :nested_form, allow_destroy: true
     belongs_to :field_group, class_name: "Document::FieldGroup", touch: true, optional: true, inverse_of: :fields
 
     include Document::Concerns::Models::Cachers::Field
-    # include ::IdentityCache
-    # cache_belongs_to :form
-    # cache_belongs_to :section
-    # cache_has_one :nested_form, embed: :id
 
     scope :only_belongs_to_section, -> { where.not(section_id: nil) }
     scope :only_not_belongs_to_section, -> { where(section_id: nil) }
@@ -34,49 +30,27 @@ module Document
       self.data_type = stored_type
     end
 
-    include RankedModel
-    #ranks :position, with_same: [:form_id], class_name: self.name
-    ranks :position_on_section, with_same: [:section_id], class_name: self.name, scope: :only_belongs_to_section
-    ranks :position_on_form, with_same: [:form_id], class_name: self.name
+    positioned on: :form, column: :position_on_form
+    positioned on: :section, column: :position_on_section
 
     attr_accessor :set_position_on_form
     attr_accessor :set_position_on_section
 
     def set_position_on_form=(value)
       @set_position_on_form=value
-      self.position_on_form_position= value
+      self.position_on_form= value
     end
 
     def set_position_on_section=(value)
       @set_position_on_section= value
-      self.position_on_section_position= value
+      self.position_on_section= value
     end
 
-    after_validation do
-      if position_on_section.nil? && section_id.present?
-        set_position_on_section= :last
-      end
-      if position_on_form.nil? && section_id.blank?
-        set_position_on_form= :last
-      end
-    end
-
-    # before_create do
-    #   if position_on_form.blank? || position_on_form_position.blank?
-    #     self.position_on_form= form.fields[-1].try(:position_on_form).to_i + 1
-    #   end
-    # end
-
-    after_commit  do
-      if section_id && saved_change_to_position_on_section?
-        # overral_pos = form.sections.rank(:position).reduce(0) do |sum, s|
-        #   if s.id != section_id
-        #     sum + s.fields_count.to_i
-        #   else
-        #     break sum + position_on_section_rank
-        #   end
-        # end
-        update(set_position_on_form: section.position_rank * section.fields_count  + self.position_on_section_rank)
+    def position_on_form
+      if section_id.present? && _section= cached_section || section
+        _section.position.to_i + position_on_section.to_i
+      else
+        super
       end
     end
 
@@ -97,13 +71,15 @@ module Document
     validates :section, presence: true, if: proc{|f|
       f.form && f.form.type != 'Document::NestedForm'
     }
-    validates :set_position_on_section, absence: true, unless: proc { section_id || section }
-    validates :set_position_on_form, absence: true, if: proc { section_id || section }
+
     validate do
       if persisted?
         errors.add(:name, :invalid) if name_in_database.to_s != name.to_s
       end
     end
+
+    # validates :position_on_form, absence: true, if: proc { section.present? }
+    # validates :position_on_section, absence: true, if: proc { section.blank? }
 
     default_value_for :name,
                       ->(_) { "field_#{SecureRandom.hex(3)}" },

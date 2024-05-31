@@ -17,13 +17,12 @@ module Document
             [ 'fields','grids', 'grid_lists', 'grid_panels', 'default_grid_list', 'default_grid_panel'].each do |c|
               class_eval <<-CODE, __FILE__, __LINE__ + 1
                 def cached_#{c}
-                  return send('#{c}')
                   begin
                     val = cacher.send('#{c}')
                     if val.blank?
                       cacher.clean('#{c}'.to_sym)
                     end
-                    val = cacher.send('#{c}')
+                    val ||= cacher.send('#{c}')
                   rescue => e
                     cacher.clean('#{c}'.to_sym)
                     send('#{c}')
@@ -53,12 +52,11 @@ module Document
               class_eval <<-CODE, __FILE__, __LINE__ + 1
                 def cached_#{c}
                   begin
-                    return send('#{c}')
                     val = cacher.send('#{c}')
                     if val.blank?
                       cacher.clean('#{c}'.to_sym)
                     end
-                    val = cacher.send('#{c}')
+                    val ||= cacher.send('#{c}')
                   rescue => e
                     cacher.clean('#{c}'.to_sym)
                     send('#{c}')
@@ -83,12 +81,11 @@ module Document
               class_eval <<-CODE, __FILE__, __LINE__ + 1
                 def cached_#{c}
                   begin
-                    return send('#{c}')
                     val = cacher.send('#{c}')
                     if val.blank?
                       cacher.clean('#{c}'.to_sym)
                     end
-                    val = cacher.send('#{c}')
+                    val ||= cacher.send('#{c}')
                   rescue => e
                     cacher.clean('#{c}'.to_sym)
                     send('#{c}')
@@ -116,12 +113,11 @@ module Document
               class_eval <<-CODE, __FILE__, __LINE__ + 1
                 def cached_#{c}
                   begin
-                    return send('#{c}')
                     val = cacher.send('#{c}')
                     if val.blank?
                       cacher.clean('#{c}'.to_sym)
                     end
-                    val = cacher.send('#{c}')
+                    val ||= cacher.send('#{c}')
                   rescue => e
                     cacher.clean('#{c}'.to_sym)
                     send('#{c}')
@@ -152,12 +148,11 @@ module Document
               class_eval <<-CODE, __FILE__, __LINE__ + 1
                 def cached_#{c}
                   begin
-                    return send('#{c}')
                     val = cacher.send('#{c}')
                     if val.blank?
                       cacher.clean('#{c}'.to_sym)
                     end
-                    val = cacher.send('#{c}')
+                    val ||= cacher.send('#{c}')
                   rescue => e
                     cacher.clean('#{c}'.to_sym)
                     send('#{c}')
@@ -200,12 +195,11 @@ module Document
               class_eval <<-CODE, __FILE__, __LINE__ + 1
                 def cached_#{c}
                   begin
-                    return send('#{c}')
                     val = cacher.send('#{c}')
                     if val.blank?
                       cacher.clean('#{c}'.to_sym)
                     end
-                    val = cacher.send('#{c}')
+                    val ||= cacher.send('#{c}')
                   rescue => e
                     cacher.clean('#{c}'.to_sym)
                     send('#{c}')
@@ -254,12 +248,11 @@ module Document
               class_eval <<-CODE, __FILE__, __LINE__ + 1
                 def cached_#{c}
                   begin
-                    return send('#{c}')
                     val = cacher.send('#{c}')
                     if val.blank?
                       cacher.clean('#{c}'.to_sym)
                     end
-                    val = cacher.send('#{c}')
+                    val ||= cacher.send('#{c}')
                   rescue => e
                     cacher.clean('#{c}'.to_sym)
                     send('#{c}')

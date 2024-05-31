@@ -85,7 +85,7 @@ module Document
 
           if step_active? && !build_options[:nested_form]
             fields_scope = proc {|fields|
-              section = cached_sections.sort_by(&:position)[step_state]#.select.with_index{|sect, index| sect.position_rank == step_state }.first
+              section = cached_sections.sort_by(&:position)[step_state]
               if section
                 section.cached_fields
               else
