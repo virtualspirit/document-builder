@@ -53,7 +53,7 @@ module Document
 
         def active_step_section
           if step_active?
-            [sections.sort_by(&:position)[step_state]]
+            [cached_sections.sort_by(&:position)[step_state]]
           end
         end
 

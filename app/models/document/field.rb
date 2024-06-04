@@ -50,7 +50,7 @@ module Document
       if section_id.present? && _section= cached_section || section
         _section.position.to_i + position_on_section.to_i
       else
-        super
+        read_attribute :position_on_form
       end
     end
 

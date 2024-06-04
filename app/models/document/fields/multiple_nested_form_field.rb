@@ -40,12 +40,22 @@ module Document
         overrides[:name] = name
         nested_model = cached_nested_form.to_virtual_model(overrides: { _global: { accessibility: accessibility}, build_options: { nested_form: true } })
         if nested_model
+          field_name = name
           relation_name= model.name.underscore.downcase
           nested_model.field "#{relation_name}_id", type: BSON::ObjectId
-          model.field "#{name}_count".to_sym, type: :integer, default: 0
-          model.has_many name, class_name: nested_model.name, foreign_key: "#{relation_name}_id"
-          nested_model.belongs_to relation_name.to_sym, class_name: model.name, optional: true, inverse_of: "#{name}".to_sym, counter_cache: "#{name}_count".to_sym, foreign_key: "#{relation_name}_id"
-          model.accepts_nested_attributes_for name, reject_if: :all_blank, allow_destroy: true
+          model.field "#{field_name}_count".to_sym, type: :integer, default: 0
+          model.has_many field_name, class_name: nested_model.name, foreign_key: "#{relation_name}_id"
+          nested_model.belongs_to relation_name.to_sym, class_name: model.name, optional: true, inverse_of: "#{field_name}".to_sym, counter_cache: "#{field_name}_count".to_sym, foreign_key: "#{relation_name}_id"
+          model.accepts_nested_attributes_for field_name, reject_if: :all_blank, allow_destroy: true
+
+          model.validate do
+            send(field_name).each_with_index do |ch, i|
+              unless ch.valid?
+                errors.add(field_name.to_sym, :invalid)
+                ch.errors.each {|e| errors.import e, **e.options.merge(attribute: "#{field_name}.#{i}.#{e.attribute}")}
+              end
+            end
+          end
 
           # model.class_eval <<-CODE
           #   def serializable_hash(options= nil)

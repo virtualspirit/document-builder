@@ -17,6 +17,7 @@ module Document
             [ 'fields','grids', 'grid_lists', 'grid_panels', 'default_grid_list', 'default_grid_panel'].each do |c|
               class_eval <<-CODE, __FILE__, __LINE__ + 1
                 def cached_#{c}
+                  return send('#{c}')
                   begin
                     val = cacher.send('#{c}')
                     if val.blank?
@@ -51,6 +52,7 @@ module Document
             ].each do |c|
               class_eval <<-CODE, __FILE__, __LINE__ + 1
                 def cached_#{c}
+                  return send('#{c}')
                   begin
                     val = cacher.send('#{c}')
                     if val.blank?
@@ -80,6 +82,7 @@ module Document
             ].each do |c|
               class_eval <<-CODE, __FILE__, __LINE__ + 1
                 def cached_#{c}
+                  return send('#{c}')
                   begin
                     val = cacher.send('#{c}')
                     if val.blank?
@@ -112,6 +115,7 @@ module Document
             ['fields', 'form'].each do |c|
               class_eval <<-CODE, __FILE__, __LINE__ + 1
                 def cached_#{c}
+                  return send('#{c}')
                   begin
                     val = cacher.send('#{c}')
                     if val.blank?
@@ -147,6 +151,7 @@ module Document
             ['form','section', 'nested_form', 'grid_fields', 'default_grid_field'].each do |c|
               class_eval <<-CODE, __FILE__, __LINE__ + 1
                 def cached_#{c}
+                  return send('#{c}')
                   begin
                     val = cacher.send('#{c}')
                     if val.blank?
@@ -194,6 +199,7 @@ module Document
             ['form', 'sections', 'nested_fields', 'fields' ].each do |c|
               class_eval <<-CODE, __FILE__, __LINE__ + 1
                 def cached_#{c}
+                  return send('#{c}')
                   begin
                     val = cacher.send('#{c}')
                     if val.blank?
@@ -247,6 +253,7 @@ module Document
             ['grids', 'field', 'section', 'nested_grid_list', 'nested_grid_panel'].each do |c|
               class_eval <<-CODE, __FILE__, __LINE__ + 1
                 def cached_#{c}
+                  return send('#{c}')
                   begin
                     val = cacher.send('#{c}')
                     if val.blank?
