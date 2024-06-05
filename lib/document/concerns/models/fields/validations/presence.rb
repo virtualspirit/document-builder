@@ -12,7 +12,7 @@ module Document
 
           def interpret_to(model, field_name, _accessibility, _options = {})
             super
-            return unless presence
+            return unless required
 
             model.validates field_name, presence: true
           end

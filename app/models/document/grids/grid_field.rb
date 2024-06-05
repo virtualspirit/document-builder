@@ -23,7 +23,7 @@ module Document
       end
 
       def invalidate_cached_field_position_on_grid
-        field.invalidate_cache_of_cached_position_on_grid
+        field.invalidate_cache_of_cached_position_on_grid if field
       end
 
       def position=(val)

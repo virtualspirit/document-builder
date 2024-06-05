@@ -24,7 +24,11 @@ module Document
     before_validation do
       if form_id.blank?
         if section
-          self.form_id= section.form_id
+          if section.form_id
+            self.form_id= section.form_id
+          else
+            self.form= section.form
+          end
         end
       end
       self.data_type = stored_type
@@ -70,6 +74,10 @@ module Document
     }
     validates :section, presence: true, if: proc{|f|
       f.form && f.form.type != 'Document::NestedForm'
+    }
+
+    validates :section_id, inclusion: { in: proc{|f| f.form.sections.pluck(:id) } }, if: proc{|f|
+      f.form && f.form.type != 'Document::NestedForm' && f.section_id.present?
     }
 
     validate do
