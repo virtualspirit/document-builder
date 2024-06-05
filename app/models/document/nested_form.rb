@@ -1,7 +1,8 @@
 module Document
   class NestedForm < BareForm
 
-    belongs_to :attachable, class_name: 'Document::Field', touch: true, optional: true, foreign_key: "attachable_id"
+    #belongs_to :attachable, class_name: 'Document::Field', touch: true, optional: true, foreign_key: "attachable_id"
+    belongs_to :attachable, class_name: 'Document::Field', touch: false, optional: true, foreign_key: "attachable_id"
     belongs_to :nested_form_field, -> { where(document_forms: { attachable_type: 'Document::Field' }) }, foreign_key: 'attachable_id', class_name: "Document::Field", optional: true, inverse_of: :nested_form
 
     include Document::Concerns::Models::Cachers::NestedForm

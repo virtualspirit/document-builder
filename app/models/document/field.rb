@@ -9,12 +9,14 @@ module Document
 
     self.table_name = "document_fields"
 
-    belongs_to :form, class_name: 'Document::BareForm', touch: true, optional: true, inverse_of: :fields, counter_cache: true, foreign_key: 'form_id'
-    belongs_to :section, class_name: Document.section_model_class, touch: true, optional: true, inverse_of: :fields, counter_cache: true, foreign_key: "section_id"
+    #belongs_to :form, class_name: 'Document::BareForm', touch: true, optional: true, inverse_of: :fields, counter_cache: true, foreign_key: 'form_id'
+    belongs_to :form, class_name: 'Document::BareForm', touch: false, optional: true, inverse_of: :fields, counter_cache: true, foreign_key: 'form_id'
+    #belongs_to :section, class_name: Document.section_model_class, touch: true, optional: true, inverse_of: :fields, counter_cache: true, foreign_key: "section_id"
+    belongs_to :section, class_name: Document.section_model_class, touch: false, optional: true, inverse_of: :fields, counter_cache: true, foreign_key: "section_id"
     #has_one :nested_form, class_name: 'Document::BareForm', as: :attachable, dependent: :destroy, inverse_of: :attachable
     has_one :nested_form, class_name: 'Document::NestedForm', dependent: :destroy, inverse_of: :attachable, foreign_key: "attachable_id"
     accepts_nested_attributes_for :nested_form, allow_destroy: true
-    belongs_to :field_group, class_name: "Document::FieldGroup", touch: true, optional: true, inverse_of: :fields
+    belongs_to :field_group, class_name: "Document::FieldGroup", optional: true, inverse_of: :fields
 
     include Document::Concerns::Models::Cachers::Field
 
@@ -34,8 +36,8 @@ module Document
       self.data_type = stored_type
     end
 
-    positioned on: :form, column: :position_on_form
-    positioned on: :section, column: :position_on_section
+    positioned on: [:form], column: :position_on_form
+    positioned on: [:form, :section], column: :position_on_section
 
     attr_accessor :set_position_on_form
     attr_accessor :set_position_on_section
