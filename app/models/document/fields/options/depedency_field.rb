@@ -150,6 +150,7 @@ module Document
           self.logical_operators ||= LOGICAL_OPERATORS
           if(self.type && self.comparison_operators.blank?)
             self.comparison_operators = COMPARISON_OPERATORS.select{|k,v| v[:only] ? v[:only].include?(self.type.to_s.to_sym) : v }
+            self.comparison_operators ||= {}
           end
         end
 
@@ -171,6 +172,7 @@ module Document
         end
 
         def to_criteria
+          begin
           cast_clause!
           if verified?
             if [:ilike, :like].include?(comparison_operator.to_sym)
@@ -184,6 +186,9 @@ module Document
               }
             end
           end
+        rescue => e
+          {}
+        end
         end
 
         def verified?
