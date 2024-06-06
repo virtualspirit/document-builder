@@ -13,7 +13,7 @@ module Document
           attribute :placeholder, :string
           attribute :logical_operator, :string
           attribute :logical_operators, :json
-          attribute :comparison_operators, :string
+          #attribute :comparison_operators, :string
           attribute :ignore_blank_values, :boolean
           serialize :comparison_operators, Hash
           attribute :values
@@ -68,6 +68,7 @@ module Document
             self.logical_operators ||= LOGICAL_OPERATORS
             if(self.type && self.comparison_operators.blank?)
               self.comparison_operators ||= COMPARISON_OPERATORS.select{|k,v| v[:only] ? v[:only].include?(self.type.to_sym) : v }
+              self.comparison_operators ||= {}
             end
           end
 
@@ -89,6 +90,7 @@ module Document
           end
 
           def to_criteria
+            begin
             cast_clause!
             if verified?
               if [:ilike, :like].include?(comparison_operator.to_sym)
@@ -101,6 +103,9 @@ module Document
                   "#{field}": { comparison_operators.deep_symbolize_keys[comparison_operator.to_sym][:symbol] => cast_value! }
                 }
               end
+            end
+            rescue => e
+              { }
             end
           end
 
