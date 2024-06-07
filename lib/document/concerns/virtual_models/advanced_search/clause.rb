@@ -13,7 +13,7 @@ module Document
           attribute :placeholder, :string
           attribute :logical_operator, :string
           attribute :logical_operators, :json
-          #attribute :comparison_operators, :string
+          attribute :comparison_operators, :string
           attribute :ignore_blank_values, :boolean
           serialize :comparison_operators, Hash
           attribute :values
