@@ -13,7 +13,7 @@ module Document
           attribute :placeholder, :string
           attribute :logical_operator, :string
           attribute :logical_operators, :json
-          #attribute :comparison_operators, :string
+          attribute :comparison_operators, :string, default: {}
           attribute :ignore_blank_values, :boolean
           serialize :comparison_operators, Hash
           attribute :values
@@ -45,8 +45,10 @@ module Document
 
           COMPARISON_OPERATORS = {
             eq: { symbol: "$eq", name: "Equal" },
-            like: { symbol: "$eq", name: "Like", only: [:string] },
-            ilike: { symbol: "$eq", name: "Ilike", only: [:string] },
+            like: { symbol: "$regex", name: "Like", only: [:string] },
+            ilike: { symbol: "$regex", name: "Ilike", only: [:string] },
+            not_like: { symbol: "$regex", name: "Not Like", only: [:string] },
+            not_ilike: { symbol: "$regex", name: "Not Ilike", only: [:string] },
             gt: { symbol: "$gt", name: "Greater Than", only: [:integer, :big_decimal, :float, :time, :date, :date_time] },
             gte: { symbol: "$gt", name: "Greater Than or Equal", only: [:integer, :big_decimal, :float, :time, :date, :date_time]},
             lt: { symbol: "$lt", name: "Less Than", only: [:integer, :big_decimal, :float, :time, :date, :date_time]},
@@ -91,21 +93,28 @@ module Document
 
           def to_criteria
             begin
-            cast_clause!
-            if verified?
-              if [:ilike, :like].include?(comparison_operator.to_sym)
-                val = comparison_operator.to_sym == :like ? /#{cast_value!}/ : /#{cast_value!}/i
-                {
-                  "#{field}": val
-                }
-              else
-                {
-                  "#{field}": { comparison_operators.deep_symbolize_keys[comparison_operator.to_sym][:symbol] => cast_value! }
-                }
+              cast_clause!
+              if verified?
+                if [:ilike, :like].include?(comparison_operator.to_sym)
+                  val = comparison_operator.to_sym == :like ? /#{values}/ : /#{values}/i
+                  {
+                    "#{field}": val
+                  }
+                elsif [:not_like, :not_ilike].include?(comparison_operator.to_sym)
+                    val = comparison_operator.to_sym == :not_like ? /#{values}/ : /#{values}/i
+                    {
+                      "#{field}": {
+                        "$not" => { "$regex" => val }
+                      }
+                    }
+                else
+                  {
+                    "#{field}": { comparison_operators.deep_symbolize_keys[comparison_operator.to_sym][:symbol] => cast_value! }
+                  }
+                end
               end
-            end
             rescue => e
-              { }
+              {}
             end
           end
 
