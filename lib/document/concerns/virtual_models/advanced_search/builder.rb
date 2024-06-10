@@ -42,6 +42,8 @@ module Document
               clauses.each do |clause|
                 instance.clauses << clause
               end
+              instance.clauses << Clause.new(comparison_operator: :eq, type: 'date_time', field: "created_at", label: "Created At", namespace: "")
+              instance.clauses << Clause.new(comparison_operator: :eq, type: 'date_time', field: "created_at", label: "Updated At", namespace: "")
               instance
             end
 

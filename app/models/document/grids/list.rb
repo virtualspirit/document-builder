@@ -82,8 +82,8 @@ module Document
       end
 
       def query_aggregation_stage params = {}
+      if options.allow_search && params.is_a?(Hash)
         stage = Document::Grids::AggregationStage.new(name: "$match", order: 9999)
-        if options.allow_search && params.is_a?(Hash)
           params = params.slice(*Options::SEARCH_TYPES.map(&:to_sym))
           res = nil
           if params[:lazy_search]
@@ -106,8 +106,8 @@ module Document
               stage.arguments.build(function: k, raw_parameter: v)
             end
           end
+          stage
         end
-        stage
       end
 
       def sort_aggregation_stage(sorts = {})
@@ -136,7 +136,8 @@ module Document
         stages = super(params, field_scope)
         pagination = params[:pagination] || {}
         search = params[:search] || {}
-        stages << query_aggregation_stage(search)
+        q_stage = query_aggregation_stage(search)
+        stages << q_stage if q_stage
         stages << sort_aggregation_stage
         stages << pagination_aggregation_stage(page: params[:page], per_page: params[:per_page]) unless options.pagination.disabled
         stages
@@ -157,7 +158,11 @@ module Document
           aggregates = raw_stages + to_aggregation(params, field_scope)
           virtual_view.collection.aggregate(aggregates)
         else
-          super(params, field_scope)
+          if options.pagination.disabled
+            virtual_view.collection.aggregate(to_aggregation(params, field_scope))
+          else
+            super(params, field_scope)
+          end
         end
       end
 

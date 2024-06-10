@@ -119,7 +119,7 @@ module Document
           end
 
           def verified?
-            verified = comparison_operators.deep_symbolize_keys.dig(self.comparison_operator.to_sym) && valid?
+            verified = self.comparison_operator.present? && comparison_operators.deep_symbolize_keys.dig(self.comparison_operator.to_sym) && valid?
             if ignore_blank_values
               verified
             else
