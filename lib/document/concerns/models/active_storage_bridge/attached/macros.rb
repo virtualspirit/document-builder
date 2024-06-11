@@ -59,7 +59,7 @@ module Document
                       end
                     end
                     include Document.file_uploader_class.new(field)
-                    after_save do 
+                    after_save do
                       if self.send(field).present?
                         urls = {original: send("#{field}_url")}
                         versions = send("#{field}_derivatives") rescue {}
@@ -240,6 +240,12 @@ module Document
                       end
                     blobs = blobs.map{|blob|
                       #{name}.build(attachment: blob)
+                    }
+                    blobs
+                  end
+                  def #{name}_remote_urls=(urls=[])
+                    blobs = urls.map{|url|
+                      #{name}.build(attachment_remote_url: url)
                     }
                     blobs
                   end

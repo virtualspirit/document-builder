@@ -8,6 +8,7 @@ module Document
 
     plugin :validation_helpers
     plugin :remote_url
+    plugin :remove_attachment
 
     Attacher.validate do
       # validate with model validation settings
