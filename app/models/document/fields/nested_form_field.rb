@@ -47,7 +47,7 @@ module Document
             if ch = send(field_name)
               unless ch.valid?
                 errors.add(field_name.to_sym, :invalid)
-                ch.errors.each {|e| errors.import e, **e.options.merge(attribute: "#{field_name}.#{i}.#{e.attribute}")}
+                ch.errors.each {|e| errors.import e, **e.options.merge(attribute: "#{field_name}.#{e.attribute}")}
               end
             end
           end
