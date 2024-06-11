@@ -46,7 +46,6 @@ module Document
     end
 
     def virtual_fields instance, _fields = nil
-      debugger
       _fields ||= fields.sort_by(&:position_on_section)
       _fields.map do |field|
         vp = present_virtual_field(field, target: instance)
