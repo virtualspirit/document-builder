@@ -134,6 +134,12 @@ module Document
           # end
           model.class_eval <<-CODE
             def serializable_hash(options= nil)
+              options ||= {}
+              if !options[:include].is_a?(Array)
+                relations = [:has_one, :has_many].reduce([]) { |arr, rel| arr + self.class.reflect_on_all_associations(rel).map(&:name) }
+                options= {include: relations}
+              end
+
               hash = super(options)
               self.class.reflect_on_all_associations(:embeds_one).map(&:name).each do |rname|
                 unless hash.keys.include?(rname.to_s)

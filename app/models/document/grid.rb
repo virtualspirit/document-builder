@@ -51,6 +51,7 @@ module Document
     has_many :grid_fields, -> { order(:field_position_on_grid) }, class_name: "Document::Grids::GridField", foreign_key: "grid_id", dependent: :destroy, inverse_of: :grid
     has_many :fields, through: :grid_fields, class_name: "Document::Grids::Field"
     has_many :grid_owners, class_name: "Document::GridOwner", foreign_key: "grid_id", dependent: :destroy
+    has_many :sections, -> {order(:position)}, class_name: "Document::Section", foreign_key: "form_id", primary_key: "form_id", inverse_of: :grid
     #has_many :owners, through: :grid_owners, source: :owner
 
     has_many :grid_nested_fields, class_name: "Document::Grids::GridNestedField", foreign_key: "nested_grid_id"
@@ -193,6 +194,7 @@ module Document
         stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_current_step", parameter: 1}])
         stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_total_step", parameter: 1}])
         stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_steps_keywords", parameter: 1}])
+        stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_steps_taken", parameter: 1}])
       end
       stages
     end
@@ -287,7 +289,7 @@ module Document
       def get_default_grid_for(grid_owner, form, **opts)
         res = owned_or_default(grid_owner, form)
         if opts[:includes]
-          res = res.includes(*[:form, :fields => [ :field => [:nested_form], :nested_grid_panel => [:form, :sections, :fields], :nested_grid_list => [:form, :fields]]])
+          res = res.includes(*[:form, :fields => [ :field => [:section, :nested_form], :nested_grid_panel => [:form, :sections, :fields], :nested_grid_list => [:form, :fields]]])
         end
         res = res.order("document_grids.default asc").first
       end

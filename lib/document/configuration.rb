@@ -57,7 +57,7 @@ module Document
       @reserved_names ||= Set.new(
         %i[def class module private public protected allocate new parent superclass] +
           virtual_model_class.instance_methods(true) +
-        %i[form_id _step _current_step _total_step steps_keywords keywords created_at updated_at version]
+        %i[form_id _step _current_step _total_step _steps_taken steps_keywords keywords created_at updated_at version]
       )
     end
 

@@ -10,16 +10,18 @@ module Document
           field :_current_step, type: :integer
           field :_total_step, type: :integer
           field :_steps_keywords, type: :array
+          field :_steps_taken, type: :array
 
           after_initialize do
             self._step = true
             self._steps_keywords ||= []
             set_total_step
-            set_current_step
+            set_current_step if self._current_step.nil?
           end
 
           before_save do
             set_keywords_overriden
+            set_steps_taken
             if _current_step < (_total_step - 1)
               self._current_step = _current_step + 1
             end
@@ -49,6 +51,13 @@ module Document
           else
             self._current_step = 0
           end
+        end
+
+        def set_steps_taken
+          self._steps_taken ||= []
+          self._steps_taken.delete self._current_step.to_i
+          self._steps_taken << self._current_step.to_i
+          self._steps_taken.uniq!
         end
 
         def set_keywords_overriden
