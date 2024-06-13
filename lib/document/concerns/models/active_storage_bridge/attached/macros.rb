@@ -238,7 +238,7 @@ module Document
                           end
                         end
                       end
-                    blobs = blobs.map{|blob|
+                    blobs = blobs.compact.map{|blob|
                       #{name}.build(attachment: blob)
                     }
                     blobs
