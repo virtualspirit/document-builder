@@ -11,7 +11,7 @@ module Document
       validates :end,
                 timeliness: {
                   after: :begin,
-                  type: :end
+                  type: :date
                 },
                 allow_blank: true,
                 if: -> { read_attribute(:begin).present? }
