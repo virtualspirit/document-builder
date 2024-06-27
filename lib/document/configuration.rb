@@ -78,8 +78,12 @@ module Document
     end
 
     def file_uploader_class
-      @file_uploader_class ||= 'Document::FileUploader::Attachment'
-      @file_uploader_class.constantize
+      @file_uploader_class
+    end
+
+    def file_uploader_class_constant
+      @file_uploader_class ||= 'Document::FileUploader'
+      "#{@file_uploader_class}::Attachment".constantize
     end
 
     def file_uploader_class=val

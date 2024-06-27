@@ -58,7 +58,7 @@ module Document
                         validates field, presence: true
                       end
                     end
-                    include Document.file_uploader_class.new(field)
+                    include Document.file_uploader_class_constant.new(field)
                     after_save do
                       if self.send(field).present?
                         urls = {original: send("#{field}_url")}
