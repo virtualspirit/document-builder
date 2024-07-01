@@ -42,7 +42,7 @@ module Document
         if nested_model
           field_name = name
           relation_name= model.name.underscore.downcase
-          nested_model.field "#{relation_name}_id", type: BSON::ObjectId
+          nested_model.field "#{field_name}_id", type: BSON::ObjectId
           model.field "#{field_name}_count".to_sym, type: :integer, default: 0
           model.has_many field_name, class_name: nested_model.name, foreign_key: "#{field_name}_id"
           nested_model.belongs_to relation_name.to_sym, class_name: model.name, optional: true, inverse_of: "#{field_name}".to_sym, counter_cache: "#{field_name}_count".to_sym, foreign_key: "#{field_name}_id"

@@ -38,9 +38,10 @@ module Document
         nested_model = cached_nested_form.to_virtual_model(overrides: { _global: { accessibility: accessibility }, build_options: { nested_form: true } })
         if nested_model
           field_name = name
+          relation_name= model.name.underscore.downcase
           nested_model.field "#{field_name}_id", type: BSON::ObjectId
           model.has_one field_name, class_name: nested_model.name, foreign_key: "#{field_name}_id"
-          nested_model.belongs_to model.name.downcase.to_sym, class_name: model.name, optional: true, inverse_of: "#{field_name}".to_sym
+          nested_model.belongs_to relation_name.to_sym, class_name: model.name, optional: true, inverse_of: "#{field_name}".to_sym
           model.accepts_nested_attributes_for field_name, reject_if: :all_blank, allow_destroy: true
 
           model.validate do
