@@ -64,6 +64,16 @@ module Document
                     }
                   ])
                   aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", parameter: 1}])
+                # when "date_field"
+                #   zone = Time.zone.name
+                #   aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", raw_parameter: { $dateToString: { format: "%Y-%m-%d", date: "$#{name}", timezone: zone } }}])
+                # when "datetime_field"
+                #   zone = Time.zone.name
+                #   aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", raw_parameter: { $dateToString: { format: "%Y-%m-%d %H:%M %z", date: "$#{name}", timezone: zone } }}])
+                # when "time_field"
+                #   zone = Time.zone.name
+                #   format = field.options.format == '24' ? "%H:%M" :
+                #   aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", raw_parameter: { $dateToString: { format: "%H:%M", date: "$#{name}", timezone: zone } }}])
                 else
                   aggregation.stages.build(name: "$project", order: 9999, arguments_attributes: [{function: "#{name}", parameter: 1}])
                 end

@@ -2,15 +2,24 @@ module Document
   module Fields
     class TimeFieldPresenter < FieldPresenter
 
-      def value
-        super&.in_time_zone
-      end
+      # def value
+      #   super&.in_time_zone
+      # end
+
+      # def value_for_preview
+      #   value = self.value
+      #   # I18n.l(value) if value
+      #   if value.is_a?(Time)
+      #     value.in_time_zone.strftime(format)
+      #   end
+      #   value
+      # end
 
       def value_for_preview
         value = self.value
         # I18n.l(value) if value
         if value.is_a?(Time)
-          value.in_time_zone.strftime(format)
+          value.strftime(format)
         end
         value
       end

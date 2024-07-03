@@ -72,6 +72,12 @@ module Document
         klass.include Document::Concerns::VirtualModels::GeneralSearch
         klass.include Document::Concerns::VirtualModels::AdvancedSearch
 
+        klass.field :timezone, type: :string
+
+        klass.before_save do
+          self.timezone ||= Time.zone.name
+        end
+
         if opts[:step]
           klass.include Document::Concerns::VirtualModels::Steps
         end

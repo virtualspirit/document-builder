@@ -18,6 +18,9 @@ module Document
           def #{name}=(val)
             super(val.try(:in_time_zone)&.utc)
           end
+          def #{name}
+            super.try(:in_time_zone)&.utc
+          end
           CODE
         end
 

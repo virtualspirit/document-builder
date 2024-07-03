@@ -16,6 +16,14 @@ module Document
                 allow_blank: true,
                 if: -> { read_attribute(:begin).present? }
 
+      def begin
+        super.try(:in_time_zone)&.utc
+      end
+
+      def end
+        super.try(:in_time_zone)&.utc
+      end
+
       def begin=(val)
         super(val.try(:in_time_zone)&.utc)
       end

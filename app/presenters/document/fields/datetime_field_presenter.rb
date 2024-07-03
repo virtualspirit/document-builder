@@ -2,6 +2,10 @@ module Document
   module Fields
     class DatetimeFieldPresenter < FieldPresenter
 
+      # def value
+      #   super&.in_time_zone
+      # end
+
       def value
         super&.in_time_zone
       end

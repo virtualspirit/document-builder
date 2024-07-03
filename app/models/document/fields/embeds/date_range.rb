@@ -24,6 +24,14 @@ module Document
         super(val.try(:in_time_zone)&.utc)
       end
 
+      def begin
+        super.try(:in_time_zone)&.utc
+      end
+
+      def end
+        super.try(:in_time_zone)&.utc
+      end
+
     end
   end
 end
