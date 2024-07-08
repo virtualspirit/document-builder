@@ -148,13 +148,25 @@ module Document
         if nested_field
           criteria = nil
           if nested_field.depedency_field?
+            unless virtual_view.fields.keys.include?("#{nested_field.name}_ids")
+              virtual_view.field "#{nested_field.name}_ids", type: Array, default: []
+            end
             ids = params["#{nested_field.name}_ids".to_sym]
             ids = [ids].compact unless ids.is_a?(Array)
             criteria = virtual_view.in(id: ids)
           else
+            unless virtual_view.fields.keys.include?("#{nested_field.name}_id")
+              virtual_view.field "#{nested_field.name}_id", type: BSON::ObjectId
+            end
             criteria = virtual_view.where("#{nested_field.name}_id".to_sym => params["#{nested_field.name}_id".to_sym])
           end
-          raw_stages << criteria.project(:id => "id").pipeline.filter{|p| p["$match"].present? }[0]
+          if criteria.is_a?(::Mongoid::Criteria)
+            stage = Document::Grids::AggregationStage.new(name: "$match", order: 9999)
+            criteria.selector.each do |k,v|
+              stage.arguments.build(function: k, raw_parameter: v)
+            end
+            raw_stages << stage.to_stage
+          end
           aggregates = raw_stages + to_aggregation(params, field_scope)
           virtual_view.collection.aggregate(aggregates)
         else
