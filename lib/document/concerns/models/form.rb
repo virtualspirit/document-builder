@@ -82,6 +82,9 @@ module Document
                             overrides: {})
           build_options = overrides.delete(:build_options) || {}
           build_options[:step] = self.step
+          if self.step
+            build_options[:step_non_linear] = self.step_options.non_linear rescue true
+          end
 
           if step_active? && !build_options[:nested_form]
             fields_scope = proc {|fields|

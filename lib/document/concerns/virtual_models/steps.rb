@@ -6,6 +6,11 @@ module Document
 
         included do
 
+          class_attribute :step
+          self.step= true
+          class_attribute :non_linear
+          self.non_linear= true
+
           field :_step, type: :boolean
           field :_current_step, type: :integer
           field :_total_step, type: :integer
@@ -40,6 +45,10 @@ module Document
 
         def set_total_step
           self._total_step = Document::Form::find(self.class.form_id).step_options.total rescue 0
+        end
+
+        def steps_completed?
+          (_steps_taken || []).uniq.length >= self._total_step.to_i
         end
 
         def set_current_step step=nil

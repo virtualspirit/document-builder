@@ -73,6 +73,8 @@ module Document
         klass.include Document::Concerns::VirtualModels::AdvancedSearch
 
         klass.field :timezone, type: :string
+        klass.field :submission_state, type: :string, default: 'incomplete'
+        klass.attr_accessor :submitted
 
         klass.before_save do
           self.timezone ||= Time.zone.name
@@ -80,7 +82,25 @@ module Document
 
         if opts[:step]
           klass.include Document::Concerns::VirtualModels::Steps
+          klass.non_linear= opts[:step_non_linear].nil? ? true : opts[:step_non_linear]
         end
+
+        klass.after_save do
+          if self.respond_to?(:_step)
+            if self.class.non_linear && self.submitted
+              set(submission_state: 'completed')
+            end
+            unless self.class.non_linear
+              set(submission_state: 'completed') if steps_completed?
+            end
+          end
+        end
+        klass.after_create do
+          unless self.respond_to?(:_step)
+            set(submission_state: 'completed')
+          end
+        end
+
         klass.class_attribute :form_id
         klass
       end

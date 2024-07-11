@@ -190,6 +190,7 @@ module Document
       end
       stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "version", parameter: 1}])
       stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "timezone", parameter: 1}])
+      stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "submission_state", parameter: 1}])
       if cached_form.step?
         stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_step", parameter: 1}])
         stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_current_step", parameter: 1}])
