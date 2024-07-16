@@ -39,7 +39,9 @@ module Document
     validates :title, presence: true
     validates :name, presence: true
 
-    after_create :auto_create_default_section
+    attr_accessor :skip_default_section
+
+    after_create :auto_create_default_section, unless: :skip_default_section
 
     private
 
