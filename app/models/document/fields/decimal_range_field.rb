@@ -11,12 +11,17 @@ module Document
         accessibility = overrides.fetch(:accessibility, self.accessibility)
         return model if accessibility == :hidden
 
-        nested_model = Document::Fields::Embeds::DecimalRange
+        #nested_model = Document::Fields::Embeds::DecimalRange
+        nested_model_name= "#{name}#{id.to_s.underscore}".classify
+        nested_model = Document::Fields::Embeds::VirtualEmbeddedModel.build(name: nested_model_name, type: :decimal_range)
 
         model.nested_models[name] = nested_model
 
         model.embeds_one name, class_name: nested_model.name, validate: true
         model.accepts_nested_attributes_for name, reject_if: :all_blank
+
+        nested_model.embedded_in model.name.underscore.to_sym, class_name: model.name, inverse_of: name
+
         model.add_as_searchable_field name if options.try(:searchable)
         model
       end

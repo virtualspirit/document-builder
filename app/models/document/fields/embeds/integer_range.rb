@@ -2,19 +2,27 @@ module Document
   module Fields::Embeds
     class IntegerRange < Base
 
-      field :from, type: :big_decimal
-      field :to, type: :big_decimal
+      module Core
+        extend ActiveSupport::Concern
 
-      validates :from, :to,
-                presence: true,
-                numericality: { only_integer: true }
+        included do
+          field :begin, type: :big_decimal
+          field :end, type: :big_decimal
+          validates :begin, :end,
+                    presence: true,
+                    numericality: { only_integer: true }
 
-      validates :to,
-                numericality: {
-                  greater_than: :from
-                },
-                allow_blank: true,
-                if: -> { read_attribute(:from).present? }
+          validates :end,
+                    numericality: {
+                      greater_than: :begin
+                    },
+                    allow_blank: true,
+                    if: -> { read_attribute(:begin).present? }
+        end
+
+      end
+
+      include Core
 
     end
   end

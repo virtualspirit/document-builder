@@ -15,7 +15,9 @@ module Document
         accessibility = overrides.fetch(:accessibility, self.accessibility)
         return model if accessibility == :hidden
 
-        nested_model = Document::Fields::Embeds::DateRange
+        #nested_model = Document::Fields::Embeds::DateRange
+        nested_model_name= "#{name}#{id.to_s.underscore}".classify
+        nested_model = Document::Fields::Embeds::VirtualEmbeddedModel.build(name: nested_model_name, type: :date_range)
 
         model.nested_models[name] = nested_model
 
@@ -25,6 +27,8 @@ module Document
         model.after_initialize do
           send("build_#{field_name}") unless send("#{field_name}")
         end
+
+        nested_model.embedded_in model.name.underscore.to_sym, class_name: model.name, inverse_of: field_name
 
         model.validate do
           if send(field_name).present? && !send(field_name).valid?

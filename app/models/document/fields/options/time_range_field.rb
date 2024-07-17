@@ -132,38 +132,38 @@ module Document
         klass = model.nested_models[field_name]
 
         unless nullable_end
-          klass.validates :to,
+          klass.validates :end,
                           presence: true
         end
 
         if begin_from_now?
           begin_minutes_offset = begin_from_now_minutes_offset.minutes.to_i
-          klass.validates :from,
+          klass.validates :begin,
                           timeliness: {
                             on_or_after: -> { (Time.zone.now.change(sec: 0, usec: 0) + begin_minutes_offset).strftime(time_format) },
                             type: :time
                           },
                           allow_blank: true
-          klass.default_value_for :from,
+          klass.default_value_for :begin,
                                   ->(_) { (Time.zone.now.change(sec: 0, usec: 0) + begin_minutes_offset).strftime(time_format) },
                                   allow_nil: false
-          klass.attr_readonly :from if fixed_begin
+          klass.attr_readonly :begin if fixed_begin
         elsif begin_from_time?
-          klass.validates :from,
+          klass.validates :begin,
                           timeliness: {
                             on_or_after: self.begin.strftime(time_format),
                             type: :time
                           },
                           allow_blank: true
-          klass.default_value_for :from,
+          klass.default_value_for :begin,
                                   self.begin,
                                   allow_nil: false
-          klass.attr_readonly :from if fixed_begin
+          klass.attr_readonly :begin if fixed_begin
         elsif begin_from_minutes_before_end?
           minutes_before_end = self.minutes_before_end.minutes.to_i
-          klass.validates :from,
+          klass.validates :begin,
                           timeliness: {
-                            on_or_after: ->(r) { (r.to - minutes_before_end).strftime(time_format) },
+                            on_or_after: ->(r) { (r.end - minutes_before_end).strftime(time_format) },
                             type: :time
                           },
                           allow_blank: true
@@ -172,32 +172,32 @@ module Document
         if end_to_now?
           end_minutes_offset = end_to_now_minutes_offset.minutes.to_i
 
-          klass.validates :to,
+          klass.validates :end,
                           timeliness: {
                             on_or_before: -> { (Time.zone.now.change(sec: 0, usec: 0) + end_minutes_offset).strftime(time_format) },
                             type: :time
                           },
                           allow_blank: true
-          klass.default_value_for :to,
+          klass.default_value_for :end,
                                   ->(_) { (Time.zone.now.change(sec: 0, usec: 0) + end_minutes_offset).strftime(time_format) },
                                   allow_nil: false
-          klass.attr_readonly :to if fixed_end
+          klass.attr_readonly :end if fixed_end
         elsif end_to_time?
-          klass.validates :to,
+          klass.validates :end,
                           timeliness: {
                             on_or_before: self.end.strftime(time_format),
                             type: :time
                           },
                           allow_blank: true
-          klass.default_value_for :to,
+          klass.default_value_for :end,
                                   self.end,
                                   allow_nil: false
-          klass.attr_readonly :to if fixed_end
+          klass.attr_readonly :end if fixed_end
         elsif end_to_minutes_since_begin?
           minutes_since_begin = self.minutes_since_begin.minutes.to_i
-          klass.validates :to,
+          klass.validates :end,
                           timeliness: {
-                            on_or_before: ->(r) { (r.from + minutes_since_begin).strftime(time_format) },
+                            on_or_before: ->(r) { (r.begin + minutes_since_begin).strftime(time_format) },
                             type: :time
                           },
                           allow_blank: true
@@ -206,58 +206,58 @@ module Document
         if minimum_distance.positive?
           minimum_distance_minutes = minimum_distance.minutes
           if fixed_begin || begin_from_now? || begin_from_time? || end_to_minutes_since_begin?
-            klass.validates :to,
+            klass.validates :end,
                             timeliness: {
-                              on_or_after: ->(r) { (r.from + minimum_distance_minutes).strftime(time_format) },
+                              on_or_after: ->(r) { (r.begin + minimum_distance_minutes).strftime(time_format) },
                               type: :time
                             },
                             allow_blank: false,
-                            if: -> { read_attribute(:from).present? }
+                            if: -> { read_attribute(:begin).present? }
           elsif fixed_end || end_to_now? || end_to_time? || begin_from_minutes_before_end?
-            klass.validates :from,
+            klass.validates :begin,
                             timeliness: {
-                              on_or_before: ->(r) { (r.to - minimum_distance_minutes).strftime(time_format) },
+                              on_or_before: ->(r) { (r.end - minimum_distance_minutes).strftime(time_format) },
                               type: :time
                             },
                             allow_blank: false,
-                            if: -> { read_attribute(:to).present? }
+                            if: -> { read_attribute(:end).present? }
           else
-            klass.validates :to,
+            klass.validates :end,
                             timeliness: {
-                              on_or_after: ->(r) { (r.from + minimum_distance_minutes).strftime(time_format) },
+                              on_or_after: ->(r) { (r.begin + minimum_distance_minutes).strftime(time_format) },
                               type: :time
                             },
                             allow_blank: false,
-                            if: -> { read_attribute(:from).present? }
+                            if: -> { read_attribute(:begin).present? }
           end
         end
 
         if maximum_distance.positive?
           maximum_distance_minutes = maximum_distance.minutes
           if fixed_begin || begin_from_now? || begin_from_time? || end_to_minutes_since_begin?
-            klass.validates :to,
+            klass.validates :end,
                             timeliness: {
-                              on_or_before: ->(r) { (r.from + maximum_distance_minutes).strftime(time_format) },
+                              on_or_before: ->(r) { (r.begin + maximum_distance_minutes).strftime(time_format) },
                               type: :time
                             },
                             allow_blank: false,
-                            if: -> { read_attribute(:from).present? }
+                            if: -> { read_attribute(:begin).present? }
           elsif fixed_end || end_to_now? || end_to_time? || begin_from_minutes_before_end?
-            klass.validates :to,
+            klass.validates :end,
                             timeliness: {
-                              on_or_after: ->(r) { (r.to - maximum_distance_minutes).strftime(time_format) },
+                              on_or_after: ->(r) { (r.end - maximum_distance_minutes).strftime(time_format) },
                               type: :time
                             },
                             allow_blank: false,
-                            if: -> { read_attribute(:to).present? }
+                            if: -> { read_attribute(:end).present? }
           else
             klass.validates :end,
                             timeliness: {
-                              on_or_before: ->(r) { (r.from + maximum_distance_minutes).strftime(time_format) },
+                              on_or_before: ->(r) { (r.begin + maximum_distance_minutes).strftime(time_format) },
                               type: :time
                             },
                             allow_blank: false,
-                            if: -> { read_attribute(:from).present? }
+                            if: -> { read_attribute(:begin).present? }
           end
         end
       end

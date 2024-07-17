@@ -2,51 +2,46 @@ module Document
   module Fields::Embeds
     class TimeRange < Base
 
-      field :from, type: :time
-      field :to, type: :time
+      module Core
+        extend ActiveSupport::Concern
 
-      validates :from,
-                presence: true
+        included do
+          self.searchable_fields = ["begin", "end"] if self.include?(Document::Concerns::VirtualModels::GeneralSearch)
 
-      validates :to,
-                timeliness: {
-                  after: :from,
-                  type: :time
-                },
-                allow_blank: true,
-                if: -> { read_attribute(:from).present? }
+          field :begin, type: :time
+          field :end, type: :time
 
-      def from=(val)
-        super(val.try(:in_time_zone)&.utc)
+          validates :begin,
+                    presence: true
+
+          validates :end,
+                    timeliness: {
+                      after: :begin,
+                      type: :time
+                    },
+                    allow_blank: true,
+                    if: -> { read_attribute(:begin).present? }
+        end
+
+        def begin=(val)
+          super(val.try(:in_time_zone)&.utc)
+        end
+
+        def end=(val)
+          super(val.try(:in_time_zone)&.utc)
+        end
+
+        def begin
+          super.try(:in_time_zone)&.utc
+        end
+
+        def end
+          super.try(:in_time_zone)&.utc
+        end
+
       end
 
-      def to=(val)
-        super(val.try(:in_time_zone)&.utc)
-      end
-
-      def from
-        super.try(:in_time_zone)&.utc
-      end
-
-      def to
-        super.try(:in_time_zone)&.utc
-      end
-
-      def begin
-        from
-      end
-
-      def end
-        to
-      end
-
-      def begin=(val)
-        from=(val)
-      end
-
-      def end=(val)
-        to=(val)
-      end
+      include Core
 
     end
   end
