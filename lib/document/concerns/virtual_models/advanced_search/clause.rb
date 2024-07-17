@@ -138,9 +138,9 @@ module Document
               when "ActiveModel::Type::Boolean"
                 ActiveModel::Type::Boolean.new.cast(values)
               when "Date"
-                Date.parse(values.to_s)
+                DateTime.parse(values.to_s).in_time_zone&.utc rescue values
               when "DateTime"
-                DateTime.parse(values.to_s)
+                DateTime.parse(values.to_s).in_time_zone&.utc rescue values
               when "BSON::ObjectId"
                 BSON::ObjectId(values.to_s)
               when "Array"
@@ -148,7 +148,7 @@ module Document
               when "Hash"
                 JSON.parse values
               when "Time"
-                Time.parse values.to_s
+                Time.parse(values.to_s).in_time_zone&.utc rescue values
               else
                 values
             end

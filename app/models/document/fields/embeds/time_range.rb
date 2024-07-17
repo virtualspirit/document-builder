@@ -2,34 +2,50 @@ module Document
   module Fields::Embeds
     class TimeRange < Base
 
-      field :begin, type: :time
-      field :end, type: :time
+      field :from, type: :time
+      field :to, type: :time
 
-      validates :begin,
+      validates :from,
                 presence: true
 
-      validates :end,
+      validates :to,
                 timeliness: {
-                  after: :begin,
+                  after: :from,
                   type: :time
                 },
                 allow_blank: true,
-                if: -> { read_attribute(:begin).present? }
+                if: -> { read_attribute(:from).present? }
 
-      def begin=(val)
+      def from=(val)
         super(val.try(:in_time_zone)&.utc)
       end
 
-      def end=(val)
+      def to=(val)
         super(val.try(:in_time_zone)&.utc)
+      end
+
+      def from
+        super.try(:in_time_zone)&.utc
+      end
+
+      def to
+        super.try(:in_time_zone)&.utc
       end
 
       def begin
-        super.try(:in_time_zone)&.utc
+        from
       end
 
       def end
-        super.try(:in_time_zone)&.utc
+        to
+      end
+
+      def begin=(val)
+        from=(val)
+      end
+
+      def end=(val)
+        to=(val)
       end
 
     end

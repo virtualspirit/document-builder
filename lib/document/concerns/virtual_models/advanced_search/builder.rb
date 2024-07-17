@@ -65,8 +65,8 @@ module Document
                   end
                 else
                   if field.range_field?
-                    from = Clause.new(comparison_operator: :eq, type: field.stored_type, field: "#{name}.begin", label: field.label, namespace: nested)
-                    to = Clause.new(comparison_operator: :eq, type: field.stored_type, field: "#{name}.end", label: field.label, namespace: nested)
+                    from = Clause.new(comparison_operator: :eq, type: field.stored_type, field: "#{name}.from", label: field.label, namespace: nested)
+                    to = Clause.new(comparison_operator: :eq, type: field.stored_type, field: "#{name}.to", label: field.label, namespace: nested)
                     collection + [from, to]
                   elsif field.type == "Document::Fields::GeolocationField"
                     collection.push(Clause.new(comparison_operator: :eq, type: field.stored_type, field: name, label: field.label, namespace: nested))

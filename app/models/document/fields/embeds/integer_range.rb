@@ -2,19 +2,19 @@ module Document
   module Fields::Embeds
     class IntegerRange < Base
 
-      field :begin, type: :big_decimal
-      field :end, type: :big_decimal
+      field :from, type: :big_decimal
+      field :to, type: :big_decimal
 
-      validates :begin, :end,
+      validates :from, :to,
                 presence: true,
                 numericality: { only_integer: true }
 
-      validates :end,
+      validates :to,
                 numericality: {
-                  greater_than: :begin
+                  greater_than: :from
                 },
                 allow_blank: true,
-                if: -> { read_attribute(:begin).present? }
+                if: -> { read_attribute(:from).present? }
 
     end
   end
