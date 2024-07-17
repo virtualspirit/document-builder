@@ -5,15 +5,15 @@ module Document
       serialize :validations, Validations::IntegerRangeField
       serialize :options, Options::IntegerRangeField
 
+      include Document::Fields::Embeds::EmbeddedVirtualModel::Core
+
       def interpret_as_field_for(model, overrides: {})
         check_model_validity!(model)
 
         accessibility = overrides.fetch(:accessibility, self.accessibility)
         return model if accessibility == :hidden
 
-        #nested_model = Document::Fields::Embeds::IntegerRange
-        nested_model_name= "#{name}#{id.to_s.underscore}".classify
-        nested_model = Document::Fields::Embeds::VirtualEmbeddedModel.build(name: nested_model_name, type: :decimal_range)
+        nested_model = embedded_virtual_model
 
         model.nested_models[name] = nested_model
 

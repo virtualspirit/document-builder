@@ -5,6 +5,8 @@ module Document
       serialize :validations, Validations::TimeRangeField
       serialize :options, Options::TimeRangeField
 
+      include Document::Fields::Embeds::EmbeddedVirtualModel::Core
+
       def stored_type
         :date_time
       end
@@ -19,9 +21,7 @@ module Document
         accessibility = overrides.fetch(:accessibility, self.accessibility)
         return model if accessibility == :hidden
 
-        #nested_model = Document::Fields::Embeds::TimeRange
-        nested_model_name= "#{name}#{id.to_s.underscore}".classify
-        nested_model = Document::Fields::Embeds::VirtualEmbeddedModel.build(name: nested_model_name, type: :datetime_range)
+        nested_model = embedded_virtual_model
 
         model.nested_models[name] = nested_model
 

@@ -1,7 +1,44 @@
 module Document
   module Fields
     module Embeds
-      class VirtualEmbeddedModel
+      class EmbeddedVirtualModel
+
+        module Core
+          extend ActiveSupport::Concern
+
+          included do
+
+            after_update do
+              if name_previously_was != name
+                unset_embedded_virtual_model_constant
+              end
+            end
+
+            after_destroy do
+              unset_embedded_virtual_model_constant
+            end
+
+          end
+
+          def embedded_virtual_model
+            Document::Fields::Embeds::EmbeddedVirtualModel.build(name: embedded_virtual_model_name, type: embedded_virtual_model_type)
+          end
+
+          def unset_embedded_virtual_model_constant
+            Document::Fields::Embeds::EmbeddedVirtualModel.unset_constant(embedded_virtual_model_name)
+          end
+
+          def embedded_virtual_model_name
+            "#{name}#{id.to_s.underscore}".classify
+          end
+
+          def embedded_virtual_model_type
+            arr = self.class.name.demodulize.underscore.split("_")
+            arr.pop
+            arr.join("_").to_s.to_sym
+          end
+
+        end
 
         # Hack
         ARRAY_WITHOUT_BLANK_PATTERN = "!ruby/array:ArrayWithoutBlank"
