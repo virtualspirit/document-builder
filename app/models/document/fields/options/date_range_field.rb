@@ -10,7 +10,7 @@ module Document
         days_before_end: "days_before_end"
       }, _prefix: :begin_from
 
-      attribute :begin, :date
+      attribute :begin, :datetime
       attribute :fixed_begin, :boolean, default: false
       attribute :begin_from_today_days_offset, :integer, default: 0
       attribute :days_before_end, :integer, default: 1
@@ -23,7 +23,7 @@ module Document
         days_since_begin: "days_since_begin"
       }, _prefix: :end_to
 
-      attribute :end, :date
+      attribute :end, :datetime
       attribute :fixed_end, :boolean, default: false
       attribute :nullable_end, :boolean, default: false
       attribute :end_to_today_days_offset, :integer, default: 0

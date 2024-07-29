@@ -19,7 +19,7 @@ module Document
         model.nested_models[name] = nested_model
 
         model.embeds_one name, class_name: nested_model.name, validate: true
-        model.accepts_nested_attributes_for name, reject_if: :all_blank
+        model.accepts_nested_attributes_for name, reject_if: :all_blank, allow_destroy: true
 
         nested_model.embedded_in model.name.underscore.to_sym, class_name: model.name, inverse_of: name
 
