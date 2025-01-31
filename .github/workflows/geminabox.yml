@@ -17,7 +17,7 @@ jobs:
       - name: Install Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.3' # Not needed with a `.ruby-version` or `.tool-versions`
+          ruby-version: '3.1' # Not needed with a `.ruby-version` or `.tool-versions`
       - name: install geminabox
         run: gem install rubygems-generate_index && gem install geminabox
       - name: Build Gem
