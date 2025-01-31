@@ -1,0 +1,26 @@
+name: CI/CD
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Remove current versions
+        run: rm -rf lib/document/version.rb
+      - name: Create current versions
+        run: echo -e "module Fbuilder\n  VERSION = '${{ github.event.release.tag_name }}'\nend" > lib/fbuilder/version.rb
+      - name: Install Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3' # Not needed with a `.ruby-version` or `.tool-versions`
+      - name: install geminabox
+        run: gem install rubygems-generate_index && gem install geminabox
+      - name: Build Gem
+        run: gem build document.gemspec
+      - name: Push to Geminabox
+        run: gem inabox document-${{ github.event.release.tag_name }}.gem -g ${{ secrets.GEMINABOX_URL }}
