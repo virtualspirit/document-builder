@@ -13,7 +13,7 @@ jobs:
       - name: Remove current versions
         run: rm -rf lib/document/version.rb
       - name: Create current versions
-        run: echo -e "module Fbuilder\n  VERSION = '${{ github.event.release.tag_name }}'\nend" > lib/document/version.rb
+        run: echo -e "module Document\n  VERSION = '${{ github.event.release.tag_name }}'\nend" > lib/document/version.rb
       - name: Install Ruby
         uses: ruby/setup-ruby@v1
         with:
