@@ -3,8 +3,8 @@ require_relative "lib/document/version"
 Gem::Specification.new do |spec|
   spec.name        = "document"
   spec.version     = Document::VERSION
-  spec.authors     = [""]
-  spec.email       = ["ihsaneddin@gmail.com"]
+  spec.authors     = ["Virtual Spirit Team"]
+  spec.email       = ["nich@virtualspirit.me"]
   spec.homepage    = "https://github.com/ihsaneddin"
   spec.summary     = "Summary of Document."
   spec.description = "Description of Document."
