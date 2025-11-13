@@ -13,12 +13,6 @@ module Document
               after_initialize do
                 build_file unless file
               end
-              validate do
-                unless file.valid?
-                  errors.add(:file, :invalid)
-                  file.errors.each {|e| errors.import e, **e.options.merge(attribute: "file.#{e.attribute}")}
-                end
-              end
             end
 
             def interpret_to(model, field_name, accessibility, options = {})
@@ -30,8 +24,6 @@ module Document
               attribute :whitelist, :string, array: true, default: []
               attribute :max_file_size, :integer, default: 0
               attribute :file_size_unit, :string, default: "bytes"
-
-              validates :max_file_size, numericality: { integer_only: true, greater_than: 0, allow_nil: true }
 
               enum file_size_unit: {
                 bytes: "bytes",
