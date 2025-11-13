@@ -29,6 +29,7 @@ module Document
             end
 
             class LengthOptions < Document::FieldOptions
+              attribute :message, :string, default: ""
               attribute :minimum, :integer, default: 0
               attribute :maximum, :integer, default: 0
               attribute :is, :integer, default: 0
@@ -60,6 +61,7 @@ module Document
                 options = {}
                 options[:minimum] = minimum if minimum.positive?
                 options[:maximum] = maximum if maximum.positive?
+                options[:message] = message if message.present?
                 return if options.empty?
                 model.validates field_name, length: options, allow_blank: true
               end

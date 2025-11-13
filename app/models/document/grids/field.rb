@@ -7,6 +7,8 @@
 #   t.string :namespace
 #   t.integer :order
 #   t.string :type
+#   t.boolean :default_aggregation
+#   t.boolean :default
 #   t.text :aggregation
 #   t.timestamps
 # end
@@ -15,294 +17,141 @@ module Document
   module Grids
     class Field < ApplicationRecord
 
+      include Fields::Concerns::Buildable
+
+      scope :only_default, -> { where(default: true) }
+
       self.table_name = 'document_grid_fields'
 
-      belongs_to :grid, class_name: 'Document::Grid'
-      belongs_to :nested_column, class_name: "Document::Grids::Field::NestedColumn", optional: true
+      belongs_to :field, class_name: 'Document::Field', foreign_key: "field_id", optional: true
+      belongs_to :section, class_name: "Document::Section", optional: true, foreign_key: "section_id"
+      has_many :grid_fields, class_name: "Document::Grids::GridField", foreign_key: "field_id", dependent: :destroy, inverse_of: :field
+      has_many :grids, through: :grid_fields, class_name: "Document::Grid"
+      has_many :grid_panels, lambda { where(type: "Document::Grids::Panel") }, through: :grid_fields, source: :grid
+      has_many :grid_lists, lambda { where(type: "Document::Grids::List") }, through: :grid_fields, source: :grid
+      has_many :grid_nested_fields, class_name: "Document::Grids::GridNestedField", foreign_key: "nested_field_id", dependent: :destroy
+      has_many :nested_grids, through: :grid_nested_fields, class_name: "Document::Grid"
+      has_one :grid_list_nested_field, -> { where(grid_type: "Document::Grids::List") }, class_name: "Document::Grids::GridNestedField", foreign_key: "nested_field_id"
+      has_one :nested_grid_list, through: :grid_list_nested_field, source: :nested_grid
+      has_one :grid_panel_nested_field, -> { where(grid_type: "Document::Grids::Panel") }, class_name: "Document::Grids::GridNestedField", foreign_key: "nested_field_id"
+      has_one :nested_grid_panel, through: :grid_panel_nested_field, source: :nested_grid
+
+      scope :only_belongs_to_section, -> { where.not(section_id: nil) }
+
+      include Document::Concerns::Models::Cachers::GridField
+
+      positioned on: :section, column: :position_on_section
+
+      cache_this :cached_position_on_grid do
+        key do |field|
+          "cached_position_on_grid-#{field.id}-#{field.current_grid.try(:id)}"
+        end
+        value do |field|
+          field.grid_fields.where(grid_id: field.current_grid.try(:id)).first.try(:field_position_on_grid)
+        end
+      end
+
+      attr_accessor :set_position_on_section
+
+      def set_position_on_section=(value)
+        @set_position_on_section = value
+        self.position_on_section= value
+      end
+
+      attr_accessor :set_position_on_grid
+      attr_accessor :current_grid
+
+      def set_current_grid grid
+        self.current_grid= grid
+      end
+
+      after_save do
+        if set_position_on_grid && current_grid
+          grid_field = grid_fields.where(grid_id: current_grid.id).first
+          if grid_field
+            #if grid_field.field_position_on_grid != cached_position_on_grid
+              grid_field.update(position: set_position_on_grid)
+            #end
+          end
+        end
+      end
 
       serialize :namespace, Array
       serialize :aggregation, Document::Grids::Aggregation
 
-      class AggregateColumn < Field
+      delegate :to_aggregation, to: :aggregation
+
+      #validates :default_aggregation, acceptance: true, if: :default
+
+      validate do
+        unless type_was.nil?
+          if type_was != type
+            errors.add(:type, :invalid)
+          end
+        end
       end
 
-      class Column < Field
-
-        belongs_to :field, class_name: 'Document::Field', foreign_key: "field_id"
-
-        delegate :to_aggregation, to: :aggregation
-
-        def aggregation_stages
-          aggregation.try(:stages) || []
+      validate do
+        unless aggregation.valid?
+          errors.add(:aggregation, :invalid)
+          aggregation.errors.each {|e| errors.import e, **e.options.merge(attribute: "aggregation.#{e.attribute}")}
         end
-
-        after_initialize do
-          if name
-            if self.aggregation.blank?
-              self.aggregation = Aggregation.new
-            end
-            if self.aggregation.stages.blank?
-              self.aggregation.stages << AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: function_name, parameter: 1}])
-            end
-          end
-        end
-
-        def function_name
-          (namespace || []).dup.append(name).join(".")
-        end
-
-        class << self
-
-
-          def build grid, field, namespace = []
-            column_name = field.name
-            if field.is_a?(Document::Fields::DepedencyOneField)
-              column_name = "#{field.name}_id"
-            end
-            if field.is_a?(Document::Fields::DepedencyManyField)
-              column_name = "#{field.name}_ids"
-            end
-            column = self.new(
-              grid_id: grid.id,
-              grid: grid,
-              field_id: field.id,
-              name: column_name,
-              label: field.label,
-              namespace: namespace,
-            )
-            # if field.nested_form
-            #   _namespace = namespace.dup << field.name
-            #   (field.nested_form.try(:fields) || []).each do |f|
-            #     column.columns << self.build(grid, f, _namespace)
-            #   end
-            # end
-            column
-          end
-
-        end
-
       end
 
-      class SubGridColumn < Field
+      after_validation do
+        if position_on_section.nil? && section_id.present?
+          set_position_on_section= :last
+        end
       end
 
-      class NestedColumn < Field
+      def set_as_default
+        update(default: true)
+      end
 
-        belongs_to :field, class_name: 'Document::Field', foreign_key: "field_id"
-        has_many :columns, class_name: 'Document::Grids::Field', foreign_key: "nested_column_id"
-        accepts_nested_attributes_for :columns, allow_destroy: true
+      def aggregation_stages
+        aggregation.try(:stages) || []
+      end
 
-        def to_aggregation
-          _aggregation = aggregation.class.new
-          _aggregation.stages = aggregation_stages.flatten
-          aggregation.to_aggregation
+      def function_name
+        (namespace || []).dup.append(name).join(".")
+      end
+
+      def nested?
+        false
+      end
+
+      def multiple?
+        false
+      end
+
+      def column_names(grid_container = nil)
+        grid_container ||= current_grid
+        if grid_container
+          build_default_aggregation(grid_container)
         end
+        aggregation.stages.select{|stage| stage.name == "$project" }.map{|stage| stage.arguments.map(&:function) }.flatten
+      end
 
-        def function_name
-          (namespace || []).dup.flatten.append(name).join(".")
-        end
+      def build_default_aggregation(grid_container=nil)
+        aggregation
+      end
 
-        def aggregation_stages
-          stages = []
-          return stages if field.nil? || columns.blank?
+      def field_type
+        nil
+      end
 
-          if field.is_a?(Document::Fields::DepedencyOneField) || field.is_a?(Document::Fields::DepedencyManyField)
-            form = field.options.form
-            if form
-              ref_col = Column.build(grid, field, namespace)
-              clauses = field.options.clauses
-              matches = {}
-              if field.is_a?(Document::Fields::DepedencyOneField)
-                matches.deep_merge!({"$expr".to_sym => { "$eq".to_sym => [ "$$#{ref_col.name}", "$_id" ] }})
-              else
-                matches.deep_merge!({"$expr".to_sym => { "$in".to_sym => [ "$_id", "$$#{ref_col.name}" ] }})
-              end
-              clauses.each do |c|
-                matches.deep_merge!(c.to_criteria) if c.to_criteria.is_a?(Hash)
-              end
-              pipeline = Aggregation.new
-              pipeline.stages.build({name: "$match", arguments_attributes: matches.reduce([]){|arr, h| arr << { function: h[0], raw_parameter: h[1] } }})
-              columns.each do |column|
-                column.aggregation_stages.each do |stg|
-                  pipeline.stages << stg
-                end
-              end
+      def field_identifier
+        nil
+      end
 
-              stages =[]
+      def namespaced_name
+        ((namespace || []) + [name]).map{|s| s.to_sym}
+      end
 
-              if(field.is_a?(Document::Fields::DepedencyManyField))
-                relation_field = AggregationStage.new({
-                  name: "$addFields", merge: false, order: 9997, arguments_attributes: [
-                    {
-                      function: "#{ref_col.function_name}",
-                      raw_parameter: {
-                        "$cond": {
-                          "if": {
-                            "$ne": [
-                              {
-                                "$type": "$#{ref_col.function_name}"
-                              },
-                              "array"
-                            ]
-                          },
-                          "then": [],
-                          "else": "$#{ref_col.function_name}"
-                        }
-                      }
-                    }
-                  ]
-                })
-                stages << relation_field
-              end
+      class << self
 
-              if (ref_col.namespace.present?)
-                ref_col.namespace.reduce([]){|arr, val|
-                  if val.is_a?(Array)
-                    unwind = AggregationStage.new(
-                      name: "$unwind",
-                      merge: false,
-                      parameters_as_array: false,
-                      order: 9996,
-                      arguments_attributes: [
-                        { function: "path", parameter: "$#{arr.concat(val).join(".")}" }
-                      ]
-                      )
-                    stages << unwind
-                  end
-                  arr.append(val)
-                }
-              end
-
-              lookup = AggregationStage.new(name: "$lookup", merge: false, order: 9997, arguments_attributes: [
-                { function: "from", parameter: field.options.virtual_model.collection_name.to_s },
-                { function: "let", parameters_as_array: false, parameters_attributes: [
-                    { function: "#{ref_col.name}", parameter: "$#{ref_col.function_name}" }
-                  ]
-                },
-                { function:  "pipeline", raw_parameter: pipeline.to_aggregation },
-                { function: "as", parameter: name }
-              ])
-              stages << lookup
-
-              add_field = AggregationStage.new({
-                name: "$addFields", merge: false, order: 9998, arguments_attributes: [{function: "#{function_name}", parameter: "$#{name}"}]
-              })
-              stages << add_field
-
-              if field.is_a?(Document::Fields::DepedencyOneField)
-                unwind = AggregationStage.new(
-                  name: "$unwind",
-                  merge: false,
-                  parameters_as_array: false,
-                  order: 9998,
-                  arguments_attributes: [
-                    { function: "path", parameter: "$#{function_name}" },
-                    { function: "preserveNullAndEmptyArrays", parameter: true }
-                  ]
-                )
-                stages << unwind
-              end
-
-              project = AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [ {function: "#{function_name}", parameter: 1} ])
-              stages << project
-
-              stages
-              #stages = [relation_field, lookup, add_field, unwind, project].compact
-            end
-          elsif field.nested_form
-            stages = aggregation.stages
-            columns.each do |column|
-              stages << column.aggregation_stages
-            end
-          end
-          stages
-        end
-
-        class << self
-
-          def build grid, field, namespace = []
-            nested = self.new(
-              grid_id: grid.id,
-              grid: grid,
-              field_id: field.id,
-              name: field.name,
-              label: field.label,
-              namespace: namespace,
-            )
-            _namespace = namespace.dup.append field.is_a?(Document::Fields::NestedFormField) ? field.name.to_s : [field.name.to_s]
-            _fields = []
-
-            if field.nested_form || field.is_a?(Document::Fields::DepedencyManyField) || field.is_a?(Document::Fields::DepedencyOneField)
-              if field.nested_form
-                _fields = field.nested_form.fields
-              else
-                _fields = field.options.form.try(:fields) || []
-                # ref_col = Column.build(grid, field, namespace)
-                # nested.columns << ref_col
-                # if !_fields.blank? && field.options.form.is_a?(Document::Form)
-                #   form = field.options.form
-                #   pipeline = field.options.collection.project(id: "_id").pipeline[0] || {}
-                #   if field.is_a?(Document::Fields::DepedencyManyField)
-                #     pipeline["$match"].merge!({"$expr" => { "$in": [ "$$#{ref_col.function_name}", "$id" ] }})
-                #   end
-                #   if field.is_a?(Document::Fields::DepedencyOneField)
-                #     pipeline["$match"].merge!({"$expr" => { "$eq": [ "$$#{ref_col.function_name}", "$id" ] }})
-                #   end
-                #   _fields.each do |f|
-                #       pipeline['$project'] ||= {}
-                #       pipeline['$project'][f.name] = 1
-                #   end
-                #   # nested.aggregation = Aggregation.new
-                #   nested.aggregation.stages.build({
-                #     name: "$lookup",
-                #     arguments_attributes:[
-                #       { function: "from" , parameter: field.options.form.collection_name},
-                #       { function: "let", parameters_as_array: false, parameters_attributes: [
-                #           { function: "#{ref_col.function_name}", parameter: "$#{ref_col.function_name}" }
-                #         ]
-                #       },
-                #       { function: "as", parameter: _namespace.join(".")},
-                #     ]
-                #   })
-                #   if field.is_a?(Document::Fields::DepedencyOneField)
-                #     nested.aggregation.stages.build(
-                #       name: "$unwind",
-                #       parameters_as_array: false,
-                #       arguments_attributes: [
-                #         {function: "path", parameter: "$#{_namespace.join('.')}"},
-                #         { function: "preserveNullAndEmptyArrays", parameter: true }
-                #       ]
-                #     )
-                #   end
-                #   nested.aggregation.stages.build(
-                #     name: "$project",
-                #     arguments_attributes: [
-                #       { function: "#{_namespace.join(".")}", parameter: 1 }
-                #     ]
-                #   )
-                # end
-              end
-            end
-
-            _fields.each do |f|
-              if f.nested_form.present? || f.is_a?(Document::Fields::DepedencyManyField) || f.is_a?(Document::Fields::DepedencyOneField)
-                if field.is_a?(Document::Fields::DepedencyOneField) || field.is_a?(Document::Fields::DepedencyManyField)
-                  nested.columns << self.build(grid, f, [])
-                else
-                  nested.columns << self.build(grid, f, _namespace)
-                end
-              else
-                if field.is_a?(Document::Fields::DepedencyOneField) || field.is_a?(Document::Fields::DepedencyManyField)
-                  nested.columns << Column.build(grid, f, [])
-                else
-                  nested.columns << Column.build(grid, f, _namespace)
-                end
-              end
-            end
-
-            nested
-          end
-
+        def timestamp_fields
+          [Document::Grids::Fields::AggregateColumn.created_at, Document::Grids::Fields::AggregateColumn.updated_at]
         end
 
       end

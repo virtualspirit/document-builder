@@ -70,7 +70,7 @@ module Document
 
       validates :end_value,
                 numericality: {
-                  only_integer: true,
+                  only_numeric: true,
                   greater_than: :begin_value
                 },
                 allow_blank: false,
@@ -94,7 +94,7 @@ module Document
 
       validates :begin_value, :end_value,
                 numericality: {
-                  only_integer: true
+                  only_numeric: true
                 },
                 allow_blank: true
 
@@ -115,47 +115,47 @@ module Document
         klass = model.nested_models[field_name]
 
         if begin_from_value?
-          klass.validates :begin,
+          klass.validates :from,
                           numericality: {
                             greater_than_or_equal_to: begin_value
                           },
                           allow_blank: true
           if fixed_begin
-            klass.default_value_for :begin,
+            klass.default_value_for :from,
                                     begin_value,
                                     allow_nil: false
-            klass.attr_readonly :begin
+            klass.attr_readonly :from
           end
         elsif begin_from_offsets_before_end?
-          klass.validates :begin,
+          klass.validates :from,
                           numericality: {
-                            greater_than_or_equal_to: ->(r) { r.end - offsets_before_end }
+                            greater_than_or_equal_to: ->(r) { r.to - offsets_before_end }
                           },
                           allow_blank: true
         end
 
         if end_to_value?
-          klass.validates :end,
+          klass.validates :to,
                           numericality: {
                             less_than_or_equal_to: end_value
                           },
                           allow_blank: true
           if fixed_end
-            klass.default_value_for :end,
+            klass.default_value_for :to,
                                     end_value,
                                     allow_nil: false
-            klass.attr_readonly :end
+            klass.attr_readonly :to
           end
         elsif end_to_offsets_since_begin?
-          klass.validates :end,
+          klass.validates :to,
                           numericality: {
-                            less_than_or_equal_to: ->(r) { r.begin + offsets_since_begin }
+                            less_than_or_equal_to: ->(r) { r.from + offsets_since_begin }
                           },
                           allow_blank: true
         end
 
         unless minimum_gap_check_unrestricted?
-          klass.validates :end,
+          klass.validates :to,
                           numericality: {
                             minimum_gap_check.to_sym => ->(r) { r.begin + minimum_gap_value }
                           },
@@ -163,9 +163,9 @@ module Document
         end
 
         unless maximum_gap_check_unrestricted?
-          klass.validates :end,
+          klass.validates :to,
                           numericality: {
-                            maximum_gap_check.to_sym => ->(r) { r.begin + maximum_gap_value }
+                            maximum_gap_check.to_sym => ->(r) { r.from + maximum_gap_value }
                           },
                           allow_blank: false
         end

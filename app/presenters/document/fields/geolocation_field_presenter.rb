@@ -10,12 +10,12 @@ module Document
         @model.options.fill_method
       end
 
-      def location_field_suffix_name
-        @model.options.location_field_suffix_name
-      end
+      # def location_field_suffix_name
+      #   @model.options.location_field_suffix_name
+      # end
 
       def location_field_suffix_name
-        "#{@model.id}#{@model.options.location_field_suffix_name}"
+        "#{@model.name}#{@model.options.location_field_suffix_name}"
       end
 
     end

@@ -29,27 +29,38 @@ module Document
       attribute :blank_parameter, :boolean, default: false
       attribute :parameters_as_array, :boolean, default: true
 
+      embeds_one :pipeline, class_name: "Document::Grids::Aggregation"
+      accepts_nested_attributes_for :pipeline, allow_destroy: true
+
       embeds_many :parameters, class_name: self.name, extend: ParemetersExtension
       accepts_nested_attributes_for :parameters, allow_destroy: true
 
+      validates :function, presence: true
+      validates :parameter, presence: true, if: proc { |arg| arg.raw_parameter.blank? }
+      validates :raw_parameter, presence: true, if: proc { |arg| arg.parameter.blank? }
+
       def to_argument
-        if blank_parameter
-          { "#{function}": nil }
+        if pipeline
+          { "#{function}" => pipeline.to_aggregation }
         else
-          if raw_parameter.present?
-            {
-              "#{function}": raw_parameter
-            }
+          if blank_parameter
+            { "#{function}": nil }
           else
-            if parameters.present?
+            if raw_parameter.present?
               {
-                "#{function}".to_sym => parameters.to_arguments(parameters_as_array)
+                "#{function}": raw_parameter
               }
             else
-              if parameter.nil?
-                "#{function}"
+              if parameters.present?
+                {
+                  "#{function}".to_sym => parameters.to_arguments(parameters_as_array)
+                }
               else
-                { "#{function}".to_sym => parameter }
+                if parameter.nil?
+                  "#{function}"
+                else
+                  { "#{function}".to_sym => parameter }
+                end
               end
             end
           end

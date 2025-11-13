@@ -28,7 +28,7 @@ module Document
 
             class FileOptions < FieldOptions
               attribute :whitelist, :string, array: true, default: []
-              attribute :max_file_size, :integer, default: 0
+              attribute :max_file_size, :integer, default: 1
               attribute :file_size_unit, :string, default: "bytes"
 
               validates :max_file_size, numericality: { integer_only: true, greater_than: 0, allow_nil: true }

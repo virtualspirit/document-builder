@@ -20,7 +20,7 @@ module Document
               end
 
               unless subset?(record, value)
-                record.errors.add(attribute, :non_subset, options.except(:in, :within).merge!(value: value))
+                record.errors.add(attribute, :non_subset, **options.except(:in, :within).merge!(value: value))
               end
             end
 

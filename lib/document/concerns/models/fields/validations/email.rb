@@ -36,9 +36,9 @@ module Document
 
               def interpret_to(model, field_name, _accessibility, _options = {})
                 options = {}
-                options[:whitelist] = whitelist
-                options[:blacklist] = blacklist
-                options[:message] = message
+                options[:whitelist] = whitelist if whitelist
+                options[:blacklist] = blacklist if blacklist
+                options[:message] = message if message
                 options.symbolize_keys!
 
                 model.validates_with EmailValidator, _merge_attributes([field_name, options])

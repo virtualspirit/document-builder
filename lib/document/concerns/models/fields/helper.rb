@@ -41,6 +41,10 @@ module Document
             false
           end
 
+          def depedency_field?
+            false
+          end
+
         end
       end
     end

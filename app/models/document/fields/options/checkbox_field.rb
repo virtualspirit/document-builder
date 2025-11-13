@@ -2,6 +2,8 @@ module Document
   module Fields::Options
     class CheckboxField < BaseOptions
 
+      attribute :strict, :boolean, default: true
+
       embeds_many :choices, class_name: "Document::Fields::Options::CheckboxField::Choice"
       accepts_nested_attributes_for :choices, reject_if: :all_blank, allow_destroy: true
       alias_method :selections=, :choices_attributes=

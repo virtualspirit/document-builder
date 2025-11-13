@@ -1,212 +1,302 @@
 # create_table :document_grids do |t|
-#   t.references :viewable, polymorphic: true
+#   t.references :form, polymorphic: true
 #   t.string :name
 #   t.text :options
 #   t.integer :order
 #   t.string :type
-#   t.text :configuration
+#   t.text :options
 #   t.boolean :default, default: false
 #   t.timestamps
+# end
+
+# module Document
+#   class Grid < ApplicationRecord
+
+#     belongs_to :form, polymorphic: true
+#     has_many :fields, class_name: "Document::Grids::Field", foreign_key: "grid_id", dependent: :destroy
+#     accepts_nested_attributes_for :fields, allow_destroy: true
+
+#     validates :name, presence: true
+#     validates :type, presence: true, inclusion: { in: ['Document::Grids::List', 'Document::Grids::Panel'] }
+
+#     def draw fields_collection = form.try(:fields) || [], namespace = []
+#       fields_collection.each do |field|
+#         self.fields << Document::Grids::Field.build(self, field, namespace)
+#       end
+#       self.fields
+#     end
+
+#     def virtual_view
+#       if form
+#         @virtual_view ||= form.to_virtual_view
+#       end
+#     end
+
+#     def virtual_view!
+#       if form
+#         @virtual_view = form.to_virtual_view
+#       end
+#     end
+
+#   end
 # end
 
 module Document
   class Grid < ApplicationRecord
 
-    belongs_to :viewable, polymorphic: true
-    has_many :fields, class_name: "Document::Grids::Field", foreign_key: "view_id"
-    accepts_nested_attributes_for :fields, allow_destroy: true
+    belongs_to :form, class_name: "Document::BareForm", foreign_key: "form_id", optional: true
+    #belongs_to :nested_field, class_name: "Document::Grids::Field", foreign_key: "nested_field_id", optional: true
+    #belongs_to :container, class_name: "Document::Grid", foreign_key: "container_id", optional: true
+    has_many :nested_grids, class_name: "Document::Grid", foreign_key: "container_id"
+    has_many :grid_fields, -> { order(:field_position_on_grid) }, class_name: "Document::Grids::GridField", foreign_key: "grid_id", dependent: :destroy, inverse_of: :grid
+    has_many :fields, through: :grid_fields, class_name: "Document::Grids::Field"
+    has_many :grid_owners, class_name: "Document::GridOwner", foreign_key: "grid_id", dependent: :destroy
+    has_many :sections, -> {order(:position)}, class_name: "Document::Section", foreign_key: "form_id", primary_key: "form_id", inverse_of: :grid
+    #has_many :owners, through: :grid_owners, source: :owner
+
+    has_many :grid_nested_fields, class_name: "Document::Grids::GridNestedField", foreign_key: "nested_grid_id"
+    has_many :nested_fields, through: :grid_nested_fields, class_name: "Document::Grids::Field"
+    has_many :query_builders, class_name: "Document::QueryBuilder", as: :configurable
+
+    include Document::Concerns::Models::Cachers::Grid
+
+    accepts_nested_attributes_for :fields, allow_destroy: true, reject_if: :all_blank
 
     validates :name, presence: true
-    validates :type, presence: true, inclusion: { in: ['Document::Grids::Table', 'Document::Grids::Panel'] }
+    validates :form, presence: true#, unless: :nested_field
+    #validates :nested_field, presence: true, unless: :form
+    validates :default_aggregation, acceptance: true, if: :default
 
-    def draw fields_collection = viewable.try(:fields) || [], _fields = []
-      fields_collection.each do |field|
-        if field.nested_form.present? || field.is_a?(Document::Fields::DepedencyManyField) || field.is_a?(Document::Fields::DepedencyOneField)
-          _fields << Document::Grids::Field::NestedColumn.build(self, field)
-        else
-          _fields << Document::Grids::Field::Column.build(self, field)
+    validate do
+      if form
+        unless form.class.included_modules.include?(Document::Concerns::Models::ActsAsGridViewable)
+          errors.add(:form, :invalid)
         end
       end
-      _fields
     end
 
-    def default_aggregation_stages
-      configuration.aggregation.try(:stages) || []
-    end
-
-    def fields_aggregation_stages _fields = fields
-      # _fields.to_a.reduce([]) {|sum, field| sum << field.to_aggregation }.flatten.reduce({}, :deep_merge)
-      _fields = draw
-      _fields.to_a.map{|f| f.aggregation_stages }.flatten
-    end
-
-    def pagination_aggregation_stage page=nil, per_page=nil
-      page ||= configuration.pagination.page
-      per_page ||= configuration.pagination.per_page
-      Document::Grids::AggregationStage.new(name: "$facet", order: 100001, arguments_attributes: [
-        { function: 'meta', parameters_attributes: [{ function: '$count', parameter: 'total' }] },
-        { function: 'data', parameters_attributes: [ { function: "$limit", parameter: per_page }, { function: "$skip", parameter: per_page * (page-1) } ] }
-      ])
-    end
-
-    def sort_aggregation_stage(sorts = {})
-      sorts = sorts.reduce([]) do |arr, (key, val)|
-        arr << Sort.new(field: key, direction: val)
+    validate do
+      unless type_was.nil?
+        if type_was != type
+          errors.add(:type, :invalid)
+        end
       end
-      sorts = configuration.default_sorts.to_a.concat(sorts)
-      Document::Grids::AggregationStage.new(name: "$sort", order: 100000,arguments_attributes: sorts.map{|s| {function: s.field, argument: s.direction_to_integer}})
     end
 
-    def initial_scopes_aggregation_stage
-      stage = Document::Grids::AggregationStage.new(name: "$match")
-      scopes = configuration.initial_scopes
-      if scopes.length > 0
-        scopes.each do |scope|
-          criteria = scope.to_criteria
-          criteria.each do |k,v|
-            if v.is_a?(Hash)
-              stage.arguments << Document::Grids::AggregationArgument.new(function: k, parameters: v.map{|s,c| {function: s, parameter: c} })
-            else
-              stage.arguments << Document::Grids::AggregationArgument.new(function: k, parameter: v)
-            end
+    validate do
+      unless options.valid?
+        errors.add(:options, :invalid)
+        options.errors.each {|e| errors.import e, **e.options.merge(attribute: "options.#{e.attribute}")}
+      end
+      unless aggregation.valid?
+        errors.add(:aggregation, :invalid)
+        aggregation.errors.each {|e| errors.import e, **e.options.merge(attribute: "aggregation.#{e.attribute}")}
+      end
+    end
+
+    attr_accessor :nested_field, :prevent_default_destroy
+
+    def prevent_default_destroy!
+      self.prevent_default_destroy= true
+    end
+
+    before_destroy do
+      if default && prevent_default_destroy
+        errors.add(:default, :invalid)
+        throw :abort
+      end
+    end
+
+    after_create :append_default_fields, if: :default
+    after_save do
+      if form_id.present?
+        if default && (default_previously_was == false || default_previously_was == nil)
+          previous_default = self.class.where.not(id: self.id).where(default: true, form_id: form_id, type: self.type).each do |pd|#.update_all(default: false)
+            pd.grid_nested_fields.update_all(nested_grid_id: self.id)
+            pd.update_column(:default, false)
           end
         end
       end
-      stage
     end
 
-    def query_aggregation_stage params = {}
-      stage = Document::Grids::AggregationStage.new(name: "$match")
-      if configuration.allow_search && params.is_a?(Hash)
-        params = params.slice(*Configuration::SEARCH_TYPES.map(&:to_sym))
-        res = nil
-        if params[:lazy_search]
-          res = virtual_view.lazy_search(params[:lazy_search].to_s)
-        else
-          if params[:heavy_search]
-            res = virtual_view.heavy_search(params[:heavy_search].to_s)
-          else
-            if params[:configured_advanced_search]
-              res = virtual_view.run_advanced_search(params[:configured_advanced_search])
-            else
-              if params[:advanced_search]
-                res = virtual_view.run_advanced_search(params[:advanced_search])
-              end
-            end
-          end
-        end
-        if res.is_a?(::Mongoid::Criteria)
-          res = res.project(:id => "id").pipeline.filter{|p| p["$match"].present? }[0]
-          if res && res["$match"].is_a?(Hash)
-            res["$match"].each do |k,v|
-              if v.is_a?(Hash)
-                stage.arguments << Document::Grids::AggregationArgument.new(function: k, parameters: v.map{|s,c| {function: s, parameter: c} })
-              else
-                stage.arguments << Document::Grids::AggregationArgument.new(function: k, parameter: v)
-              end
-            end
-          end
-        end
-      end
-      stage
+    def set_as_default
+      update(default: true)
     end
 
     def virtual_view
-      if viewable
-        @virtual_view ||= viewable.to_virtual_view
+      if cached_form
+        @virtual_view ||= cached_form.to_virtual_view
       end
     end
 
-    def virtual_view!
-      if viewable
-        @virtual_view = viewable.to_virtual_view
+    def is_panel?
+      false
+    end
+
+    def is_list?
+      false
+    end
+
+    def has_sections?
+      is_panel? && cached_form.try(:type) == "Document::Form"
+    end
+
+    def append_field field
+      self.fields << field
+    end
+
+    def append_default_fields
+      gfs = []
+      #cacher.form.fields.includes(:default_grid_field).each do |f|
+      form.fields.each do |f|
+        gf = f.default_grid_field || f.create_or_get_default_gried_field
+        gfs << gf
+      end
+      ##append timestamps
+      gfs = gfs + Document::Grids::Field.timestamp_fields
+      append_field gfs
+    end
+
+    def build_default_aggregation(grid_container=nil)
+      if default_aggregation
+        aggregation.stages = []
+        aggregation.nested_stages = []
       end
     end
 
-    def to_aggregation params={}
-      page = params[:page] || configuration.pagination.page
-      per = params[:per] || configuration.pagination.per_page
-      search = params[:search] || {}
-      stages = [
-        default_aggregation_stages,
-        initial_scopes_aggregation_stage,
-        query_aggregation_stage(search),
-        fields_aggregation_stages,
-        sort_aggregation_stage,
-        pagination_aggregation_stage
-      ].flatten.compact_blank
-      aggregation = Document::Grids::Aggregation.new
-      aggregation.stages.append(stages)
-      aggregation.to_aggregation
+    def aggregation_stages(params={}, field_scope = proc{|field, grid| field})
+      stages = fields_stages(field_scope)
+      if scopes_stage = default_scopes_aggregation_stage
+        stages << scopes_stage
+      end
+      stages
     end
 
-    def data params={}
-      virtual_view.collection.aggregate(to_aggregation(params))
+    def to_aggregation(params={}, field_scope = proc{|field, grid| field})
+      if default_aggregation
+        build_default_aggregation
+      end
+      agg = aggregation
+      agg.stages.append(aggregation_stages(params, field_scope))
+      agg.to_aggregation
     end
 
-    class Configuration < Document::FieldOptions
+    def fields_stages(field_scope= proc{|field, grid| field})
+      stages = []
+      _fields= field_scope.call(cached_fields, self)
+      _fields.each do |field|
+        field.build_default_aggregation if field.default_aggregation
+        stages = stages + field.aggregation.stages
+      end
+      stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "version", parameter: 1}])
+      stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "timezone", parameter: 1}])
+      stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "submission_state", parameter: 1}])
+      if cached_form.step?
+        stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_step", parameter: 1}])
+        stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_current_step", parameter: 1}])
+        stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_total_step", parameter: 1}])
+        stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_steps_keywords", parameter: 1}])
+        stages << Document::Grids::AggregationStage.new(name: "$project", order: 9999, arguments_attributes: [{function: "_steps_taken", parameter: 1}])
+      end
+      stages
+    end
 
-      embeds_one :aggregation, class_name: 'Document::Grids::Aggregation'
-      accepts_nested_attributes_for :aggregation, allow_destroy: true
+    def nested_aggregation_stages(params={}, field_scope = proc{|field, grid| field})
+      stages = []
+      if nested_field
+        build_default_aggregation if default_aggregation
+        stages = aggregation.nested_stages.map{|stg|
+          if stg.name == "$lookup"
+            matches = {}
+            if nested_field.depedency_field? && nested_field.field_type == "Document::Fields::DepedencyManyField"
+              matches.deep_merge!({"$expr".to_sym => { "$in".to_sym => [ "$_id", "$$#{nested_field.name}_ids" ] }})
+            end
+            agg = aggregation.class.new
+            unless matches.blank?
+              agg.stages.build({name: "$match", arguments_attributes: matches.reduce([]){|arr, h| arr << { function: h[0], raw_parameter: h[1] } }})
+            end
+            agg.stages.append(aggregation_stages(params, field_scope))
+            stg.arguments.build(function: "pipeline", raw_parameter:  agg.to_aggregation)
+          end
+          stg
+        }
+      end
+      stages
+    end
 
-      embeds_many :initial_scopes, class_name: "Document::Concerns::VirtualModels::AdvancedSearch::Clause"
-      accepts_nested_attributes_for :initial_scopes, allow_destroy: true
+    def default_scopes_aggregation_stage
+      scopes = options.default_scopes
+      if scopes.length
+        stage = Document::Grids::AggregationStage.new(name: "$match")
+        res = virtual_view.run_advanced_search(scopes)
+        if res.is_a?(::Mongoid::Criteria)
+          res.selector.each do |k,v|
+            stage.arguments.build(function: k, raw_parameter: v)
+          end
+        end
+        stage
+      end
+    end
 
+    def data(params={}, field_scope = proc{|field, grid| field})
+      virtual_view.collection.aggregate(to_aggregation(params, field_scope)).first
+    end
+
+
+    class Options < Document::FieldOptions
       embeds_many :default_scopes, class_name: "Document::Concerns::VirtualModels::AdvancedSearch::Clause"
       accepts_nested_attributes_for :default_scopes, allow_destroy: true
 
-      embeds_one :query_builder, class_name: "Document::Concerns::VirtualModels::AdvancedSearch::Builder"
-      accepts_nested_attributes_for :query_builder, allow_destroy: true
+      embeds_many :html_options, class_name: "Document::Grid::Options::HtmlOptions"
+      accepts_nested_attributes_for :html_options, allow_destroy: true
 
-      embeds_one :pagination, class_name: "Document::Grid::Pagination"
-      accepts_nested_attributes_for :pagination, allow_destroy: true
-      validates :pagination, presence: true
+      validate do
+        default_scopes.each_with_index do |dc, i|
+          unless dc.valid?
+            dc.errors.each {|e| errors.import e, **e.options.merge(attribute: "default_scopes.#{i}.#{e.attribute}")}
+          end
+        end
+      end
 
-      embeds_many :default_sorts, class_name: "Document::Grid::Sort"
-      accepts_nested_attributes_for :default_sorts, allow_destroy: true
-      validates :sort, presence: true
-
-      attribute :allow_search, :boolean, default: true
-      attribute :allowed_search_types, :string, array: true, default: ['lazy_search']
-
-      SEARCH_TYPES = ['lazy_search', 'heavy_search', 'configured_advanced_search', 'advanced_search']
-
-      validates :query_builder, presence: true, if: -> (res) { res.allowed_search_types.include?('configured_advanced_search') }
-
-      after_initialize do
-        build_pagination if pagination.blank?
+      class HtmlOptions < Document::FieldOptions
+        attribute :name, :string
+        attribute :value, :string
       end
 
     end
 
-    class Options < Document::FieldOptions
-    end
+    serialize :options, Options
+    serialize :aggregation, Document::Grids::Aggregation
 
-    class Pagination < Document::FieldOptions
-      attribute :page, :integer, default: 1
-      attribute :pages, :integer, array: true, default: [25, 50, 100]
-      attribute :per_page, :integer, default: 25
-      validates :page, presence: true, numericality: { greater_than: 0, only_integer: true, allow_blank: true }
-      validates :per_page, presence: true, numericality: { greater_than: 0, only_integer: true, allow_blank: true }
-    end
+    scope :only_container, -> { where(nested_field_id: nil) }
+    scope :owned_or_default, -> (grid_owner, form) {
+      # where(form_id: form.id).left_joins(:grid_owners).scoping do
+      #   merge(where(document_grid_owners: { owner_type: grid_owner.class.base_class.name, owner_id: grid_owner.id }))
+      #   .or(merge(where(default: true)))
+      # end
+      owned_by(grid_owner).or(only_default).only_form(form)
+    }
+    scope :owned_by, -> (grid_owner) {
+      # where(form_id: form.id).left_joins(:grid_owners).scoping do
+      #   where(document_grid_owners: { owner_type: grid_owner.class.base_class.name, owner_id: grid_owner.id })
+      # end
+      left_joins(:grid_owners)
+      .where(document_grid_owners: { owner_type: grid_owner.class.base_class.name, owner_id: grid_owner.id })
+    }
+    scope :only_default, -> { where(default: true) }
+    scope :only_form, -> (form) { where(form_id: form.id) }
 
-    class Sort < Document::FieldOptions
-      attribute :field
-      attribute :direction
-      validates :direction, inclusion: { in: ['asc', 'desc'], allow_blank: true }
+    class << self
 
-      def to_sort
-        { "#{field}": direction == 'asc' ? 1 : -1 }
+      def get_default_grid_for(grid_owner, form, **opts)
+        res = owned_or_default(grid_owner, form)
+        if opts[:includes]
+          res = res.includes(*[:form, :fields => [ :field => [:section, :nested_form], :nested_grid_panel => [:form, :sections, :fields], :nested_grid_list => [:form, :fields]]])
+        end
+        res = res.order("document_grids.default asc").first
       end
 
-      def direction_to_integer
-        direction.to_s == 'asc' ? 1 : -1
-      end
-
     end
-
-    serialize :configuration, Document::Grid::Configuration
-    serialize :options, Document::Grid::Options
 
   end
 end

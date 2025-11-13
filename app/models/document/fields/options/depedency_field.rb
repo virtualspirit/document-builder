@@ -2,20 +2,62 @@ module Document
   module Fields::Options
     class DepedencyField < BaseOptions
 
-      attribute :document_form_id, :integer
+      attribute :document_form_id, :string
       attribute :display_value_field, :string, default: "_id"
+      attribute :display_value_fields, :string, array: true, default: ["_id"]
       embeds_many :clauses, class_name: "Document::Fields::Options::DepedencyField::Clause"
       accepts_nested_attributes_for :clauses, allow_destroy: true
 
       validates :document_form_id, presence: true
-      validates :display_value_field, presence: true, inclusion: { in: -> (dof) { dof.fields } }
+      validates :display_value_field, presence: true, inclusion: { in: -> (dof) { dof.fields } }, if: :form
+      validate do
+        unless form
+          errors.add(:document_form_id, :invalid)
+        end
+      end
+
+      #attr_accessor :_append_choices_as_json
+
+      # def as_json options=nil
+      #   if _append_choices_as_json
+      #     super(options).merge({choices: choices})
+      #   else
+      #     super(options)
+      #   end
+      # end
+
+      def reset_instance_variables
+        @form = nil
+        @virtual_model= nil
+        @clause_templates= nil
+        @collection = nil
+      end
+
+      def append_choices_as_json
+        self._append_choices_as_json = true
+      end
 
       def virtual_model
-        @virtual_model ||= form.try(:to_virtual_view)
+        if form
+          @virtual_model ||= form.to_virtual_view( overrides: { build_options: { nested_form: true } } )
+        end
+        @virtual_model
       end
 
       def form
-        @form ||= Document.form_model_class_constant.includes(:fields).find_by_id(document_form_id)
+        # @form ||= Document.form_model_class_constant.find_by_id(document_form_id_value)
+        @form ||= Document.form_model_class_constant.cacher.find_by(id: document_form_id_value)
+      end
+
+      def document_form_id_value
+        case Document::Form.column_for_attribute(:id).type
+        when :uuid
+          document_form_id.to_s
+        when :integer
+          document_form_id.to_s.to_i
+        else
+          document_form_id
+        end
       end
 
       def clause_templates
@@ -34,6 +76,11 @@ module Document
             logical_operator = clause.logical_operator || :where
             @collection = @collection.send(logical_operator, clause.to_criteria)
           end
+          projection = ([display_value_field] + display_value_fields).uniq.select{|f| f != '_id'}.reduce({}) { |p,f|
+            p[f] = 1
+            p
+          }
+          @collection.project(p)
         end
         @collection || []
       end
@@ -74,13 +121,16 @@ module Document
           :string => String,
           :symbol => Symbol,
           :time => Time,
-          :time_with_zone => ActiveSupport::TimeWithZone
+          :time_with_zone => ActiveSupport::TimeWithZone,
+          :geospatial_point => Mongoid::Geospatial::Point
         }
 
         COMPARISON_OPERATORS = {
           eq: { symbol: "$eq", name: "Equal" },
-          like: { symbol: "$eq", name: "Like", only: [:string] },
-          ilike: { symbol: "$eq", name: "Ilike", only: [:string] },
+          like: { symbol: "$regex", name: "Like", only: [:string] },
+          ilike: { symbol: "$regex", name: "Ilike", only: [:string] },
+          not_like: { symbol: "$regex", name: "Not Like", only: [:string] },
+          not_ilike: { symbol: "$regex", name: "Not Ilike", only: [:string] },
           gt: { symbol: "$gt", name: "Greater Than", only: [:integer, :big_decimal, :float, :time, :date, :date_time] },
           gte: { symbol: "$gt", name: "Greater Than or Equal", only: [:integer, :big_decimal, :float, :time, :date, :date_time]},
           lt: { symbol: "$lt", name: "Less Than", only: [:integer, :big_decimal, :float, :time, :date, :date_time]},
@@ -88,6 +138,9 @@ module Document
           in: { symbol: "$in", name: "Inclusion" },
           nin: { symbol: "$nin", name: "Exclusion"},
           ne: { symbol: "$ne", name: "Not Equal"},
+          near: { symbol: "$near", name: "Near", only: [:geospatial_point] },
+          all: { symbol: "$all", name: "All", only: [:array] },
+          exists: { symbol: "$exists", name: "Exists" },
         }
 
         LOGICAL_OPERATORS = {
@@ -99,6 +152,7 @@ module Document
           self.logical_operators ||= LOGICAL_OPERATORS
           if(self.type && self.comparison_operators.blank?)
             self.comparison_operators = COMPARISON_OPERATORS.select{|k,v| v[:only] ? v[:only].include?(self.type.to_s.to_sym) : v }
+            self.comparison_operators ||= {}
           end
         end
 
@@ -120,23 +174,34 @@ module Document
         end
 
         def to_criteria
-          cast_clause!
-          if verified?
-            if [:ilike, :like].include?(comparison_operator.to_sym)
-              val = comparison_operator.to_sym == :like ? /#{values}/ : /#{values}/i
-              {
-                "#{field}": val
-              }
-            else
-              {
-                "#{field}": { comparison_operators.deep_symbolize_keys[comparison_operator.to_sym][:symbol] => cast_value! }
-              }
+          begin
+            cast_clause!
+            if verified?
+              if [:ilike, :like].include?(comparison_operator.to_sym)
+                val = comparison_operator.to_sym == :like ? /#{values}/ : /#{values}/i
+                {
+                  "#{field}": val
+                }
+              elsif [:not_like, :not_ilike].include?(comparison_operator.to_sym)
+                  val = comparison_operator.to_sym == :not_like ? /#{values}/ : /#{values}/i
+                  {
+                    "#{field}": {
+                      "$not" => { "$regex" => val }
+                    }
+                  }
+              else
+                {
+                  "#{field}": { comparison_operators.deep_symbolize_keys[comparison_operator.to_sym][:symbol] => cast_value! }
+                }
+              end
             end
+          rescue => e
+            {}
           end
         end
 
         def verified?
-          verified = comparison_operators.deep_symbolize_keys.dig(self.comparison_operator.to_sym) && valid?
+          verified = self.comparison_operator.present? && comparison_operators.deep_symbolize_keys.dig(self.comparison_operator.to_sym) && valid?
           # if ignore_blank_values
           #   verified
           # else

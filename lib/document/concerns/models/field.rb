@@ -5,6 +5,7 @@ module Document
         extend ActiveSupport::Concern
 
         NAME_REGEX = /\A[a-z][a-z_0-9]*\z/.freeze
+        DYNAMIC_FIELD_NAMES_TYPES = ['Document::Fields::DepedencyOneField', 'Document::Fields::DepedencyManyField', 'Document::Fields::GeolocationField', 'Document::Fields::AttachmentField']
 
         included do
           enum accessibility: { read_and_write: 0, readonly: 1, hidden: 2 },
@@ -15,8 +16,8 @@ module Document
 
           validates :name,
                     presence: true,
-                    uniqueness: { scope: [:section_id, :field_group_id, :form_id] },
-                    exclusion: { in: Document.reserved_names },
+                    uniqueness: { scope: [:form_id] },
+                    exclusion: { in: ->(field) { Document.reserved_names + field.dynamic_reserved_names } },
                     format: { with: NAME_REGEX }, if: :form_id
           validates :accessibility,
                     inclusion: { in: accessibilities.keys.map(&:to_sym) }
@@ -52,6 +53,30 @@ module Document
             end
           end
 
+        end
+
+        def dynamic_reserved_names
+          drn = []
+          if form
+            drn = form.fields.where(type: DYNAMIC_FIELD_NAMES_TYPES).reduce([]) do |arr, field|
+              if field.id != self.id
+                field_name = field.name.to_s
+                case field.type.demodulize.underscore
+                when "depedency_one_field"
+                  arr << field_name + "_id"
+                when "depedency_many_field"
+                  arr << field_name + "_ids"
+                when "attachment_field"
+                  arr << field_name + "_data"
+                  arr << "_" + field_name + "_url"
+                when "geolocation_field"
+                  arr << field_name + field.options.location_field_suffix_name.to_s
+                end
+              end
+              arr
+            end
+          end
+          drn
         end
 
         def skip_options_validation!

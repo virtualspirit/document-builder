@@ -13,7 +13,7 @@ module Document
           attribute :placeholder, :string
           attribute :logical_operator, :string
           attribute :logical_operators, :json
-          attribute :comparison_operators, :string
+          attribute :comparison_operators, :string, default: {}
           attribute :ignore_blank_values, :boolean
           serialize :comparison_operators, Hash
           attribute :values
@@ -39,13 +39,16 @@ module Document
             :string => String,
             :symbol => Symbol,
             :time => Time,
-            :time_with_zone => ActiveSupport::TimeWithZone
+            :time_with_zone => ActiveSupport::TimeWithZone,
+            :geospatial_point => Mongoid::Geospatial::Point
           }
 
           COMPARISON_OPERATORS = {
             eq: { symbol: "$eq", name: "Equal" },
-            like: { symbol: "$eq", name: "Like", only: [:string] },
-            ilike: { symbol: "$eq", name: "Ilike", only: [:string] },
+            like: { symbol: "$regex", name: "Like", only: [:string] },
+            ilike: { symbol: "$regex", name: "Ilike", only: [:string] },
+            not_like: { symbol: "$regex", name: "Not Like", only: [:string] },
+            not_ilike: { symbol: "$regex", name: "Not Ilike", only: [:string] },
             gt: { symbol: "$gt", name: "Greater Than", only: [:integer, :big_decimal, :float, :time, :date, :date_time] },
             gte: { symbol: "$gt", name: "Greater Than or Equal", only: [:integer, :big_decimal, :float, :time, :date, :date_time]},
             lt: { symbol: "$lt", name: "Less Than", only: [:integer, :big_decimal, :float, :time, :date, :date_time]},
@@ -53,6 +56,9 @@ module Document
             in: { symbol: "$in", name: "Inclusion" },
             nin: { symbol: "$nin", name: "Exclusion"},
             ne: { symbol: "$ne", name: "Not Equal"},
+            near: { symbol: "$near", name: "Near", only: [:geospatial_point] },
+            all: { symbol: "$all", name: "All", only: [:array] },
+            exists: { symbol: "$exists", name: "Exists" },
           }
 
           LOGICAL_OPERATORS = {
@@ -62,8 +68,9 @@ module Document
 
           after_initialize do
             self.logical_operators ||= LOGICAL_OPERATORS
-            if(self.type && self.comparison_operators)
-              self.comparison_operators ||= COMPARISON_OPERATORS.select{|k,v| v[:only] ? v[:only].include?(self.type.to_sym) : v }
+            if(self.type && self.comparison_operators.blank?)
+              self.comparison_operators = COMPARISON_OPERATORS.select{|k,v| v[:only] ? v[:only].include?(self.type.to_sym) : v }
+              self.comparison_operators ||= {}
             end
           end
 
@@ -77,7 +84,7 @@ module Document
               self.values = self.values.to_s unless values.is_a?(String)
             when Array
               unless self.values.is_a?(Array)
-                self.values = self.values.to_s.gsub(/\s+/, "").split(",") unless values.is_a?(Array)
+                self.values = self.values.to_s.gsub(/\s+/, "").split(",")
               end
             when ActiveModel::Type::Boolean
               self.values = ActiveModel::Type::Boolean.new.cast(self.values)
@@ -85,23 +92,34 @@ module Document
           end
 
           def to_criteria
-            cast_clause!
-            if verified?
-              if [:ilike, :like].include?(comparison_operator.to_sym)
-                val = comparison_operator.to_sym == :like ? /#{cast_value!}/ : /#{cast_value!}/i
-                {
-                  "#{field}": val
-                }
-              else
-                {
-                  "#{field}": { comparison_operators.deep_symbolize_keys[comparison_operator.to_sym][:symbol] => cast_value! }
-                }
+            begin
+              cast_clause!
+              if verified?
+                if [:ilike, :like].include?(comparison_operator.to_sym)
+                  val = comparison_operator.to_sym == :like ? /#{values}/ : /#{values}/i
+                  {
+                    "#{field}": val
+                  }
+                elsif [:not_like, :not_ilike].include?(comparison_operator.to_sym)
+                    val = comparison_operator.to_sym == :not_like ? /#{values}/ : /#{values}/i
+                    {
+                      "#{field}": {
+                        "$not" => { "$regex" => val }
+                      }
+                    }
+                else
+                  {
+                    "#{field}": { comparison_operators.deep_symbolize_keys[comparison_operator.to_sym][:symbol] => cast_value! }
+                  }
+                end
               end
+            rescue => e
+              {}
             end
           end
 
           def verified?
-            verified = comparison_operators.deep_symbolize_keys.dig(self.comparison_operator.to_sym) && valid?
+            verified = self.comparison_operator.present? && (comparison_operators || {}).deep_symbolize_keys.dig(self.comparison_operator.to_s.to_sym) && valid?
             if ignore_blank_values
               verified
             else
@@ -120,9 +138,9 @@ module Document
               when "ActiveModel::Type::Boolean"
                 ActiveModel::Type::Boolean.new.cast(values)
               when "Date"
-                Date.parse(values.to_s)
+                DateTime.parse(values.to_s).in_time_zone&.utc rescue values
               when "DateTime"
-                DateTime.parse(values.to_s)
+                DateTime.parse(values.to_s).in_time_zone&.utc rescue values
               when "BSON::ObjectId"
                 BSON::ObjectId(values.to_s)
               when "Array"
@@ -130,7 +148,7 @@ module Document
               when "Hash"
                 JSON.parse values
               when "Time"
-                Time.parse values.to_s
+                Time.parse(values.to_s).in_time_zone&.utc rescue values
               else
                 values
             end
