@@ -5,6 +5,13 @@ module Document
     config.after_initialize do
       begin; require 'cancancan'; rescue LoadError; end
       if defined?(CanCan) and defined?(Grape::API)
+        begin
+          require 'document/grape/services/base' 
+        rescue LoadError => e
+          Rails.logger.warn "Gagal memuat Document::Grape::Services::Base: #{e.message}"
+          next
+        end
+        
         klass = Document::Grape::Services::Base
         require 'document/grape/cancan'
         require 'document/grape/ability'

@@ -1,5 +1,5 @@
 begin; require 'grape'; rescue LoadError; end
-begin; require 'grape_api'; rescue LoadError; end
+# begin; require 'grape_api'; rescue LoadError; end
 if defined?(Grape::API) && defined?(GrapeAPI::Endpoint::Base)
   module Document
     module Grape

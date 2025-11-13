@@ -1,8 +1,14 @@
 require_relative 'concern.rb'
 
 require 'validates_timeliness'
-require 'mongoid'
-require 'mongoid_search'
+begin
+  require 'mongoid'
+  require 'mongoid_search'
+  require 'mongoid/geospatial'
+rescue LoadError
+  # Tidak melakukan apa-apa jika gem Mongoid tidak ada
+end
+# -
 # debugger
 require 'mongoid/geospatial'
 require 'keisan'

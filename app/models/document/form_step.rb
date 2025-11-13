@@ -1,12 +1,14 @@
-module Document
-  class FormStep
+if defined?(Mongoid)
+  module Document
+    class FormStep
 
-    include Mongoid::Document
+      include Mongoid::Document
 
-    store_in collection: "document-form-steps"
+      store_in collection: "document-form-steps"
 
-    field :document_uid, type: BSON::ObjectId
-    field :step, type: Integer
+      field :document_uid, type: BSON::ObjectId
+      field :step, type: Integer
 
+    end
   end
 end

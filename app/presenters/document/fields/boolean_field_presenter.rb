@@ -10,6 +10,10 @@ module Document
         super ? I18n.t("values.true") : I18n.t("values.false")
       end
 
+      def default_value
+        @model.options.default_value
+      end
+
     end
   end
 end

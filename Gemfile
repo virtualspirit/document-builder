@@ -15,7 +15,7 @@ gem "activeentity"
 gem 'mongoid', '>= 8.0.2'
 gem 'mongoid_search', github: 'mongoid/mongoid_search'
 gem 'mongoid-geospatial'
-gem 'validates_timeliness', '~> 6.0.0.alpha1'
+gem 'validates_timeliness', '~> 7.0.0'
 gem 'keisan'
 gem 'support', git: "https://github.com/ihsaneddin/support", branch: "upgrade/rails-7"# tag: "v2.0.0"
 gem 'grape_api', git: "https://github.com/ihsaneddin/grape_api", branch: "upgrade/rails-7"#, tag: "v2.0.0"
