@@ -7,26 +7,11 @@ module Document
       end
 
       serialize :validations, Validations::NestedFormField
-      serialize :options, Options::NestedFormField
+      serialize :options, Document::NonConfigurableField
 
       def attached_nested_form?
         true
       end
-
-      # def interpret_as_field_for model, overrides: {}
-      #   check_model_validity!(model)
-
-      #   accessibility = overrides.fetch(:accessibility, self.accessibility)
-      #   return model if accessibility == :hidden
-
-      #   nested_model = nested_form.to_virtual_model(overrides: { _global: { accessibility: accessibility } })
-
-      #   model.nested_models[name] = nested_model
-      #   model.embeds_one name, class_name: "#{nested_model.name}", store_as: name, validate: true
-      #   nested_model.embedded_in model.name.downcase.to_sym, class_name: model.name
-      #   model.accepts_nested_attributes_for name, reject_if: :all_blank
-      #   model
-      # end
 
       def interpret_as_field_for model, overrides: {}
         check_model_validity!(model)
@@ -34,75 +19,12 @@ module Document
         accessibility = overrides.fetch(:accessibility, self.accessibility)
         return model if accessibility == :hidden
 
-        overrides[:name] = name
-        nested_model = cached_nested_form.to_virtual_model(overrides: { _global: { accessibility: accessibility }, build_options: { nested_form: true } })
-        if nested_model
-          field_name = name
-          relation_name= model.name.underscore.downcase
-          nested_model.field "#{field_name}_id", type: BSON::ObjectId
-          model.has_one field_name, class_name: nested_model.name, foreign_key: "#{field_name}_id"
-          nested_model.belongs_to relation_name.to_sym, class_name: model.name, optional: true, inverse_of: "#{field_name}".to_sym
-          model.accepts_nested_attributes_for field_name, reject_if: :all_blank, allow_destroy: true
+        nested_model = nested_form.to_virtual_model(overrides: { _global: { accessibility: accessibility } })
 
-          model.validate do
-            if ch = send(field_name)
-              unless ch.valid?
-                errors.add(field_name.to_sym, :invalid)
-                ch.errors.each {|e| errors.import e, **e.options.merge(attribute: "#{field_name}.#{e.attribute}")}
-              end
-            end
-          end
-
-          nested_model.class_eval <<-CODE
-            def serializable_hash(options= nil)
-              options ||= {}
-              if !options[:include].is_a?(Array)
-                relations = [:has_one, :has_many].reduce([]) { |arr, rel| arr + self.class.reflect_on_all_associations(rel).map(&:name) }
-                options= {include: relations}
-              end
-
-              hash = super(options)
-              self.class.reflect_on_all_associations(:embeds_one).map(&:name).each do |rname|
-                unless hash.keys.include?(rname.to_s)
-                  hash[rname.to_s] = nil
-                end
-              end
-              self.class.reflect_on_all_associations(:embeds_many).map(&:name).each do |rname|
-                unless hash.keys.include?(rname.to_s)
-                  hash[rname.to_s] = []
-                end
-              end
-              if self.class.respond_to?(:_uploadable_config)
-                (self.class._uploadable_config[self.class.name] || {}).each do |f,v|
-                  hash[f] = self.send("_"+f.to_s+"_url") rescue {}
-                end
-              end
-              hash
-            end
-          CODE
-
-          # model.class_eval <<-CODE
-          #   def serializable_hash(options= nil)
-          #     if options && options[:include]
-          #       options[:include] = [options[:include]].compact unless options[:include].is_a?(Array)
-          #       options[:include] << '#{name}'.to_sym
-          #     else
-          #       unless options.is_a?(Hash)
-          #         options={}
-          #       end
-          #       options[:include]= '#{name}'.to_sym
-          #     end
-          #     super(options)
-          #   end
-          # CODE
-          # if options.try(:searchable)
-          #   nested_model.fields.each do |arr, f|
-          #     model.add_as_searchable_field({field_name.to_sym => f.name.to_sym}) if f.options.try(:searchable)
-          #   end
-          # end
-          interpret_validations_to model, accessibility, overrides
-          interpret_extra_to model, accessibility, overrides
-        end
+        model.nested_models[name] = nested_model
+        model.embeds_one name, class_name: "#{nested_model.name}", store_as: name, validate: true
+        nested_model.embedded_in model.name.downcase.to_sym, class_name: model.name
+        model.accepts_nested_attributes_for name, reject_if: :all_blank
         model
       end
 

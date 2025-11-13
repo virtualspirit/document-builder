@@ -1,4 +1,5 @@
-require 'grape_api'
+require "grape_api"
+
 module Document
   module Grape
     module Services

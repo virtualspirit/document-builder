@@ -8,7 +8,7 @@ module Document
 
       included do
 
-        belongs_to :form, polymorphic: true
+        belongs_to :viewable, polymorphic: true
         has_many :columns, class_name: "Document::ViewField", foreign_key: "view_id"
         accepts_nested_attributes_for :columns, allow_destroy: true
 

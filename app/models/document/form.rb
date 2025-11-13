@@ -1,12 +1,10 @@
 module Document
   class Form < BareForm
 
+    has_many :sections, -> { rank(:position) }, class_name: "Document::Section", dependent: :destroy, inverse_of: :form, index_errors: true
     belongs_to :owner, polymorphic: true, optional: true
     belongs_to :documentable, polymorphic: true, optional: true
-    has_many :sections, -> { order(:position) }, class_name: Fbuilder.config.document.section_model_class, dependent: :destroy, inverse_of: :form, index_errors: true, counter_cache: :sections_count
     accepts_nested_attributes_for :sections, allow_destroy: true
-
-    include Document::Concerns::Models::Cachers::Form
 
     serialize :step_options, FormStepOptions
 
@@ -39,9 +37,7 @@ module Document
     validates :title, presence: true
     validates :name, presence: true
 
-    attr_accessor :skip_default_section
-
-    after_create :auto_create_default_section, unless: :skip_default_section
+    after_create :auto_create_default_section
 
     private
 

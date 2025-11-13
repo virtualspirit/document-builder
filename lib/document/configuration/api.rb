@@ -22,9 +22,9 @@ module Document
           form_got_resource: -> (resource) { resource.owner = current_user if resource.new_record? },
           form_query_scope: -> (query) { query },
           section_got_resource: -> (resource) {  resource.form = form },
-          section_query_scope: -> (query) { query.where(form: form).order(:position) },
+          section_query_scope: -> (query) { query.where(form: form).rank(:position) },
           field_got_resource: -> (resource) {  resource.form = form },
-          field_query_scope: -> (query) { query.where(form: form).order(:position) },
+          field_query_scope: -> (query) { query.where(form: form).rank(:position) },
           instance_got_resource: -> (resource) { resource },
           instance_query_scope: -> (query) { query },
           query_builder_got_resource: -> (resource) {

@@ -12,7 +12,7 @@ class <%= migration_class_name %> < ActiveRecord::Migration<%= migration_version
       t.belongs_to :documentable, polymorphic: true, index: true
       t.references :attachable, polymorphic: true, index: true
       t.references :owner, polymorphic: true, index: true
-      t.integer :fields_count
+
       t.timestamps
     end
 
@@ -24,8 +24,6 @@ class <%= migration_class_name %> < ActiveRecord::Migration<%= migration_version
       t.text :options
       t.text :validations
       t.integer :position
-      t.integer :position_on_section, null: false
-      t.integer :position_on_form, null: false
       t.string :type
       t.belongs_to :form
       t.belongs_to :section, index: true
@@ -37,20 +35,16 @@ class <%= migration_class_name %> < ActiveRecord::Migration<%= migration_version
 
     add_index :document_fields, [:form_id, :name, :id], unique: true
     add_index :document_fields, [:form_id, :position, :id]
-    add_index :document_fields, [:form_id, :position_on_form]
-    add_index :document_fields, [:section_id, :position_on_section]
 
     create_table :document_sections do |t|
       t.string :title, default: ""
       t.text :description
       t.boolean :headless, null: false, default: false
       t.belongs_to :form
-      t.integer :position, null: false
-      t.integer :fields_count
+      t.integer :position
+
       t.timestamps
     end
-
-    add_index :document_sections, [:form_id, :position], unique: true
 
     create_table :document_field_groups do |t|
       t.string :name, default: ""
@@ -62,72 +56,37 @@ class <%= migration_class_name %> < ActiveRecord::Migration<%= migration_version
       t.text :data
       t.string :name
       t.string :type
-      t.boolean, :default, default: false
       t.references :context, polymorphic: true
       t.references :configurable, polymorphic: true
       t.timestamps
     end
 
     create_table :document_grids do |t|
-      t.references :form
-      t.references :nested_field
-      t.references :container
-      t.references :list
-      t.references :form
+      t.references :viewable, polymorphic: true
       t.string :name
       t.text :options
       t.integer :order
       t.string :type
       t.text :aggregation
       t.boolean :default, default: false
-      t.boolean :default_aggregation, default: true
-      t.timestamps
-    end
-
-    create_table :document_grid_sections do |t|
-      t.string :title, default: ""
-      t.text :description
-      t.boolean :headless, null: false, default: false
-      t.belongs_to :grid
-      t.integer :position
       t.timestamps
     end
 
     create_table :document_grid_fields do |t|
       t.references :field
+      t.references :nested_column
       t.references :grid
-      t.references :section
       t.string :name
       t.string :label
       t.text :namespace
-      t.integer :position
+      t.integer :order
       t.string :type
-      t.boolean :default_aggregation
-      t.boolean :default, default: false
-      t.integer :position_on_section, null: false
       t.text :aggregation
       t.timestamps
     end
 
-    add_index :document_grid_fields, [:section_id, :position_on_section], unique: true
-
     create_table :document_grid_owners do |t|
       t.references :owner, polymorphic: true
-      t.references :grid
-      t.timestamps
-    end
-
-    create_table :document_grids_fields do |t|
-      t.references :field
-      t.references :grid
-      t.integer :field_position_on_grid. null: false
-      t.timestamps
-    end
-
-    add_index :document_grids_fields, [:grid_id, :field_position_on_grid], unique: true
-
-    create_table :document_grids_nested_fields do |t|
-      t.references :field
       t.references :grid
       t.timestamps
     end

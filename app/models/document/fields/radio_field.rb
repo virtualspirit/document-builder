@@ -17,7 +17,7 @@ module Document
 
         def interpret_extra_to(model, accessibility, overrides = {})
           super
-          return if accessibility != :read_and_write || !options.strict
+          return if accessibility != :read_and_write
 
           choices = options.choices
           return if choices.empty?

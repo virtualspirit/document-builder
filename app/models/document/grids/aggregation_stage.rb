@@ -4,7 +4,6 @@ module Document
     class AggregationStage < Document::FieldOptions
 
       attribute :name
-      attribute :id, :string
       attribute :order, :integer, default: 0
       attribute :merge, :boolean, default: true
 
@@ -12,15 +11,6 @@ module Document
 
       embeds_many :arguments, class_name: 'Document::Grids::AggregationArgument'
       accepts_nested_attributes_for :arguments, allow_destroy: true
-
-      validate do
-        arguments.each_with_index do |arg, i|
-          unless arg.valid?
-            errors.add(:arguments, :invalid)
-            arg.errors.each {|e| errors.import e, **e.options.merge(attribute: "arguments.#{i}.#{e.attribute}")}
-          end
-        end
-      end
 
       def to_stage
         {
@@ -34,54 +24,6 @@ module Document
 
       def blank?
         to_stage["#{name}".to_sym].blank? && to_stage["#{name}"].blank?
-      end
-
-      class AddFields < AggregationStage
-
-      end
-
-      class Bucket < AggregationStage
-
-      end
-
-      class Count < AggregationStage
-
-      end
-
-      class Group < AggregationStage
-
-      end
-
-      class Limit < AggregationStage
-
-      end
-
-      class Facet < AggregationStage
-
-      end
-
-      class Match < AggregationStage
-
-      end
-
-      class Lookup < AggregationStage
-
-      end
-
-      class Merge < AggregationStage
-
-      end
-
-      class Sort < AggregationStage
-
-      end
-
-      class Skip < AggregationStage
-
-      end
-
-      class Unwind < AggregationStage
-
       end
 
 

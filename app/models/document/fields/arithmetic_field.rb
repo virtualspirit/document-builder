@@ -2,7 +2,7 @@ module Document
   module Fields
     class ArithmeticField < Document::Field
 
-      serialize :validations, ::Document::NonConfigurableField
+      serialize :validations, Validations::ArithmeticField
       serialize :options, Options::ArithmeticField
 
       def stored_type
@@ -17,7 +17,7 @@ module Document
           precision = options.precision
           _name = name
           model.before_validation do
-            fields = formula.to_s.scan(/\{.*?\}/)
+            fields = formula.scan(/\{.*?\}/)
             fields.each do |f|
               field = f.gsub(/[{}]/, "")
               val = send(field) rescue 0

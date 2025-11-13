@@ -8,7 +8,7 @@ module Document
     end
 
     def form_model_class_constant
-      form_model_class.is_a?(String) ? @form_model_class.constantize : @form_model_class
+      @form_model_class.is_a?(String) ? @form_model_class.constantize : @form_model_class
     end
 
     def form_model_class=(klass)
@@ -56,15 +56,8 @@ module Document
     def reserved_names
       @reserved_names ||= Set.new(
         %i[def class module private public protected allocate new parent superclass] +
-          virtual_model_class.instance_methods(true) +
-        %i[form_id _step _current_step _total_step _steps_taken steps_keywords keywords created_at updated_at version timezone]
+          virtual_model_class.instance_methods(true)
       )
-    end
-
-    def reserved_names= names=[]
-      res = reserved_names
-      res = res.to_a + names
-      @reserved_names = Set.new(res)
     end
 
     def virtual_model_coder_class
@@ -78,12 +71,8 @@ module Document
     end
 
     def file_uploader_class
-      @file_uploader_class
-    end
-
-    def file_uploader_class_constant
-      @file_uploader_class ||= 'Document::FileUploader'
-      "#{@file_uploader_class}::Attachment".constantize
+      @file_uploader_class ||= 'Document::FileUploader::Attachment'
+      @file_uploader_class.constantize
     end
 
     def file_uploader_class=val

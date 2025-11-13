@@ -6,7 +6,7 @@ module Document
       serialize :options, Options::DateField
 
       def stored_type
-        :date_time
+        :date
       end
 
       protected
@@ -17,9 +17,6 @@ module Document
           model.class_eval <<-CODE, __FILE__, __LINE__ + 1
           def #{name}=(val)
             super(val.try(:in_time_zone)&.utc)
-          end
-          def #{name}
-            super.try(:in_time_zone)&.utc
           end
           CODE
         end

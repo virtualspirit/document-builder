@@ -1,22 +1,11 @@
 require_relative 'concern.rb'
 
 require 'validates_timeliness'
-begin
-  require 'mongoid'
-  require 'mongoid_search'
-  require 'mongoid/geospatial'
-rescue LoadError
-end
+require 'mongoid'
+require 'mongoid_search'
+# debugger
+require 'mongoid/geospatial'
 require 'keisan'
-require 'options_model'
-# require 'activeentity'
-# require 'ranked-model'
-require 'positioning'
-require 'shrine'
-# require 'identity_cache'
-# require 'cityhash'
-# require 'dalli'
-require 'active_model_cachers'
 
 require 'document/coder'
 require 'document/coders/hash_coder'
@@ -31,12 +20,6 @@ require 'document/concerns/models/form'
 require 'document/concerns/models/field'
 require 'document/concerns/models/is_document'
 require 'document/concerns/models/view'
-require 'document/concerns/models/acts_as_grid_viewable'
-require 'document/concerns/models/acts_as_grid_section'
-require 'document/concerns/models/acts_as_grid_field'
-require 'document/concerns/models/view'
-require 'document/concerns/models/cached'
-require 'document/concerns/models/cachers'
 require 'document/field_options'
 require 'document/non_configurable_field'
 require 'document/virtual_model'
@@ -44,7 +27,6 @@ require 'document/virtual_options'
 require 'document/concerns/virtual_models/general_search'
 require 'document/concerns/virtual_models/advanced_search'
 require 'document/concerns/virtual_models/steps'
-require 'document/shrine_plugins/embedded_mongoid_support'
 
 require 'document/concerns/models/field'
 require 'document/concerns/models/form'
@@ -57,6 +39,8 @@ end
 end
 
 require 'document/patches/active_support/prependable'
+require 'ranked-model'
+require 'shrine'
 require 'document/configuration/api'
 require 'document/configuration'
 require "document/version"

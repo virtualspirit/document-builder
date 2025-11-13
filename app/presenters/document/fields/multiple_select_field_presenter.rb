@@ -19,10 +19,6 @@ module Document
         end
       end
 
-      def choices
-        collection
-      end
-
     end
   end
 end

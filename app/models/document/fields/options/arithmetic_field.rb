@@ -4,12 +4,12 @@ module Document
 
       attribute :precision, :integer, default: 0
       attribute :formula
-      #attribute :order, :integer, default: 0
+      attribute :order, :integer, default: 0
 
       validates :formula, presence: true
       validates :precision, presence: true, numericality: { only_integer: true, allow_blank: true, greater_than_or_equal_to: 0 }
-      #validates :order, numericality: { only_integer: true, allow_blank: true }
-      validate :valid_formula?, if: :formula
+      validates :order, numericality: { only_integer: true, allow_blank: true }
+      validate :valid_formula?
 
       def valid_formula?
         str = formula
@@ -24,12 +24,8 @@ module Document
         end
       end
 
-      def available_calculated_fields field = nil, form=nil
+      def available_calculated_fields field = nil
         @available_calculated_fields ||= (field.nil?? [] : field.form.fields).select{|f| ["Document::Fields::IntegerField", "Document::Fields::DecimalField"].include?(f.type) && field.id != f.id }
-      end
-
-      def available_calculated_fields_by_form form
-        form.fields.select{|f| ["Document::Fields::IntegerField", "Document::Fields::DecimalField"].include?(f.type) }
       end
 
       def self.calculator

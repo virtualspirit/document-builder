@@ -58,31 +58,19 @@ module Document
                         validates field, presence: true
                       end
                     end
-                    include Document.file_uploader_class_constant.new(field)
-                    after_save do
-                      if self.send(field).present?
-                        urls = {original: send("#{field}_url")}
-                        versions = send("#{field}_derivatives") rescue {}
-                        versions.keys.each do |v|
-                          urls[v] = send("#{field}_url", v)
-                        end
-                        self.set("_#{field}_url" => urls)
-                      else
-                        self.set("_#{field}_url" => {})
-                      end
-                    end
+                    include Document.file_uploader_class.new(field)
 
                     _meta = uploadable_metadata(fieldname: field)
 
-                    # if _meta
-                    #   field "#{field}_metadata", type: Hash
-                    #   before_validation do
-                    #     send("#{field}_metadata=", {}) if send("#{field}_metadata").nil?
-                    #   end
-                    #   after_initialize do
-                    #     send("#{field}_metadata=", {}) if send("#{field}_metadata").nil?
-                    #   end
-                    # end
+                    if _meta
+                      field "#{field}_metadata", type: Hash
+                      before_validation do
+                        send("#{field}_metadata=", {}) if send("#{field}_metadata").nil?
+                      end
+                      after_initialize do
+                        send("#{field}_metadata=", {}) if send("#{field}_metadata").nil?
+                      end
+                    end
 
                   end
 
@@ -188,8 +176,7 @@ module Document
 
               def has_one_attached(name)
 
-                field "#{name}_data", type: Hash
-                field "_#{name}_url", type: Hash, default: {}
+                field "#{name}_data", type: String
 
                 unless included_modules.include?(ActsAsUploadable)
                   include ActsAsUploadable
@@ -219,7 +206,7 @@ module Document
 
               def has_many_attached(name)
                 class_eval <<-CODE, __FILE__, __LINE__ + 1
-                  def #{name}=(attachables=[])
+                  def #{name}=(attachables)
                     blobs =
                       attachables.flatten.collect do |attachable|
                         case attachable
@@ -238,15 +225,7 @@ module Document
                           end
                         end
                       end
-                    blobs = blobs.compact.map{|blob|
-                      #{name}.build(attachment: blob)
-                    }
-                    blobs
-                  end
-                  def #{name}_remote_urls=(urls=[])
-                    blobs = urls.map{|url|
-                      #{name}.build(attachment_remote_url: url)
-                    }
+                    blobs = blobs.map{|blob| #{name}.build(attachment: blob) }
                     blobs
                   end
                 CODE

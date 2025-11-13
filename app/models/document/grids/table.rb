@@ -1,7 +1,7 @@
 module Document
   module Grids
 
-    class Panel < Document::Grid
+    class Table < Document::Grid
 
       def draw
       end

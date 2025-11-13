@@ -1,20 +1,22 @@
 module Document
   module Fields::Embeds
-    class IntegerRange < Base
+    class IntegerRange
 
-      field :from, type: :big_decimal
-      field :to, type: :big_decimal
+      include Mongoid::Document
 
-      validates :from, :to,
+      field :begin, type: :big_decimal
+      field :end, type: :big_decimal
+
+      validates :begin, :end,
                 presence: true,
                 numericality: { only_integer: true }
 
-      validates :to,
+      validates :end,
                 numericality: {
-                  greater_than: :from
+                  greater_than: :begin
                 },
                 allow_blank: true,
-                if: -> { read_attribute(:from).present? }
+                if: -> { read_attribute(:begin).present? }
 
     end
   end

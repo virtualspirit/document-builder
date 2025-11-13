@@ -6,27 +6,20 @@ module Document
 
         included do
 
-          class_attribute :step
-          self.step= true
-          class_attribute :non_linear
-          self.non_linear= true
-
           field :_step, type: :boolean
           field :_current_step, type: :integer
           field :_total_step, type: :integer
           field :_steps_keywords, type: :array
-          field :_steps_taken, type: :array
 
           after_initialize do
             self._step = true
             self._steps_keywords ||= []
             set_total_step
-            set_current_step if self._current_step.nil?
+            set_current_step
           end
 
           before_save do
             set_keywords_overriden
-            set_steps_taken
             if _current_step < (_total_step - 1)
               self._current_step = _current_step + 1
             end
@@ -47,10 +40,6 @@ module Document
           self._total_step = Document::Form::find(self.class.form_id).step_options.total rescue 0
         end
 
-        def steps_completed?
-          (_steps_taken || []).uniq.length >= self._total_step.to_i
-        end
-
         def set_current_step step=nil
           step ||= _current_step
           if _current_step
@@ -62,15 +51,8 @@ module Document
           end
         end
 
-        def set_steps_taken
-          self._steps_taken ||= []
-          self._steps_taken.delete self._current_step.to_i
-          self._steps_taken << self._current_step.to_i
-          self._steps_taken.uniq!
-        end
-
         def set_keywords_overriden
-          (search_fields || []).each do |index, fields|
+          search_fields.each do |index, fields|
             if(_current_step <= _total_step - 1)
               self._steps_keywords[_current_step] = get_keywords(fields)
             else

@@ -1,43 +1,29 @@
 module Document
   module Fields::Embeds
-    class DateRange < Base
+    class DateRange
 
-      field :from, type: :date_time
-      field :to, type: :date_time
+      include Mongoid::Document
 
-      validates :from,
+      field :begin, type: :date_time
+      field :end, type: :date_time
+
+      validates :begin,
                 presence: true
 
-      validates :to,
+      validates :end,
                 timeliness: {
-                  after: :from,
-                  type: :date
+                  after: :begin,
+                  type: :end
                 },
                 allow_blank: true,
-                if: -> { read_attribute(:from).present? }
+                if: -> { read_attribute(:begin).present? }
 
-      def from=(val)
+      def begin=(val)
         super(val.try(:in_time_zone)&.utc)
       end
 
-      def to=(val)
+      def end=(val)
         super(val.try(:in_time_zone)&.utc)
-      end
-
-      def from
-        super.try(:in_time_zone)&.utc
-      end
-
-      def to
-        super.try(:in_time_zone)&.utc
-      end
-
-      def begin
-        from
-      end
-
-      def end
-        to
       end
 
     end

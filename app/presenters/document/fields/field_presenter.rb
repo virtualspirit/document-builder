@@ -2,11 +2,7 @@ module Document
   class Fields::FieldPresenter < ApplicationPresenter
 
     def required
-      if @model.validations.attributes[:required].present?
-        @model.validations&.required
-      else
-        false
-      end
+      @model.validations&.presence
     end
     alias required? required
 
@@ -48,14 +44,6 @@ module Document
     end
 
     def multiple_nested_form?
-      false
-    end
-
-    def depedency_field?
-      false
-    end
-
-    def multiple_depedency_field?
       false
     end
 

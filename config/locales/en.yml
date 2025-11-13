@@ -36,7 +36,3 @@ en:
   values:
     'true': 'Yes'
     'false': 'No'
-  shrine:
-    errors:
-      mime_type: "must be %{whitelist}"
-      max_size: "max size is %{max}"

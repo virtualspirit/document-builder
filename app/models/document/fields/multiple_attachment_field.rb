@@ -18,7 +18,7 @@ module Document
         nested_model = Document::Fields::Embeds::MultipleAttachment
 
         model.nested_models[name] = nested_model
-        model.has_many name, class_name: nested_model.name, as: :attachable
+        model.embeds_many name, class_name: nested_model.name
         model.accepts_nested_attributes_for name, reject_if: :all_blank, allow_destroy: true
         model.has_many_attached name
         model

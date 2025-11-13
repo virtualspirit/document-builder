@@ -2,9 +2,9 @@ module Document
   module Fields
     class DateFieldPresenter < FieldPresenter
 
-      # def value
-      #   super&.in_time_zone&.to_date
-      # end
+      def value
+        super&.in_time_zone&.to_date
+      end
 
       def value_for_preview
         value = self.value
@@ -48,14 +48,6 @@ module Document
         end
 
         options
-      end
-
-      def min
-        field_options[:min]
-      end
-
-      def max
-        field_options[:max]
       end
 
     end

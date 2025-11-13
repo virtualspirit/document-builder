@@ -115,57 +115,57 @@ module Document
         klass = model.nested_models[field_name]
 
         if begin_from_value?
-          klass.validates :from,
+          klass.validates :begin,
                           numericality: {
                             greater_than_or_equal_to: begin_value
                           },
                           allow_blank: true
           if fixed_begin
-            klass.default_value_for :from,
+            klass.default_value_for :begin,
                                     begin_value,
                                     allow_nil: false
-            klass.attr_readonly :from
+            klass.attr_readonly :begin
           end
         elsif begin_from_offsets_before_end?
-          klass.validates :from,
+          klass.validates :begin,
                           numericality: {
-                            greater_than_or_equal_to: ->(r) { r.to - offsets_before_end }
+                            greater_than_or_equal_to: ->(r) { r.end - offsets_before_end }
                           },
                           allow_blank: true
         end
 
         if end_to_value?
-          klass.validates :to,
+          klass.validates :end,
                           numericality: {
                             less_than_or_equal_to: end_value
                           },
                           allow_blank: true
           if fixed_end
-            klass.default_value_for :to,
+            klass.default_value_for :end,
                                     end_value,
                                     allow_nil: false
             klass.attr_readonly :end
           end
         elsif end_to_offsets_since_begin?
-          klass.validates :to,
+          klass.validates :end,
                           numericality: {
-                            less_than_or_equal_to: ->(r) { r.from + offsets_since_begin }
+                            less_than_or_equal_to: ->(r) { r.begin + offsets_since_begin }
                           },
                           allow_blank: true
         end
 
         unless minimum_gap_check_unrestricted?
-          klass.validates :to,
+          klass.validates :end,
                           numericality: {
-                            minimum_gap_check.to_sym => ->(r) { r.from + minimum_gap_value }
+                            minimum_gap_check.to_sym => ->(r) { r.begin + minimum_gap_value }
                           },
                           allow_blank: false
         end
 
         unless maximum_gap_check_unrestricted?
-          klass.validates :to,
+          klass.validates :end,
                           numericality: {
-                            maximum_gap_check.to_sym => ->(r) { r.from + maximum_gap_value }
+                            maximum_gap_check.to_sym => ->(r) { r.begin + maximum_gap_value }
                           },
                           allow_blank: false
         end

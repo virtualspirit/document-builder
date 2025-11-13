@@ -16,20 +16,11 @@ module Document
       end
 
       def value
-        target.send("#{@model.name}_id") rescue nil
-      end
-
-      def access_readonly?
-        target.class.attr_readonly?("#{@model.name}_id")
-      end
-
-      def access_hidden?
-        target.class.attribute_names.exclude?("#{@model.name}_id") && target.class.relations.keys.exclude?("#{@model.name}_id") rescue false
-      end
-
-      def access_read_and_write?
-        !access_readonly? &&
-          (target.class.attribute_names.include?("#{@model.name}_id") || target.class.relations.key?("#{@model.name}_id"))
+        begin
+          target.send("#{@model.name}_id")
+        rescue => e
+          puts e.backtrace
+        end
       end
 
     end

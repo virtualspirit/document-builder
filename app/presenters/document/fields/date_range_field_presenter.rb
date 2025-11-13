@@ -2,26 +2,14 @@ module Document
   module Fields
     class DateRangeFieldPresenter < CompositeFieldPresenter
 
-      # def value_for_preview
-      #   record = value
-      #   return unless record
-
-      #   from =
-      #     (I18n.l(record.begin.in_time_zone.to_date) if record.begin && record.begin != -Float::INFINITY)
-      #   to =
-      #     (I18n.l(record.end.in_time_zone.to_date) if record.end && record.end != Float::INFINITY)
-
-      #   [from, to].join(" ~ ")
-      # end
-
       def value_for_preview
         record = value
         return unless record
 
         from =
-          (I18n.l(record.begin) if record.begin && record.begin != -Float::INFINITY)
+          (I18n.l(record.begin.in_time_zone.to_date) if record.begin && record.begin != -Float::INFINITY)
         to =
-          (I18n.l(record.end) if record.end && record.end != Float::INFINITY)
+          (I18n.l(record.end.in_time_zone.to_date) if record.end && record.end != Float::INFINITY)
 
         [from, to].join(" ~ ")
       end
@@ -51,6 +39,7 @@ module Document
         def min_begin
           return if begin_disabled?
           return if @model.options.begin_from_unlimited?
+
           record = value
           if @model.options.begin_from_today?
             record.begin

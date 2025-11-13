@@ -2,26 +2,14 @@ module Document
   module Fields
     class DatetimeRangeFieldPresenter < CompositeFieldPresenter
 
-      # def value_for_preview
-      #   record = value
-      #   return unless record
-
-      #   from =
-      #     (I18n.l(record.begin.in_time_zone) if record.begin && record.begin != -Float::INFINITY)
-      #   to =
-      #     (I18n.l(record.end.in_time_zone) if record.end && record.end != Float::INFINITY)
-
-      #   [from, to].join(" ~ ")
-      # end
-
       def value_for_preview
         record = value
         return unless record
 
         from =
-          (I18n.l(record.begin) if record.begin && record.begin != -Float::INFINITY)
+          (I18n.l(record.begin.in_time_zone) if record.begin && record.begin != -Float::INFINITY)
         to =
-          (I18n.l(record.end) if record.end && record.end != Float::INFINITY)
+          (I18n.l(record.end.in_time_zone) if record.end && record.end != Float::INFINITY)
 
         [from, to].join(" ~ ")
       end

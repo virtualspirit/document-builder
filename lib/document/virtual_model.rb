@@ -46,7 +46,7 @@ module Document
         @nested_models ||= {}
       end
 
-      def build(name: nil, collection: nil, **opts)
+      def build(name: nil, collection: nil, step: false)
         # if collection
         #   self.store_in collection: collection
         # end
@@ -56,7 +56,7 @@ module Document
         # klass
         klass = Class.new(self)
         klass.name = name
-        klass = setup_model(klass,**opts)
+        klass = setup_model(klass, step)
         if collection
           klass.store_in collection: collection
         end
@@ -65,42 +65,15 @@ module Document
 
       protected
 
-      def setup_model klass, step=false, **opts
+      def setup_model klass, step=false
         klass.include Mongoid::Document
         klass.include Mongoid::Timestamps
         klass.include Document::Concerns::Models::ActiveStorageBridge::Attached::Macros
         klass.include Document::Concerns::VirtualModels::GeneralSearch
         klass.include Document::Concerns::VirtualModels::AdvancedSearch
-
-        klass.field :timezone, type: :string
-        klass.field :submission_state, type: :string, default: 'incomplete'
-        klass.attr_accessor :submitted
-
-        klass.before_save do
-          self.timezone ||= Time.zone.name
-        end
-
-        if opts[:step]
+        if step
           klass.include Document::Concerns::VirtualModels::Steps
-          klass.non_linear= opts[:step_non_linear].nil? ? true : opts[:step_non_linear]
         end
-
-        klass.after_save do
-          if self.respond_to?(:_step)
-            if self.class.non_linear && self.submitted
-              set(submission_state: 'completed')
-            end
-            unless self.class.non_linear
-              set(submission_state: 'completed') if steps_completed?
-            end
-          end
-        end
-        klass.after_create do
-          unless self.respond_to?(:_step)
-            set(submission_state: 'completed')
-          end
-        end
-
         klass.class_attribute :form_id
         klass
       end

@@ -26,20 +26,13 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'mongoid', '~> 8.0.1'
   spec.add_dependency 'mongoid_search'
   spec.add_dependency 'mongoid-geospatial'
-  #spec.add_dependency "ranked-model", ">= 0.4.9"
+  spec.add_dependency "ranked-model", "> 0.4.9"
   spec.add_dependency 'validates_timeliness', '~> 7.0.0'
   spec.add_dependency 'shrine', '~> 3.4.0'
-  spec.add_dependency "shrine-mongoid", "~> 1.0"
 
   # spec.add_dependency 'support', ">= 2.0.0"
   # spec.add_dependency 'grape_api', ">= 2.0.0"
   spec.add_dependency 'options_model'
   spec.add_dependency 'keisan'
-  spec.add_dependency 'active_model_cachers'
-  # spec.add_dependency "identity_cache"
-  # spec.add_dependency 'cityhash'
-  # spec.add_dependency 'dalli'
-  # spec.add_dependency "dalli"
-  spec.add_dependency 'positioning'
 
 end

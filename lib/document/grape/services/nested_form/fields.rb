@@ -7,7 +7,7 @@ module Document
           fetch_resource_and_collection! do
             model_klass "Document::Field"
             query_scope -> (query) {
-              query.where(nested_form: nested_form).order(:position)
+              query.where(nested_form: nested_form).rank(:position)
             }
             got_resource_callback proc { |resource|
               resource.nested_form = nested_form

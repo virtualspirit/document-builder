@@ -1,14 +1,10 @@
 module Document
   class FileUploader < Shrine
 
-    # plugin :validation_helpers, default_messages: {
-    #   mime_type_inclusion: -> (whitelist) { I18n.t('shrine.errors.mime_type', whitelist: whitelist.join(', ')) },
-    #   max_size: -> (max) { I18n.t('shrine.errors.max_size', max: max) }
-    # }
-
-    plugin :validation_helpers
-    plugin :remote_url
-    plugin :remove_attachment
+    plugin :validation_helpers, default_messages: {
+      mime_type_inclusion: -> (whitelist) { I18n.t('shrine.errors.mime_type', whitelist: whitelist.join(', ')) },
+      max_size: -> (max) { I18n.t('shrine.errors.max_size', max: max / 1048576.0) }
+    }
 
     Attacher.validate do
       # validate with model validation settings

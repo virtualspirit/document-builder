@@ -6,10 +6,6 @@ module Document
         super
       end
 
-      def choices
-        @model.options.choices
-      end
-
     end
   end
 end

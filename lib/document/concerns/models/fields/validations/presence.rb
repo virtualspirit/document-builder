@@ -7,12 +7,12 @@ module Document
           extend ActiveSupport::Concern
 
           included do
-            attribute :required, :boolean, default: false
+            attribute :presence, :boolean, default: false
           end
 
           def interpret_to(model, field_name, _accessibility, _options = {})
             super
-            return unless required
+            return unless presence
 
             model.validates field_name, presence: true
           end
