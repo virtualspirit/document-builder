@@ -16,7 +16,7 @@ module Document
     class << self
 
       delegate :dump, :load, to: :coder, allow_nil: false
-
+      
       def coder
         @_coder ||= Document.virtual_model_coder_class.new(self)
       end
@@ -71,6 +71,7 @@ module Document
         klass.include Document::Concerns::Models::ActiveStorageBridge::Attached::Macros
         klass.include Document::Concerns::VirtualModels::GeneralSearch
         klass.include Document::Concerns::VirtualModels::AdvancedSearch
+        klass.include Document::Concerns::Models::Submitter
         if step
           klass.include Document::Concerns::VirtualModels::Steps
         end
