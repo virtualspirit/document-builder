@@ -50,6 +50,10 @@ module Document
       self.class.type_key
     end
 
+    def field_type
+     model_name.name.demodulize.gsub("Field", "")
+    end
+
     protected
 
       def interpret_validations_to(model, accessibility, overrides = {})
