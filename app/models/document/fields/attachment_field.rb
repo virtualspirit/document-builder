@@ -2,8 +2,8 @@
 module Document
   module Fields
     class AttachmentField < Field
-      serialize :validations, Validations::AttachmentField
-      serialize :options, Options::AttachmentField
+      serialize :validations, coder: Validations::AttachmentField
+      serialize :options, coder: Options::AttachmentField
 
       def stored_type
         :string

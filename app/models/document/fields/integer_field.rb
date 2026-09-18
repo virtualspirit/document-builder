@@ -2,8 +2,8 @@ module Document
   module Fields
     class IntegerField < Document::Field
 
-      serialize :validations, Validations::IntegerField
-      serialize :options, Options::IntegerField
+      serialize :validations, coder: Validations::IntegerField
+      serialize :options, coder: Options::IntegerField
 
       def stored_type
         :integer

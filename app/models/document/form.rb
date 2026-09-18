@@ -6,7 +6,7 @@ module Document
     belongs_to :documentable, polymorphic: true, optional: true
     accepts_nested_attributes_for :sections, allow_destroy: true
 
-    serialize :step_options, FormStepOptions
+    serialize :step_options, coder: FormStepOptions
 
     before_save do
       if will_save_change_to_attribute?(:step)

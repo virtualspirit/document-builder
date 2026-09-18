@@ -6,7 +6,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 gemspec
 
 group :development do
-  gem 'sqlite3'
+  gem 'sqlite3', '~> 2.0'
 end
 
 # To use a debugger

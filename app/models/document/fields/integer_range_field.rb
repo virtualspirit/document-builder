@@ -2,8 +2,8 @@ module Document
   module Fields
     class IntegerRangeField < Document::Field
 
-      serialize :validations, Validations::IntegerRangeField
-      serialize :options, Options::IntegerRangeField
+      serialize :validations, coder: Validations::IntegerRangeField
+      serialize :options, coder: Options::IntegerRangeField
 
       def interpret_to(model, overrides: {})
         check_model_validity!(model)
