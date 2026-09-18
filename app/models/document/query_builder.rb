@@ -5,7 +5,7 @@ module Document
     belongs_to :context, optional: true, polymorphic: true
     belongs_to :form
 
-    serialize :data, Document::Concerns::VirtualModels::AdvancedSearch::Builder
+    serialize :data, coder: Document::Concerns::VirtualModels::AdvancedSearch::Builder
 
     after_initialize do
       if respond_to? :data

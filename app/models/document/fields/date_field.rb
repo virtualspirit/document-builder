@@ -2,8 +2,8 @@ module Document
   module Fields
     class DateField < Document::Field
 
-      serialize :validations, Validations::DateField
-      serialize :options, Options::DateField
+      serialize :validations, coder: Validations::DateField
+      serialize :options, coder: Options::DateField
 
       def stored_type
         :date

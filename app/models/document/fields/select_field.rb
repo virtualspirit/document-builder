@@ -2,8 +2,8 @@ module Document
   module Fields
     class SelectField < Document::Field
 
-      serialize :validations, Validations::SelectField
-      serialize :options, Options::SelectField
+      serialize :validations, coder: Validations::SelectField
+      serialize :options, coder: Options::SelectField
 
       def stored_type
         :string

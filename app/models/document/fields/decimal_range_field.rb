@@ -2,8 +2,8 @@ module Document
   module Fields
     class DecimalRangeField < Document::Field
 
-      serialize :validations, Validations::DecimalRangeField
-      serialize :options, Options::DecimalRangeField
+      serialize :validations, coder: Validations::DecimalRangeField
+      serialize :options, coder: Options::DecimalRangeField
 
       def interpret_to(model, overrides: {})
         check_model_validity!(model)

@@ -6,8 +6,8 @@ module Document
         build_nested_form.save! unless nested_form.present?
       end
 
-      serialize :validations, Validations::MultipleNestedFormField
-      serialize :options, Document::NonConfigurableField
+      serialize :validations, coder: Validations::MultipleNestedFormField
+      serialize :options, coder: Document::NonConfigurableField
 
       def attached_nested_form?
         true

@@ -2,8 +2,8 @@ module Document
   module Fields
     class RadioField < Document::Field
 
-      serialize :validations, Validations::RadioField
-      serialize :options, Options::RadioField
+      serialize :validations, coder: Validations::RadioField
+      serialize :options, coder: Options::RadioField
 
       def stored_type
         :string

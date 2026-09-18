@@ -2,8 +2,8 @@ module Document
   module Fields
     class BooleanField < Document::Field
 
-      serialize :validations, Validations::BooleanField
-      serialize :options, ::Document::NonConfigurableField
+      serialize :validations, coder: Validations::BooleanField
+      serialize :options, coder: ::Document::NonConfigurableField
 
       def stored_type
         :boolean

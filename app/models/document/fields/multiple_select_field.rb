@@ -2,8 +2,8 @@ module Document
   module Fields
     class MultipleSelectField < Document::Field
 
-      serialize :validations, Validations::MultipleSelectField
-      serialize :options, Options::MultipleSelectField
+      serialize :validations, coder: Validations::MultipleSelectField
+      serialize :options, coder: Options::MultipleSelectField
 
       def stored_type
         :string

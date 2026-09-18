@@ -2,8 +2,8 @@ module Document
   module Fields
     class CheckboxField < Document::Field
 
-      serialize :validations, Validations::CheckboxField
-      serialize :options, Options::CheckboxField
+      serialize :validations, coder: Validations::CheckboxField
+      serialize :options, coder: Options::CheckboxField
 
       def stored_type
         :array

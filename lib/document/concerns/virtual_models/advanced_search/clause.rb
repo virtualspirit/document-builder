@@ -15,7 +15,7 @@ module Document
           attribute :logical_operators, :json
           attribute :comparison_operators, :string
           attribute :ignore_blank_values, :boolean
-          serialize :comparison_operators, Hash
+          serialize :comparison_operators, type: Hash
           attribute :values
 
           validates_presence_of :type, :field
